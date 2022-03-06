@@ -345,14 +345,6 @@ loglevel:value("info")
 loglevel:value("warning")
 loglevel:value("error")
 
-trojan_loglevel = s:taboption("log", ListValue, "trojan_loglevel", "Trojan" ..  translate("Log Level"))
-trojan_loglevel.default = "2"
-trojan_loglevel:value("0", "all")
-trojan_loglevel:value("1", "info")
-trojan_loglevel:value("2", "warn")
-trojan_loglevel:value("3", "error")
-trojan_loglevel:value("4", "fatal")
-
 s:tab("faq", "FAQ")
 
 o = s:taboption("faq", DummyValue, "")

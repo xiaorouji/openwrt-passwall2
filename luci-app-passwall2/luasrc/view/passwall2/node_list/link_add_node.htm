@@ -48,7 +48,7 @@ local api = require "luci.model.cbi.passwall2.api.api"
 	function add_node() {
 		var nodes_link = document.getElementById("nodes_link").value;
 		if (nodes_link.trim() != "") {
-			var supports = "ss ssr vmess vless trojan trojan-go hysteria";
+			var supports = "ss ssr vmess vless trojan hysteria";
 			var itype = nodes_link.split('://')[0];
 			if (itype.trim() != "" && supports.indexOf(itype) >= 0) {
 				ajax_add_node(nodes_link);

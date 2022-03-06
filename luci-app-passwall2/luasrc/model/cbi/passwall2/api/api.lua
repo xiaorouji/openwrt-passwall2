@@ -324,17 +324,6 @@ function get_xray_version(file)
     return get_bin_version_cache(file, cmd)
 end
 
-function get_trojan_go_path()
-    local path = uci_get_type("global_app", "trojan_go_file")
-    return path
-end
-
-function get_trojan_go_version(file)
-    if file == nil then file = get_trojan_go_path() end
-    local cmd = "-version | awk '{print $2}' | sed -n 1P"
-    return get_bin_version_cache(file, cmd)
-end
-
 function get_brook_path()
     local path = uci_get_type("global_app", "brook_file")
     return path

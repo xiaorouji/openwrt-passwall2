@@ -127,15 +127,6 @@ local function start()
             elseif type == "Xray" then
                 config = require(require_dir .. "v2ray").gen_config(user)
                 bin = ln_run(api.get_xray_path(), "xray", "-config=" .. config_file, log_path)
-            elseif type == "Trojan" then
-                config = require(require_dir .. "trojan").gen_config(user)
-                bin = ln_run("/usr/sbin/trojan", "trojan", "-c " .. config_file, log_path)
-            elseif type == "Trojan-Plus" then
-                config = require(require_dir .. "trojan").gen_config(user)
-                bin = ln_run("/usr/sbin/trojan-plus", "trojan-plus", "-c " .. config_file, log_path)
-            elseif type == "Trojan-Go" then
-                config = require(require_dir .. "trojan").gen_config(user)
-                bin = ln_run(api.get_trojan_go_path(), "trojan-go", "-config " .. config_file, log_path)
             elseif type == "Brook" then
                 local brook_protocol = user.protocol
                 local brook_password = user.password

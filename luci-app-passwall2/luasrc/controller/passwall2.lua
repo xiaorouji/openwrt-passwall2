@@ -11,7 +11,6 @@ local i18n = require "luci.i18n"
 local brook = require("luci.model.cbi." .. appname ..".api.brook")
 local v2ray = require("luci.model.cbi." .. appname ..".api.v2ray")
 local xray = require("luci.model.cbi." .. appname ..".api.xray")
-local trojan_go = require("luci.model.cbi." .. appname ..".api.trojan_go")
 local hysteria = require("luci.model.cbi." .. appname ..".api.hysteria")
 
 function index()
@@ -73,8 +72,6 @@ function index()
 	entry({"admin", "services", appname, "v2ray_update"}, call("v2ray_update")).leaf = true
 	entry({"admin", "services", appname, "xray_check"}, call("xray_check")).leaf = true
 	entry({"admin", "services", appname, "xray_update"}, call("xray_update")).leaf = true
-	entry({"admin", "services", appname, "trojan_go_check"}, call("trojan_go_check")).leaf = true
-	entry({"admin", "services", appname, "trojan_go_update"}, call("trojan_go_update")).leaf = true
 	entry({"admin", "services", appname, "hysteria_check"}, call("hysteria_check")).leaf = true
 	entry({"admin", "services", appname, "hysteria_update"}, call("hysteria_update")).leaf = true
 end
@@ -425,25 +422,6 @@ function xray_update()
 		json = xray.to_move(http.formvalue("file"))
 	else
 		json = xray.to_download(http.formvalue("url"), http.formvalue("size"))
-	end
-
-	http_write_json(json)
-end
-
-function trojan_go_check()
-	local json = trojan_go.to_check("")
-	http_write_json(json)
-end
-
-function trojan_go_update()
-	local json = nil
-	local task = http.formvalue("task")
-	if task == "extract" then
-		json = trojan_go.to_extract(http.formvalue("file"), http.formvalue("subfix"))
-	elseif task == "move" then
-		json = trojan_go.to_move(http.formvalue("file"))
-	else
-		json = trojan_go.to_download(http.formvalue("url"), http.formvalue("size"))
 	end
 
 	http_write_json(json)

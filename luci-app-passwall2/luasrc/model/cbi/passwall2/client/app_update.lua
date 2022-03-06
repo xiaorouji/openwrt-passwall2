@@ -11,7 +11,6 @@ s = m:section(TypedSection, "global_app", translate("App Update"),
 s.anonymous = true
 s:append(Template(appname .. "/app_update/v2ray_version"))
 s:append(Template(appname .. "/app_update/xray_version"))
-s:append(Template(appname .. "/app_update/trojan_go_version"))
 s:append(Template(appname .. "/app_update/brook_version"))
 s:append(Template(appname .. "/app_update/hysteria_version"))
 
@@ -21,10 +20,6 @@ o.rmempty = false
 
 o = s:option(Value, "xray_file", translatef("%s App Path", "Xray"))
 o.default = "/usr/bin/xray"
-o.rmempty = false
-
-o = s:option(Value, "trojan_go_file", translatef("%s App Path", "Trojan-Go"))
-o.default = "/usr/bin/trojan-go"
 o.rmempty = false
 
 o = s:option(Value, "brook_file", translatef("%s App Path", "Brook"))

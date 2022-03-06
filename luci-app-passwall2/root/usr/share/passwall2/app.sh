@@ -34,7 +34,6 @@ LUA_API_PATH=/usr/lib/lua/luci/model/cbi/$CONFIG/api
 API_GEN_SS=$LUA_API_PATH/gen_shadowsocks.lua
 API_GEN_V2RAY=$LUA_API_PATH/gen_v2ray.lua
 API_GEN_V2RAY_PROTO=$LUA_API_PATH/gen_v2ray_proto.lua
-API_GEN_TROJAN=$LUA_API_PATH/gen_trojan.lua
 API_GEN_NAIVE=$LUA_API_PATH/gen_naiveproxy.lua
 API_GEN_HYSTERIA=$LUA_API_PATH/gen_hysteria.lua
 
@@ -393,14 +392,6 @@ run_socks() {
 		lua $API_GEN_V2RAY -node $node -local_socks_port $socks_port ${_extra_param} > $config_file
 		ln_run "$(first_type $(config_t_get global_app ${type}_file) ${type})" ${type} $log_file -config="$config_file"
 	;;
-	trojan-go)
-		lua $API_GEN_TROJAN -node $node -run_type client -local_addr $bind -local_port $socks_port -server_host $server_host -server_port $port > $config_file
-		ln_run "$(first_type $(config_t_get global_app trojan_go_file) trojan-go)" trojan-go $log_file -config "$config_file"
-	;;
-	trojan*)
-		lua $API_GEN_TROJAN -node $node -run_type client -local_addr $bind -local_port $socks_port -server_host $server_host -server_port $port > $config_file
-		ln_run "$(first_type ${type})" "${type}" $log_file -c "$config_file"
-	;;
 	naiveproxy)
 		lua $API_GEN_NAIVE -node $node -run_type socks -local_addr $bind -local_port $socks_port -server_host $server_host -server_port $port > $config_file
 		ln_run "$(first_type naive)" naive $log_file "$config_file"
@@ -491,16 +482,6 @@ run_redir() {
 			local loglevel=$(config_t_get global loglevel "warning")
 			lua $API_GEN_V2RAY -node $node -proto udp -redir_port $local_port -proxy_way tproxy -loglevel $loglevel > $config_file
 			ln_run "$(first_type $(config_t_get global_app ${type}_file) ${type})" ${type} $log_file -config="$config_file"
-		;;
-		trojan-go)
-			local loglevel=$(config_t_get global trojan_loglevel "2")
-			lua $API_GEN_TROJAN -node $node -run_type nat -local_addr "0.0.0.0" -local_port $local_port -loglevel $loglevel > $config_file
-			ln_run "$(first_type $(config_t_get global_app trojan_go_file) trojan-go)" trojan-go $log_file -config "$config_file"
-		;;
-		trojan*)
-			local loglevel=$(config_t_get global trojan_loglevel "2")
-			lua $API_GEN_TROJAN -node $node -run_type nat -local_addr "0.0.0.0" -local_port $local_port -loglevel $loglevel > $config_file
-			ln_run "$(first_type ${type})" "${type}" $log_file -c "$config_file"
 		;;
 		naiveproxy)
 			echolog "Naiveproxy不支持UDP转发！"
@@ -632,27 +613,6 @@ run_redir() {
 			}
 			lua $API_GEN_V2RAY -node $node -redir_port $local_port -proxy_way $tcp_proxy_way -loglevel $loglevel ${_extra_param} > $config_file
 			ln_run "$(first_type $(config_t_get global_app ${type}_file) ${type})" ${type} $log_file -config="$config_file"
-		;;
-		trojan-go)
-			[ "$TCP_UDP" = "1" ] && {
-				config_file=$(echo $config_file | sed "s/TCP/TCP_UDP/g")
-				UDP_REDIR_PORT=$TCP_REDIR_PORT
-				UDP_NODE="nil"
-			}
-			local loglevel=$(config_t_get global trojan_loglevel "2")
-			lua $API_GEN_TROJAN -node $node -run_type nat -local_addr "0.0.0.0" -local_port $local_port -loglevel $loglevel > $config_file
-			ln_run "$(first_type $(config_t_get global_app trojan_go_file) trojan-go)" trojan-go $log_file -config "$config_file"
-		;;
-		trojan*)
-			[ "$tcp_proxy_way" = "tproxy" ] && lua_tproxy_arg="-use_tproxy true"
-			[ "$TCP_UDP" = "1" ] && {
-				config_file=$(echo $config_file | sed "s/TCP/TCP_UDP/g")
-				UDP_REDIR_PORT=$TCP_REDIR_PORT
-				UDP_NODE="nil"
-			}
-			local loglevel=$(config_t_get global trojan_loglevel "2")
-			lua $API_GEN_TROJAN -node $node -run_type nat -local_addr "0.0.0.0" -local_port $local_port -loglevel $loglevel $lua_tproxy_arg > $config_file
-			ln_run "$(first_type ${type})" "${type}" $log_file -c "$config_file"
 		;;
 		naiveproxy)
 			lua $API_GEN_NAIVE -node $node -run_type redir -local_addr "0.0.0.0" -local_port $local_port > $config_file
@@ -1125,8 +1085,8 @@ TCP_UDP=0
 [ "$TCP_NODE" == "nil" -a "$UDP_NODE" == "nil" ] && NO_PROXY=1
 [ "$(config_get_type $TCP_NODE nil)" == "nil" -a "$(config_get_type $UDP_NODE nil)" == "nil" ] && NO_PROXY=1
 tcp_proxy_way=$(config_t_get global_forwarding tcp_proxy_way redirect)
-REDIRECT_LIST="socks ss ss-rust ssr v2ray xray trojan-plus trojan-go naiveproxy"
-TPROXY_LIST="socks ss ss-rust ssr v2ray xray trojan-plus brook trojan-go hysteria"
+REDIRECT_LIST="socks ss ss-rust ssr v2ray xray naiveproxy"
+TPROXY_LIST="socks ss ss-rust ssr v2ray xray brook hysteria"
 RESOLVFILE=/tmp/resolv.conf.d/resolv.conf.auto
 [ -f "${RESOLVFILE}" ] && [ -s "${RESOLVFILE}" ] || RESOLVFILE=/tmp/resolv.conf.auto
 TCP_REDIR_PORTS=$(config_t_get global_forwarding tcp_redir_ports '80,443')
