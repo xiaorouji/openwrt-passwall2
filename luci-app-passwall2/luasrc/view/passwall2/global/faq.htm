@@ -34,7 +34,6 @@ local api = require "luci.model.cbi.passwall2.api.api"
 	var dom = document.getElementById("div2");
 	if (dom) {
 		var li = "";
-		li += "<%:You can use load balancing for failover.%>" + "<br />";
 		li += "<%:Restore the default configuration method. Input example in the address bar:%>" + "<a href='#' onclick='reset()'>" + reset_url + "</a>" + "<br />";
 		li += "<%:Hide menu method, input example in the address bar:%>" + "<a href='#' onclick='hide()'>" + hide_url + "</a>" + "<br />";
 		li += "<%:After the hidden to the display, input example in the address bar:%>" + "<a href='#'>" + show_url + "</a>" + "<br />";

@@ -59,25 +59,9 @@ while [ "$ENABLED" -eq 1 ]; do
 
 	#dns
 	dns_mode=$(config_t_get global dns_mode)
-	if [ "$dns_mode" == "pdnsd" ] || [ "$dns_mode" == "dns2socks" ] || [ "$dns_mode" == "v2ray" ] || [ "$dns_mode" == "xray" ]; then
+	if [ "$dns_mode" == "v2ray" ] || [ "$dns_mode" == "xray" ]; then
 		icount=$(netstat -apn | grep 7913 | wc -l)
 		if [ $icount = 0 ]; then
-			/etc/init.d/$CONFIG restart
-			exit 0
-		fi
-	fi
-	
-	[ -f "$TMP_BIN_PATH/chinadns-ng" ] && {
-		if ! pgrep -x "$TMP_BIN_PATH/chinadns-ng" > /dev/null 2>&1; then
-			/etc/init.d/$CONFIG restart
-			exit 0
-		fi
-	}
-
-	#haproxy
-	use_haproxy=$(config_t_get global_haproxy balancing_enable 0)
-	if [ $use_haproxy -gt 0 ]; then
-		if ! pgrep -x "$TMP_BIN_PATH/haproxy" > /dev/null 2>&1; then
 			/etc/init.d/$CONFIG restart
 			exit 0
 		fi

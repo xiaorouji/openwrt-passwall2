@@ -138,25 +138,6 @@ do
 
 	if true then
 		local i = 0
-		local option = "lbss"
-		uci:foreach(appname, "haproxy_config", function(t)
-			i = i + 1
-			local node_id = t[option]
-			CONFIG[#CONFIG + 1] = {
-				log = true,
-				id = t[".name"],
-				remarks = "HAProxy负载均衡节点列表[" .. i .. "]",
-				currentNode = node_id and uci:get_all(appname, node_id) or nil,
-				set = function(o, server)
-					uci:set(appname, t[".name"], option, server)
-					o.newNodeId = server
-				end
-			}
-		end)
-	end
-
-	if true then
-		local i = 0
 		local options = {"tcp", "udp"}
 		uci:foreach(appname, "acl_rule", function(t)
 			i = i + 1

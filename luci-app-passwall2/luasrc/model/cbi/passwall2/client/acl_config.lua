@@ -225,9 +225,6 @@ end
 ---- DNS Forward Mode
 o = s:option(ListValue, "dns_mode", translate("Filter Mode"))
 o:depends({ tcp_node = "default",  ['!reverse'] = true })
-if api.is_finded("dns2socks") then
-    o:value("dns2socks", "dns2socks")
-end
 if has_v2ray then
     o:value("v2ray", "V2ray")
 end
@@ -250,7 +247,6 @@ o:value("8.8.8.8", "8.8.8.8 (Google DNS)")
 o:value("8.8.4.4", "8.8.4.4 (Google DNS)")
 o:value("208.67.222.222", "208.67.222.222 (Open DNS)")
 o:value("208.67.220.220", "208.67.220.220 (Open DNS)")
-o:depends("dns_mode", "dns2socks")
 o:depends("v2ray_dns_mode", "tcp")
 
 if has_v2ray or has_xray then

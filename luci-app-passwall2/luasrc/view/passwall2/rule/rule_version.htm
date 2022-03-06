@@ -1,10 +1,6 @@
 <%
 local api = require "luci.model.cbi.passwall2.api.api"
 
-local gfwlist_update = api.uci_get_type("global_rules", "gfwlist_update", "1") == "1" and "checked='checked'" or ""
-local chnroute_update = api.uci_get_type("global_rules", "chnroute_update", "1") == "1" and "checked='checked'" or ""
-local chnroute6_update = api.uci_get_type("global_rules", "chnroute6_update", "1") == "1" and "checked='checked'" or ""
-local chnlist_update = api.uci_get_type("global_rules", "chnlist_update", "1") == "1" and "checked='checked'" or ""
 local geoip_update = api.uci_get_type("global_rules", "geoip_update", "1") == "1" and "checked='checked'" or ""
 local geosite_update = api.uci_get_type("global_rules", "geosite_update", "1") == "1" and "checked='checked'" or ""
 -%>
@@ -46,22 +42,6 @@ local geosite_update = api.uci_get_type("global_rules", "geosite_update", "1") =
 	</label>
 	<div class="cbi-value-field">
 		<div>
-			<label>
-				<input class="cbi-input-checkbox" type="checkbox" name="gfwlist" value="1" <%=gfwlist_update%> />
-				gfwlist
-			</label>
-			<label>
-				<input class="cbi-input-checkbox" type="checkbox" name="chnroute" value="1" <%=chnroute_update%> />
-				chnroute
-			</label>
-			<label>
-				<input class="cbi-input-checkbox" type="checkbox" name="chnroute6" value="1" <%=chnroute6_update%> />
-				chnroute6
-			</label>
-			<label>
-				<input class="cbi-input-checkbox" type="checkbox" name="chnlist" value="1" <%=chnlist_update%> />
-				chnlist
-			</label>
 			<label>
 				<input class="cbi-input-checkbox" type="checkbox" name="geoip" value="1" <%=geoip_update%> />
 				geoip

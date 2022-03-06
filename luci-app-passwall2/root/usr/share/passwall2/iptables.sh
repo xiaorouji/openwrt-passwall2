@@ -270,7 +270,7 @@ load_acl() {
 			udp_redir_ports=${udp_redir_ports:-default}
 			tcp_node=${tcp_node:-default}
 			udp_node=${udp_node:-default}
-			dns_mode=${dns_mode:-dns2socks}
+			dns_mode=${dns_mode:-v2ray}
 			dns_forward=${dns_forward:-1.1.1.1}
 			[ "$dns_mode" = "v2ray" -o "$dns_mode" = "xray" ] && {
 				[ "$v2ray_dns_mode" = "doh" ] && dns_forward=${dns_doh:-https://cloudflare-dns.com/dns-query,1.1.1.1}
@@ -295,9 +295,7 @@ load_acl() {
 							[ -z ${_dns_port} ] && {
 								dns_port=$(get_new_port $(expr $dns_port + 1))
 								_dns_port=$dns_port
-								if [ "$dns_mode" = "dns2socks" ]; then
-									run_dns2socks flag=acl_${sid} socks_address=127.0.0.1 socks_port=$socks_port listen_address=0.0.0.0 listen_port=${_dns_port} dns=$dns_forward cache=1
-								elif [ "$dns_mode" = "v2ray" -o "$dns_mode" = "xray" ]; then
+								if [ "$dns_mode" = "v2ray" -o "$dns_mode" = "xray" ]; then
 									config_file=$TMP_ACL_PATH/${tcp_node}_SOCKS_${socks_port}_DNS.json
 									run_v2ray_dns_socks flag=acl_${sid} type=$dns_mode socks_address=127.0.0.1 socks_port=$socks_port listen_address=0.0.0.0 listen_port=${_dns_port} dns_proto=${v2ray_dns_mode} dns_tcp_server=${dns_forward} doh="${dns_forward}" dns_client_ip=${dns_client_ip} dns_query_strategy=${DNS_QUERY_STRATEGY} config_file=$config_file
 								fi
@@ -623,14 +621,6 @@ load_acl() {
 	$ip6t_m -A PSW $(comment "默认") -p udp -j RETURN
 }
 
-filter_haproxy() {
-	for item in ${haproxy_items}; do
-		local ip=$(get_host_ip ipv4 $(echo $item | awk -F ":" '{print $1}') 1)
-		ipset -q add $IPSET_VPSIPLIST $ip
-	done
-	echolog "加入负载均衡的节点到ipset[$IPSET_VPSIPLIST]直连完成"
-}
-
 filter_vpsip() {
 	uci show $CONFIG | grep ".address=" | cut -d "'" -f 2 | grep -E "([0-9]{1,3}[\.]){3}[0-9]{1,3}" | sed -e "/^$/d" | sed -e "s/^/add $IPSET_VPSIPLIST &/g" | awk '{print $0} END{print "COMMIT"}' | ipset -! -R
 	uci show $CONFIG | grep ".address=" | cut -d "'" -f 2 | grep -E "([A-Fa-f0-9]{1,4}::?){1,7}[A-Fa-f0-9]{1,4}" | sed -e "/^$/d" | sed -e "s/^/add $IPSET_VPSIPLIST6 &/g" | awk '{print $0} END{print "COMMIT"}' | ipset -! -R
@@ -832,7 +822,6 @@ add_firewall_rule() {
 
 	#  过滤所有节点IP
 	filter_vpsip > /dev/null 2>&1 &
-	filter_haproxy > /dev/null 2>&1 &
 
 	accept_icmp=$(config_t_get global_forwarding accept_icmp 0)
 	accept_icmpv6=$(config_t_get global_forwarding accept_icmpv6 0)

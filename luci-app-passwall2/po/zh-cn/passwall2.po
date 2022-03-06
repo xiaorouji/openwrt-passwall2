@@ -61,9 +61,6 @@ msgstr "节点列表"
 msgid "Other Settings"
 msgstr "高级设置"
 
-msgid "Load Balancing"
-msgstr "负载均衡"
-
 msgid "Enter interface"
 msgstr "进入界面"
 
@@ -142,15 +139,6 @@ msgstr "用于代理特定的列表。"
 msgid "For proxy game network."
 msgstr "用于代理游戏等。"
 
-msgid "DNS Shunt"
-msgstr "DNS分流"
-
-msgid "Domestic group name"
-msgstr "国内分组名"
-
-msgid "You only need to configure domestic DNS packets in SmartDNS and set it redirect or as Dnsmasq upstream, and fill in the domestic DNS group name here."
-msgstr "你只需要在SmartDNS配置好国内DNS分组，并设置重定向或作为Dnsmasq上游，此处填入国内DNS分组名。"
-
 msgid "Filter Mode"
 msgstr "过滤模式"
 
@@ -162,9 +150,6 @@ msgstr "远程DNS"
 
 msgid "IP:Port mode acceptable, multi value split with english comma."
 msgstr "接受 IP:Port 形式的输入，多个以英文逗号分隔。"
-
-msgid "If you use dns2socks, only the first one is valid."
-msgstr "如果使用dns2socks，只有第一个生效。"
 
 msgid "Ali"
 msgstr "阿里"
@@ -208,9 +193,6 @@ msgstr "此功能需要 DNS 服务器支持 EDNS Client Subnet（RFC7871）。"
 msgid "When the accessed domain name does not exist in the rule list, the default DNS used."
 msgstr "当访问的域名不存在规则列表中，使用的默认DNS。"
 
-msgid "The effect is better, but will increase the memory."
-msgstr "效果更好，但会增加内存使用。"
-
 msgid "Filter Proxy Host IPv6"
 msgstr "过滤代理域名 IPv6"
 
@@ -240,9 +222,6 @@ msgstr "客户端DNS和默认网关必须指向本路由器。"
 
 msgid "If you have a wrong DNS process, the consequences are at your own risk!"
 msgstr "如果你自行配置了错误的DNS流程，后果自负！"
-
-msgid "You can use load balancing for failover."
-msgstr "可以使用负载均衡实现故障切换功能。"
 
 msgid "Restore the default configuration method. Input example in the address bar:"
 msgstr "恢复默认配置方法，地址栏输入例："
@@ -741,60 +720,6 @@ msgstr "通过关键字删除备用节点列表的节点"
 
 msgid "Please enter the node keyword, pay attention to distinguish between spaces, uppercase and lowercase."
 msgstr "请输入节点关键字，注意区分空格、大写和小写。"
-
-msgid "Configure this node with 127.0.0.1: this port"
-msgstr "使用127.0.0.1和此端口配置节点"
-
-msgid "Enable Load Balancing"
-msgstr "开启负载均衡"
-
-msgid "Console Username"
-msgstr "控制台账号"
-
-msgid "Console Password"
-msgstr "控制台密码"
-
-msgid "Console Port"
-msgstr "控制台端口"
-
-msgid "In the browser input routing IP plus port access, such as:192.168.1.1:1188"
-msgstr "在浏览器输入路由IP加端口访问，如：192.168.1.1:1188"
-
-msgid "Haproxy Port"
-msgstr "负载均衡端口"
-
-msgid "Add a node, Export Of Multi WAN Only support Multi Wan. Load specific gravity range 1-256. Multiple primary servers can be load balanced, standby will only be enabled when the primary server is offline! Multiple groups can be set, Haproxy port same one for each group."
-msgstr "添加节点，指定出口功能是为多WAN用户准备的。负载比重范围1-256。多个主服务器可以负载均衡，备用只有在主服务器离线时才会启用！可以设置多个组，负载均衡端口相同则为一组。"
-
-msgid "Note that the node configuration parameters for load balancing must be consistent, otherwise problems can arise!"
-msgstr "注意，负载均衡的节点配置参数必须一致，否则会出问题！"
-
-msgid "Node"
-msgstr "节点"
-
-msgid "Node Address"
-msgstr "节点地址"
-
-msgid "Node Port"
-msgstr "节点端口"
-
-msgid "Node Weight"
-msgstr "负载比重"
-
-msgid "Export Of Multi WAN"
-msgstr "多WAN指定出口"
-
-msgid "Main"
-msgstr "主要"
-
-msgid "Mode"
-msgstr "模式"
-
-msgid "Primary"
-msgstr "主要"
-
-msgid "Standby"
-msgstr "备用"
 
 msgid "Manually update"
 msgstr "手动更新"

@@ -265,28 +265,6 @@ lua_api() {
 	echo $(lua -e "local api = require 'luci.model.cbi.passwall2.api.api' print(api.${func})")
 }
 
-run_ipt2socks() {
-	local flag redir_type tcp_tproxy local_port socks_address socks_port socks_username socks_password log_file
-	local _extra_param=""
-	eval_set_val $@
-	[ -n "$log_file" ] || log_file="/dev/null"
-	socks_address=$(get_host_ip "ipv4" ${socks_address})
-	[ -n "$socks_username" ] && [ -n "$socks_password" ] && _extra_param="${_extra_param} -a $socks_username -k $socks_password"
-	[ -n "$tcp_tproxy" ] || _extra_param="${_extra_param} -R"
-	case "$redir_type" in
-	UDP)
-		flag="${flag}_UDP"
-		_extra_param="${_extra_param} -U"
-	;;
-	TCP)
-		flag="${flag}_TCP"
-		_extra_param="${_extra_param} -T"
-	;;
-	esac
-	_extra_param="${_extra_param} -v"
-	ln_run "$(first_type ipt2socks)" "ipt2socks_${flag}" $log_file -l $local_port -b 0.0.0.0 -s $socks_address -p $socks_port ${_extra_param}
-}
-
 run_v2ray() {
 	local flag node proxy_way redir_type redir_port socks_address socks_port socks_username socks_password http_address http_port http_username http_password log_file config_file
 	local _extra_param=""
@@ -313,24 +291,6 @@ run_v2ray() {
 	esac
 	lua $API_GEN_V2RAY -node $node -proto $proto -redir_port $redir_port -proxy_way $proxy_way -local_socks_address $socks_address -local_socks_port $socks_port -local_http_address $http_address -local_http_port $http_port ${_extra_param} > $config_file
 	ln_run "$(first_type $(config_t_get global_app ${type}_file) ${type})" ${type} $log_file -config="$config_file"
-}
-
-run_dns2socks() {
-	local flag socks socks_address socks_port socks_username socks_password listen_address listen_port dns cache log_file
-	local _extra_param=""
-	eval_set_val $@
-	[ -n "$flag" ] && flag="_${flag}"
-	[ -n "$log_file" ] || log_file="/dev/null"
-	dns=$(get_first_dns dns 53 | sed 's/#/:/g')
-	[ -n "$socks" ] && {
-		socks=$(echo $socks | sed "s/#/:/g")
-		socks_address=$(echo $socks | awk -F ':' '{print $1}')
-		socks_port=$(echo $socks | awk -F ':' '{print $2}')
-	}
-	[ -n "$socks_username" ] && [ -n "$socks_password" ] && _extra_param="${_extra_param} /u $socks_username /p $socks_password"
-	[ -z "$cache" ] && cache=1
-	[ "$cache" = "0" ] && _extra_param="${_extra_param} /d"
-	ln_run "$(first_type dns2socks)" "dns2socks${flag}" $log_file ${_extra_param} "${socks_address}:${socks_port}" "${dns}" "${listen_address}:${listen_port}"
 }
 
 run_v2ray_dns_socks() {
@@ -664,7 +624,6 @@ run_redir() {
 						;;
 						fakedns)
 							fakedns=1
-							CHINADNS_NG=0
 							_extra_param="${_extra_param} -dns_listen_port ${dns_listen_port} -dns_fakedns 1"
 							echolog "  - 域名解析 Fake DNS..."
 						;;
@@ -1037,12 +996,6 @@ start_dns() {
 	}
 
 	case "$DNS_MODE" in
-	dns2socks)
-		local dns2socks_socks_server=$(echo $(config_t_get global socks_server 127.0.0.1:1080) | sed "s/#/:/g")
-		local dns2socks_forward=$(get_first_dns DNS_FORWARD 53 | sed 's/#/:/g')
-		run_dns2socks socks=$dns2socks_socks_server listen_address=127.0.0.1 listen_port=${dns_listen_port} dns=$dns2socks_forward cache=$DNS_CACHE
-		echolog "  - 域名解析：dns2socks(127.0.0.1:${dns_listen_port})，${dns2socks_socks_server} -> ${dns2socks_forward}"
-	;;
 	v2ray|\
 	xray)
 		[ "${resolve_dns}" == "0" ] && {
@@ -1093,267 +1046,15 @@ start_dns() {
 			ln_run "$(first_type $(config_t_get global_app ${DNS_MODE}_file) ${DNS_MODE})" ${DNS_MODE} $TMP_PATH/DNS.log -config="$TMP_PATH/DNS.json"
 		}
 	;;
-	pdnsd)
-		use_tcp_node_resolve_dns=1
-		gen_pdnsd_config "${dns_listen_port}" "${DNS_FORWARD}" "${DNS_CACHE}"
-		ln_run "$(first_type pdnsd)" pdnsd "/dev/null" --daemon -c "${TMP_PATH}/pdnsd/pdnsd.conf" -d
-		echolog "  - 域名解析：pdnsd + 使用(TCP节点)解析域名..."
-	;;
-	udp)
-		use_udp_node_resolve_dns=1
-		TUN_DNS="$(echo ${DNS_FORWARD} | sed 's/#/:/g' | sed -E 's/\:([^:]+)$/#\1/g')"
-		echolog "  - 域名解析：使用UDP协议请求DNS（$TUN_DNS）..."
-	;;
 	esac
 
 	[ "${use_tcp_node_resolve_dns}" = "1" ] && echolog "  * 请确认上游 DNS 支持 TCP 查询，如非直连地址，确保 TCP 代理打开，并且已经正确转发！"
 	[ "${use_udp_node_resolve_dns}" = "1" ] && echolog "  * 要求代理 DNS 请求，如上游 DNS 非直连地址，确保 UDP 代理打开，并且已经正确转发！"
 	
-	case "$DNS_SHUNT" in
-	smartdns)
-		local group_domestic=$(config_t_get global group_domestic)
-		CHINADNS_NG=0
-		source $APP_PATH/helper_smartdns.sh add DNS_MODE=$DNS_MODE SMARTDNS_CONF=/tmp/etc/smartdns/$CONFIG.conf REMOTE_FAKEDNS=$fakedns DEFAULT_DNS=$DEFAULT_DNS LOCAL_GROUP=$group_domestic TUN_DNS=$TUN_DNS TCP_NODE=$TCP_NODE PROXY_MODE=${TCP_PROXY_MODE}${LOCALHOST_TCP_PROXY_MODE}${ACL_TCP_PROXY_MODE} NO_PROXY_IPV6=${filter_proxy_ipv6}
-		source $APP_PATH/helper_smartdns.sh restart
-		echolog "  - 域名解析：使用SmartDNS，请确保配置正常。"
-	;;
-	esac
-
-	[ -n "$chnlist" ] && [ "$CHINADNS_NG" = "1" ] && [ -n "$(first_type chinadns-ng)" ] && [ -s "${RULES_PATH}/chnlist" ] && {
-		china_ng_listen_port=$(expr $dns_listen_port + 1)
-		china_ng_listen="127.0.0.1#${china_ng_listen_port}"
-		china_ng_chn=$(echo -n $(echo "${LOCAL_DNS}" | sed "s/,/\n/g" | head -n2) | tr " " ",")
-		china_ng_gfw="${TUN_DNS}"
-		echolog "  | - (chinadns-ng) 最高支持4级域名过滤..."
-
-		local gfwlist_param="${TMP_PATH}/chinadns_gfwlist"
-		[ -s "${RULES_PATH}/gfwlist" ] && cp -a "${RULES_PATH}/gfwlist" "${gfwlist_param}"
-		local chnlist_param="${TMP_PATH}/chinadns_chnlist"
-		[ -s "${RULES_PATH}/chnlist" ] && cp -a "${RULES_PATH}/chnlist" "${chnlist_param}"
-
-		[ -s "${RULES_PATH}/proxy_host" ] && {
-			cat "${RULES_PATH}/proxy_host" | tr -s '\n' | grep -v "^#" | sort -u >> "${gfwlist_param}"
-			echolog "  | - [$?](chinadns-ng) 代理域名表合并到防火墙域名表"
-		}
-		[ -s "${RULES_PATH}/direct_host" ] && {
-			cat "${RULES_PATH}/direct_host" | tr -s '\n' | grep -v "^#" | sort -u >> "${chnlist_param}"
-			echolog "  | - [$?](chinadns-ng) 域名白名单合并到中国域名表"
-		}
-		chnlist_param=${chnlist_param:+-m "${chnlist_param}" -M}
-		local log_path="${TMP_PATH}/chinadns-ng.log"
-		log_path="/dev/null"
-		ln_run "$(first_type chinadns-ng)" chinadns-ng "$log_path" -v -b 0.0.0.0 -l "${china_ng_listen_port}" ${china_ng_chn:+-c "${china_ng_chn}"} ${chnlist_param} ${china_ng_gfw:+-t "${china_ng_gfw}"} ${gfwlist_param:+-g "${gfwlist_param}"} -f
-		echolog "  + 过滤服务：ChinaDNS-NG(:${china_ng_listen_port})：国内DNS：${china_ng_chn}，可信DNS：${china_ng_gfw}"
-	}
-	
 	[ "$DNS_SHUNT" = "dnsmasq" ] && {
 		source $APP_PATH/helper_dnsmasq.sh stretch
-		source $APP_PATH/helper_dnsmasq.sh add DNS_MODE=$DNS_MODE TMP_DNSMASQ_PATH=$TMP_DNSMASQ_PATH DNSMASQ_CONF_FILE=/tmp/dnsmasq.d/dnsmasq-passwall2.conf REMOTE_FAKEDNS=$fakedns DEFAULT_DNS=$DEFAULT_DNS LOCAL_DNS=$LOCAL_DNS TUN_DNS=$TUN_DNS CHINADNS_DNS=$china_ng_listen TCP_NODE=$TCP_NODE PROXY_MODE=${TCP_PROXY_MODE}${LOCALHOST_TCP_PROXY_MODE}${ACL_TCP_PROXY_MODE} NO_PROXY_IPV6=${filter_proxy_ipv6}
+		source $APP_PATH/helper_dnsmasq.sh add DNS_MODE=$DNS_MODE TMP_DNSMASQ_PATH=$TMP_DNSMASQ_PATH DNSMASQ_CONF_FILE=/tmp/dnsmasq.d/dnsmasq-passwall2.conf REMOTE_FAKEDNS=$fakedns DEFAULT_DNS=$DEFAULT_DNS LOCAL_DNS=$LOCAL_DNS TUN_DNS=$TUN_DNS TCP_NODE=$TCP_NODE PROXY_MODE=${TCP_PROXY_MODE}${LOCALHOST_TCP_PROXY_MODE}${ACL_TCP_PROXY_MODE} NO_PROXY_IPV6=${filter_proxy_ipv6}
 	}
-}
-
-gen_pdnsd_config() {
-	local listen_port=${1}
-	local up_dns=${2}
-	local cache=${3}
-	local pdnsd_dir=${TMP_PATH}/pdnsd
-	local perm_cache=2048
-	local _cache="on"
-	local query_method="tcp_only"
-	local reject_ipv6_dns=
-	[ "${cache}" = "0" ] && _cache="off" && perm_cache=0
-
-	mkdir -p "${pdnsd_dir}"
-	touch "${pdnsd_dir}/pdnsd.cache"
-	chown -R root.nogroup "${pdnsd_dir}"
-	if [ $PROXY_IPV6 == "0" ]; then
-		reject_ipv6_dns=$(cat <<- 'EOF'
-
-				reject = ::/0;
-				reject_policy = negate;
-		EOF
-		)
-	fi
-	cat > "${pdnsd_dir}/pdnsd.conf" <<-EOF
-		global {
-			perm_cache = $perm_cache;
-			cache_dir = "$pdnsd_dir";
-			run_as = "root";
-			server_ip = 127.0.0.1;
-			server_port = ${listen_port};
-			status_ctl = on;
-			query_method = ${query_method};
-			min_ttl = 1h;
-			max_ttl = 1w;
-			timeout = 10;
-			par_queries = 2;
-			neg_domain_pol = off;
-			udpbufsize = 1024;
-			proc_limit = 2;
-			procq_limit = 8;
-		}
-
-	EOF
-	echolog "  + [$?]Pdnsd (127.0.0.1:${listen_port})..."
-
-	append_pdnsd_updns() {
-		[ -z "${2}" ] && echolog "  | - 略过错误 : ${1}" && return 0
-		cat >> $pdnsd_dir/pdnsd.conf <<-EOF
-			server {
-				label = "node-${2}_${3}";
-				ip = ${2};
-				edns_query = on;
-				port = ${3};
-				timeout = 4;
-				interval = 10m;
-				uptest = none;
-				purge_cache = off;
-				proxy_only = on;
-				caching = $_cache;${reject_ipv6_dns}
-			}
-		EOF
-		echolog "  | - [$?]上游DNS：${2}:${3}"
-	}
-	hosts_foreach up_dns append_pdnsd_updns 53
-}
-
-add_ip2route() {
-	local ip=$(get_host_ip "ipv4" $1)
-	[ -z "$ip" ] && {
-		echolog "  - 无法解析[${1}]，路由表添加失败！"
-		return 1
-	}
-	local remarks="${1}"
-	[ "$remarks" != "$ip" ] && remarks="${1}(${ip})"
-	
-	. /lib/functions/network.sh
-	local gateway device
-	network_get_gateway gateway "$2"
-	network_get_device device "$2"
-	[ -z "${device}" ] && device="$2"
-	
-	if [ -n "${gateway}" ]; then
-		route add -host ${ip} gw ${gateway} dev ${device} >/dev/null 2>&1
-		echo "$ip" >> $TMP_ROUTE_PATH/${device}
-		echolog "  - [${remarks}]添加到接口[${device}]路由表成功！"
-	else
-		echolog "  - [${remarks}]添加到接口[${device}]路由表失功！原因是找不到[${device}]网关。"
-	fi
-}
-
-delete_ip2route() {
-	[ -d "${TMP_ROUTE_PATH}" ] && {
-		for interface in $(ls ${TMP_ROUTE_PATH}); do
-			for ip in $(cat ${TMP_ROUTE_PATH}/${interface}); do
-				route del -host ${ip} dev ${interface} >/dev/null 2>&1
-			done
-		done
-	}
-}
-
-start_haproxy() {
-	local haproxy_path haproxy_file item items lport sort_items
-
-	[ "$(config_t_get global_haproxy balancing_enable 0)" != "1" ] && return
-	echolog "HAPROXY 负载均衡..."
-
-	haproxy_path=${TMP_PATH}/haproxy
-	mkdir -p "${haproxy_path}"
-	haproxy_file=${haproxy_path}/config.cfg
-	cat <<-EOF > "${haproxy_file}"
-		global
-		    log         127.0.0.1 local2
-		    chroot      ${haproxy_path}
-		    maxconn     60000
-		    stats socket  ${haproxy_path}/haproxy.sock
-		    daemon
-
-		defaults
-		    mode                    tcp
-		    log                     global
-		    option                  tcplog
-		    option                  dontlognull
-		    option http-server-close
-		    #option forwardfor       except 127.0.0.0/8
-		    option                  redispatch
-		    retries                 2
-		    timeout http-request    10s
-		    timeout queue           1m
-		    timeout connect         10s
-		    timeout client          1m
-		    timeout server          1m
-		    timeout http-keep-alive 10s
-		    timeout check           10s
-		    maxconn                 3000
-
-	EOF
-
-	items=$(uci show ${CONFIG} | grep "=haproxy_config" | cut -d '.' -sf 2 | cut -d '=' -sf 1)
-	for item in $items; do
-		lport=$(config_n_get ${item} haproxy_port 0)
-		[ "${lport}" = "0" ] && echolog "  - 丢弃1个明显无效的节点" && continue
-		sort_items="${sort_items}${IFS}${lport} ${item}"
-	done
-
-	items=$(echo "${sort_items}" | sort -n | cut -d ' ' -sf 2)
-
-	unset lport
-	local haproxy_port lbss lbweight export backup remark
-	local msg bip bport hasvalid bbackup failcount interface
-	for item in ${items}; do
-		unset haproxy_port bbackup
-
-		eval $(uci -q show "${CONFIG}.${item}" | cut -d '.' -sf 3-)
-		[ "$enabled" = "1" ] || continue
-		get_ip_port_from "$lbss" bip bport 1
-
-		[ -z "$haproxy_port" ] || [ -z "$bip" ] && echolog "  - 丢弃1个明显无效的节点" && continue
-		[ "$backup" = "1" ] && bbackup="backup"
-		remark=$(echo $bip | sed "s/\[//g" | sed "s/\]//g")
-
-		[ "$lport" = "${haproxy_port}" ] || {
-			hasvalid="1"
-			lport=${haproxy_port}
-			echolog "  + 入口 0.0.0.0:${lport}..."
-			cat <<-EOF >> "${haproxy_file}"
-				listen $lport
-				    mode tcp
-				    bind 0.0.0.0:$lport
-			EOF
-		}
-
-		cat <<-EOF >> "${haproxy_file}"
-			    server $remark:$bport $bip:$bport weight $lbweight check inter 1500 rise 1 fall 3 $bbackup
-		EOF
-
-		if [ "$export" != "0" ]; then
-			add_ip2route ${bip} ${export} > /dev/null 2>&1 &
-		fi
-
-		haproxy_items="${haproxy_items}${IFS}${bip}:${bport}"
-		echolog "  | - 出口节点：${bip}:${bport}，权重：${lbweight}"
-	done
-
-	# 控制台配置
-	local console_port=$(config_t_get global_haproxy console_port)
-	local console_user=$(config_t_get global_haproxy console_user)
-	local console_password=$(config_t_get global_haproxy console_password)
-	local auth=""
-	[ -n "$console_user" ] && [ -n "$console_password" ] && auth="stats auth $console_user:$console_password"
-	cat <<-EOF >> "${haproxy_file}"
-
-		listen console
-		    bind 0.0.0.0:$console_port
-		    mode http
-		    stats refresh 30s
-		    stats uri /
-		    stats admin if TRUE
-		    $auth
-	EOF
-
-	[ "${hasvalid}" != "1" ] && echolog "  - 没有发现任何有效节点信息，不启动。" && return 0
-	ln_run "$(first_type haproxy)" haproxy "/dev/null" -f "${haproxy_file}"
-	echolog "  * 控制台端口：${console_port}/，${auth:-公开}"
 }
 
 kill_all() {
@@ -1375,7 +1076,6 @@ boot() {
 
 start() {
 	ulimit -n 65535
-	start_haproxy
 	start_socks
 
 	[ "$NO_PROXY" == 1 ] || {
@@ -1396,15 +1096,12 @@ start() {
 stop() {
 	clean_log
 	source $APP_PATH/iptables.sh stop
-	delete_ip2route
 	kill_all v2ray-plugin obfs-local
 	pgrep -f "sleep.*(6s|9s|58s)" | xargs kill -9 >/dev/null 2>&1
 	pgrep -af "${CONFIG}/" | awk '! /app\.sh|subscribe\.lua|rule_update\.lua/{print $1}' | xargs kill -9 >/dev/null 2>&1
 	unset V2RAY_LOCATION_ASSET
 	unset XRAY_LOCATION_ASSET
 	stop_crontab
-	source $APP_PATH/helper_smartdns.sh del
-	source $APP_PATH/helper_smartdns.sh restart no_log=1
 	source $APP_PATH/helper_dnsmasq.sh del
 	source $APP_PATH/helper_dnsmasq.sh restart no_log=1
 	rm -rf ${TMP_PATH}
@@ -1450,10 +1147,9 @@ chnlist=$(echo "${TCP_PROXY_MODE}${LOCALHOST_TCP_PROXY_MODE}${UDP_PROXY_MODE}${L
 gfwlist=$(echo "${TCP_PROXY_MODE}${LOCALHOST_TCP_PROXY_MODE}${UDP_PROXY_MODE}${LOCALHOST_UDP_PROXY_MODE}" | grep "gfwlist")
 DNS_SHUNT=$(config_t_get global dns_shunt dnsmasq)
 [ -z "$(first_type $DNS_SHUNT)" ] && DNS_SHUNT="dnsmasq"
-DNS_MODE=$(config_t_get global dns_mode pdnsd)
+DNS_MODE=$(config_t_get global dns_mode v2ray)
 DNS_FORWARD=$(config_t_get global dns_forward 1.1.1.1:53 | sed 's/#/:/g' | sed -E 's/\:([^:]+)$/#\1/g')
 DNS_CACHE=$(config_t_get global dns_cache 0)
-CHINADNS_NG=$(config_t_get global chinadns_ng 0)
 filter_proxy_ipv6=$(config_t_get global filter_proxy_ipv6 0)
 dns_listen_port=${DNS_PORT}
 

@@ -38,11 +38,6 @@ function s.remove(e, t)
             m:del(s[".name"])
         end
     end)
-    m.uci:foreach(appname, "haproxy_config", function(s)
-        if s["lbss"] and s["lbss"] == t then
-            m:del(s[".name"])
-        end
-    end)
     m.uci:foreach(appname, "acl_rule", function(s)
         if s["tcp_node"] and s["tcp_node"] == t then
             m:set(s[".name"], "tcp_node", "default")

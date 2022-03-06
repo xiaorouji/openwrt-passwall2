@@ -112,7 +112,7 @@ ipset_merge() {
 
 add() {
 	local fwd_dns item servers msg
-	local DNS_MODE TMP_DNSMASQ_PATH DNSMASQ_CONF_FILE DEFAULT_DNS LOCAL_DNS TUN_DNS REMOTE_FAKEDNS CHINADNS_DNS TCP_NODE PROXY_MODE NO_LOGIC_LOG NO_PROXY_IPV6
+	local DNS_MODE TMP_DNSMASQ_PATH DNSMASQ_CONF_FILE DEFAULT_DNS LOCAL_DNS TUN_DNS REMOTE_FAKEDNS TCP_NODE PROXY_MODE NO_LOGIC_LOG NO_PROXY_IPV6
 	eval_set_val $@
 	_LOG_FILE=$LOG_FILE
 	[ -n "$NO_LOGIC_LOG" ] && LOG_FILE="/dev/null"
@@ -123,7 +123,6 @@ add() {
 	mkdir -p "${TMP_DNSMASQ_PATH}" "${DNSMASQ_PATH}" "/tmp/dnsmasq.d"
 	count_hosts_str="!"
 
-	[ -n "$CHINADNS_DNS" ] && dnsmasq_default_dns="${CHINADNS_DNS}"
 	[ -n "$global" ] && [ -z "$returnhome" ] && [ -z "$chnlist" ] && [ -z "$gfwlist" ] && only_global=1 && dnsmasq_default_dns="${TUN_DNS}"
 
 	#屏蔽列表
@@ -140,7 +139,6 @@ add() {
 	#始终用国内DNS解析直连（白名单）列表
 	[ -s "${RULES_PATH}/direct_host" ] && {
 		fwd_dns="${LOCAL_DNS}"
-		#[ -n "$CHINADNS_DNS" ] && unset fwd_dns
 		cat "${RULES_PATH}/direct_host" | tr -s '\n' | grep -v "^#" | sort -u | gen_items ipsets="whitelist,whitelist6" dnss="${fwd_dns}" outf="${TMP_DNSMASQ_PATH}/11-direct_host.conf" ipsetoutf="${TMP_DNSMASQ_PATH}/ipset.conf"
 		echolog "  - [$?]域名白名单(whitelist)：${fwd_dns:-默认}"
 	}
@@ -241,7 +239,6 @@ add() {
 			fi
 			[ -z "${only_global}" ] && {
 				fwd_dns="${TUN_DNS}"
-				[ -n "$CHINADNS_DNS" ] && unset fwd_dns
 				[ -n "${REMOTE_FAKEDNS}" ] && unset ipset_flag
 				sort -u "${TMP_PATH}/gfwlist" | gen_items ipsets="${ipset_flag}" dnss="${fwd_dns}" outf="${TMP_DNSMASQ_PATH}/99-gfwlist.conf" ipsetoutf="${TMP_DNSMASQ_PATH}/ipset.conf"
 				echolog "  - [$?]防火墙域名表(gfwlist)：${fwd_dns:-默认}"
@@ -250,13 +247,10 @@ add() {
 		}
 		
 		# 中国列表以外 模式
-		[ -n "${CHINADNS_DNS}" ] && {
+		[ -s "${RULES_PATH}/chnlist" ] && {
 			fwd_dns="${LOCAL_DNS}"
-			[ -n "$CHINADNS_DNS" ] && unset fwd_dns
-			[ -s "${RULES_PATH}/chnlist" ] && {
-				grep -v -E "$count_hosts_str" "${RULES_PATH}/chnlist" | gen_items ipsets="chnroute,chnroute6" dnss="${fwd_dns}" outf="${TMP_DNSMASQ_PATH}/19-chinalist_host.conf" ipsetoutf="${TMP_DNSMASQ_PATH}/ipset.conf"
-				echolog "  - [$?]中国域名表(chnroute)：${fwd_dns:-默认}"
-			}
+			grep -v -E "$count_hosts_str" "${RULES_PATH}/chnlist" | gen_items ipsets="chnroute,chnroute6" dnss="${fwd_dns}" outf="${TMP_DNSMASQ_PATH}/19-chinalist_host.conf" ipsetoutf="${TMP_DNSMASQ_PATH}/ipset.conf"
+			echolog "  - [$?]中国域名表(chnroute)：${fwd_dns:-默认}"
 		}
 	else
 		#回国模式
