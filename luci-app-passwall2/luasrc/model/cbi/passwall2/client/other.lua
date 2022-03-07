@@ -68,32 +68,6 @@ o.default = "disable"
 o:value("disable", translate("No patterns are used"))
 o:value("1:65535", translate("All"))
 
----- TCP Proxy Drop Ports
-o = s:option(Value, "tcp_proxy_drop_ports", translate("TCP Proxy Drop Ports"))
-o.default = "disable"
-o:value("disable", translate("No patterns are used"))
-
----- UDP Proxy Drop Ports
-o = s:option(Value, "udp_proxy_drop_ports", translate("UDP Proxy Drop Ports"))
-o.default = "80,443"
-o:value("disable", translate("No patterns are used"))
-o:value("80,443", translate("QUIC"))
-
----- TCP Redir Ports
-o = s:option(Value, "tcp_redir_ports", translate("TCP Redir Ports"))
-o.default = "22,25,53,143,465,587,853,993,995,80,443"
-o:value("1:65535", translate("All"))
-o:value("22,25,53,143,465,587,853,993,995,80,443", translate("Common Use"))
-o:value("80,443", translate("Only Web"))
-o:value("80:65535", "80 " .. translate("or more"))
-o:value("1:443", "443 " .. translate("or less"))
-
----- UDP Redir Ports
-o = s:option(Value, "udp_redir_ports", translate("UDP Redir Ports"))
-o.default = "1:65535"
-o:value("1:65535", translate("All"))
-o:value("53", "DNS")
-
 if os.execute("lsmod | grep -i REDIRECT >/dev/null") == 0 and os.execute("lsmod | grep -i TPROXY >/dev/null") == 0 then
     o = s:option(ListValue, "tcp_proxy_way", translate("TCP Proxy Way"))
     o.default = "redirect"

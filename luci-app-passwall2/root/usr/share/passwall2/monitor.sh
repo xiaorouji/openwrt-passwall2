@@ -32,48 +32,14 @@ while [ "$ENABLED" -eq 1 ]; do
 	}
 	touch $LOCK_FILE
 	
-	#TCP
-	[ -f "$TMP_ID_PATH/TCP" ] && {
-		TCP_NODE=$(cat $TMP_ID_PATH/TCP)
-		if [ "$TCP_NODE" != "nil" ]; then
-			icount=$(pgrep -af "$TMP_BIN_PATH.*(tcp|TCP)" | grep -v -E 'acl/|acl_' | wc -l)
-			if [ $icount = 0 ]; then
-				/etc/init.d/$CONFIG restart
-				exit 0
-			fi
-		fi
-	}
-
-	#udp
-	[ -f "$TMP_ID_PATH/UDP" ] && {
-		UDP_NODE=$(cat $TMP_ID_PATH/UDP)
-		if [ "$UDP_NODE" != "nil" ]; then
-			[ "$UDP_NODE" == "tcp" ] && UDP_NODE=$TCP_NODE
-			icount=$(pgrep -af "$TMP_BIN_PATH.*(udp|UDP)" | grep -v -E 'acl/|acl_' | wc -l)
-			if [ $icount = 0 ]; then
-				/etc/init.d/$CONFIG restart
-				exit 0
-			fi
-		fi
-	}
-
-	#dns
-	dns_mode=$(config_t_get global dns_mode)
-	if [ "$dns_mode" == "v2ray" ] || [ "$dns_mode" == "xray" ]; then
-		icount=$(netstat -apn | grep 7913 | wc -l)
+	for filename in $(ls ${TMP_SCRIPT_FUNC_PATH}); do
+		cmd=$(cat ${TMP_SCRIPT_FUNC_PATH}/${filename})
+		cmd_check=$(echo $cmd | awk -F '>' '{print $1}')
+		[ -n "$(echo $cmd_check | grep "dns2socks")" ] && cmd_check=$(echo $cmd_check | sed "s#:# #g")
+		icount=$(pgrep -f "$(echo $cmd_check)" | wc -l)
 		if [ $icount = 0 ]; then
-			/etc/init.d/$CONFIG restart
-			exit 0
-		fi
-	fi
-	
-	#socks
-	for filename in $(ls ${TMP_SCRIPT_FUNC_PATH} | grep "SOCKS_*"); do
-		cfgid=$(echo $filename | awk -F 'SOCKS_' '{print $2}')
-		icount=$(pgrep -af "$TMP_BIN_PATH.*$cfgid" | grep -i 'socks' | wc -l)
-		if [ $icount = 0 ]; then
-			cmd=$(cat ${TMP_SCRIPT_FUNC_PATH}/${filename})
-			/usr/share/${CONFIG}/app.sh ${cmd}
+			#echo "${cmd} 进程挂掉，重启" >> /tmp/log/passwall2.log
+			eval $(echo "nohup ${cmd} 2>&1 &") >/dev/null 2>&1 &
 		fi
 	done
 	

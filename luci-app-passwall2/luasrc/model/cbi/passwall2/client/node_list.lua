@@ -39,16 +39,13 @@ function s.remove(e, t)
         end
     end)
     m.uci:foreach(appname, "acl_rule", function(s)
-        if s["tcp_node"] and s["tcp_node"] == t then
-            m:set(s[".name"], "tcp_node", "default")
-        end
-        if s["udp_node"] and s["udp_node"] == t then
-            m:set(s[".name"], "udp_node", "default")
+        if s["node"] and s["node"] == t then
+            m:set(s[".name"], "node", "default")
         end
     end)
-    for k, v in ipairs(m:get("@auto_switch[0]", "tcp_node") or {}) do
+    for k, v in ipairs(m:get("@auto_switch[0]", "node") or {}) do
         if v and v == t then
-            sys.call(string.format("uci -q del_list %s.@auto_switch[0].tcp_node='%s'", appname, v))
+            sys.call(string.format("uci -q del_list %s.@auto_switch[0].node='%s'", appname, v))
         end
     end
     TypedSection.remove(e, t)
@@ -57,11 +54,8 @@ function s.remove(e, t)
     if node0 then
         new_node = node0[".name"]
     end
-    if (m:get("@global[0]", "tcp_node") or "nil") == t then
-        m:set('@global[0]', "tcp_node", new_node)
-    end
-    if (m:get("@global[0]", "udp_node") or "nil") == t then
-        m:set('@global[0]', "udp_node", new_node)
+    if (m:get("@global[0]", "node") or "nil") == t then
+        m:set('@global[0]', "node", new_node)
     end
 end
 

@@ -1,9 +1,6 @@
 local api = require "luci.model.cbi.passwall2.api.api"
 local appname = api.appname
 local sys = api.sys
-local has_v2ray = api.is_finded("v2ray")
-local has_xray = api.is_finded("xray")
-local has_chnlist = api.fs.access("/usr/share/passwall2/rules/chnlist")
 
 m = Map(appname)
 
@@ -11,8 +8,6 @@ local nodes_table = {}
 for k, e in ipairs(api.get_valid_nodes()) do
     nodes_table[#nodes_table + 1] = e
 end
-
-local global_proxy_mode = (m:get("@global[0]", "tcp_proxy_mode") or "") .. (m:get("@global[0]", "udp_proxy_mode") or "")
 
 local dynamicList_write = function(self, section, value)
     local t = {}
@@ -135,36 +130,6 @@ sources.validate = function(self, value, t)
 end
 sources.write = dynamicList_write
 
----- TCP Proxy Mode
-tcp_proxy_mode = s:option(ListValue, "tcp_proxy_mode", translatef("%s Proxy Mode", "TCP"))
-tcp_proxy_mode.default = "default"
-tcp_proxy_mode.rmempty = false
-tcp_proxy_mode:value("default", translate("Default"))
-tcp_proxy_mode:value("disable", translate("No Proxy"))
-tcp_proxy_mode:value("global", translate("Global Proxy"))
-if has_chnlist and global_proxy_mode:find("returnhome") then
-    tcp_proxy_mode:value("returnhome", translate("China List"))
-else
-    tcp_proxy_mode:value("gfwlist", translate("GFW List"))
-    tcp_proxy_mode:value("chnroute", translate("Not China List"))
-end
-tcp_proxy_mode:value("direct/proxy", translate("Only use direct/proxy list"))
-
----- UDP Proxy Mode
-udp_proxy_mode = s:option(ListValue, "udp_proxy_mode", translatef("%s Proxy Mode", "UDP"))
-udp_proxy_mode.default = "default"
-udp_proxy_mode.rmempty = false
-udp_proxy_mode:value("default", translate("Default"))
-udp_proxy_mode:value("disable", translate("No Proxy"))
-udp_proxy_mode:value("global", translate("Global Proxy"))
-if has_chnlist and global_proxy_mode:find("returnhome") then
-    udp_proxy_mode:value("returnhome", translate("China List"))
-else
-    udp_proxy_mode:value("gfwlist", translate("GFW List"))
-    udp_proxy_mode:value("chnroute", translate("Not China List"))
-end
-udp_proxy_mode:value("direct/proxy", translate("Only use direct/proxy list"))
-
 ---- TCP No Redir Ports
 o = s:option(Value, "tcp_no_redir_ports", translate("TCP No Redir Ports"))
 o.default = "default"
@@ -179,64 +144,18 @@ o:value("disable", translate("No patterns are used"))
 o:value("default", translate("Default"))
 o:value("1:65535", translate("All"))
 
----- TCP Proxy Drop Ports
-o = s:option(Value, "tcp_proxy_drop_ports", translate("TCP Proxy Drop Ports"))
-o.default = "default"
-o:value("disable", translate("No patterns are used"))
-o:value("default", translate("Default"))
-
----- UDP Proxy Drop Ports
-o = s:option(Value, "udp_proxy_drop_ports", translate("UDP Proxy Drop Ports"))
-o.default = "default"
-o:value("disable", translate("No patterns are used"))
-o:value("default", translate("Default"))
-o:value("80,443", translate("QUIC"))
-
----- TCP Redir Ports
-o = s:option(Value, "tcp_redir_ports", translate("TCP Redir Ports"))
-o.default = "default"
-o:value("default", translate("Default"))
-o:value("1:65535", translate("All"))
-o:value("80,443", "80,443")
-o:value("80:65535", "80 " .. translate("or more"))
-o:value("1:443", "443 " .. translate("or less"))
-
----- UDP Redir Ports
-o = s:option(Value, "udp_redir_ports", translate("UDP Redir Ports"))
-o.default = "default"
-o:value("default", translate("Default"))
-o:value("1:65535", translate("All"))
-o:value("53", "53")
-
-tcp_node = s:option(ListValue, "tcp_node", "<a style='color: red'>" .. translate("TCP Node") .. "</a>")
-tcp_node.default = "default"
-tcp_node:value("default", translate("Default"))
-
-udp_node = s:option(ListValue, "udp_node", "<a style='color: red'>" .. translate("UDP Node") .. "</a>")
-udp_node.default = "default"
-udp_node:value("default", translate("Default"))
-udp_node:value("tcp", translate("Same as the tcp node"))
+node = s:option(ListValue, "node", "<a style='color: red'>" .. translate("Node") .. "</a>")
+node.default = "default"
+node:value("default", translate("Default"))
 
 for k, v in pairs(nodes_table) do
-    tcp_node:value(v.id, v["remark"])
-    udp_node:value(v.id, v["remark"])
+    node:value(v.id, v["remark"])
 end
 
----- DNS Forward Mode
-o = s:option(ListValue, "dns_mode", translate("Filter Mode"))
-o:depends({ tcp_node = "default",  ['!reverse'] = true })
-if has_v2ray then
-    o:value("v2ray", "V2ray")
-end
-if has_xray then
-    o:value("xray", "Xray")
-end
-
-o = s:option(ListValue, "v2ray_dns_mode", " ")
+o = s:option(ListValue, "dns_protocol", translate("DNS Protocol"))
 o:value("tcp", "TCP")
 o:value("doh", "DoH")
-o:depends("dns_mode", "v2ray")
-o:depends("dns_mode", "xray")
+o:depends({ node = "default",  ['!reverse'] = true })
 
 ---- DNS Forward
 o = s:option(Value, "dns_forward", translate("Remote DNS"))
@@ -247,9 +166,8 @@ o:value("8.8.8.8", "8.8.8.8 (Google DNS)")
 o:value("8.8.4.4", "8.8.4.4 (Google DNS)")
 o:value("208.67.222.222", "208.67.222.222 (Open DNS)")
 o:value("208.67.220.220", "208.67.220.220 (Open DNS)")
-o:depends("v2ray_dns_mode", "tcp")
+o:depends("dns_protocol", "tcp")
 
-if has_v2ray or has_xray then
 ---- DoH
 o = s:option(Value, "dns_doh", translate("DoH request address"))
 o:value("https://cloudflare-dns.com/dns-query,1.1.1.1", "CloudFlare")
@@ -282,11 +200,11 @@ o.validate = function(self, value, t)
     end
     return nil, translate("DoH request address") .. " " .. translate("Format must be:") .. " URL,IP"
 end
-o:depends("v2ray_dns_mode", "doh")
-end
+o:depends("dns_protocol", "doh")
 
 o = s:option(Value, "dns_client_ip", translate("EDNS Client Subnet"))
 o.datatype = "ipaddr"
-o:depends("v2ray_dns_mode", "doh")
+o:depends("dns_protocol", "tcp")
+o:depends("dns_protocol", "doh")
 
 return m

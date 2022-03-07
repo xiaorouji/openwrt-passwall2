@@ -73,9 +73,6 @@ remarks.default = translate("Remarks")
 remarks.rmempty = false
 
 type = s:option(ListValue, "type", translate("Type"))
-if api.is_finded("ipt2socks") then
-    type:value("Socks", translate("Socks"))
-end
 if api.is_finded("ss-redir") then
     type:value("SS", translate("Shadowsocks Libev"))
 end
@@ -130,23 +127,25 @@ balancing_node:depends("protocol", "_balancing")
 
 -- 分流
 uci:foreach(appname, "shunt_rules", function(e)
-    o = s:option(ListValue, e[".name"], string.format('* <a href="%s" target="_blank">%s</a>', api.url("shunt_rules", e[".name"]), translate(e.remarks)))
-    o:value("nil", translate("Close"))
-    o:value("_default", translate("Default"))
-    o:value("_direct", translate("Direct Connection"))
-    o:value("_blackhole", translate("Blackhole"))
-    o:depends("protocol", "_shunt")
+    if e[".name"] and e.remarks then
+        o = s:option(ListValue, e[".name"], string.format('* <a href="%s" target="_blank">%s</a>', api.url("shunt_rules", e[".name"]), e.remarks))
+        o:value("nil", translate("Close"))
+        o:value("_default", translate("Default"))
+        o:value("_direct", translate("Direct Connection"))
+        o:value("_blackhole", translate("Blackhole"))
+        o:depends("protocol", "_shunt")
 
-    if #nodes_table > 0 then
-        _proxy_tag = s:option(ListValue, e[".name"] .. "_proxy_tag", string.format('* <a style="color:red">%s</a>', translate(e.remarks) .. " " .. translate("Preproxy")))
-        _proxy_tag:value("nil", translate("Close"))
-        _proxy_tag:value("default", translate("Default"))
-        _proxy_tag:value("main", translate("Default Preproxy"))
-        _proxy_tag.default = "nil"
+        if #nodes_table > 0 then
+            _proxy_tag = s:option(ListValue, e[".name"] .. "_proxy_tag", string.format('* <a style="color:red">%s</a>', e.remarks .. " " .. translate("Preproxy")))
+            _proxy_tag:value("nil", translate("Close"))
+            _proxy_tag:value("default", translate("Default"))
+            _proxy_tag:value("main", translate("Default Preproxy"))
+            _proxy_tag.default = "nil"
 
-        for k, v in pairs(nodes_table) do
-            o:value(v.id, v.remarks)
-            _proxy_tag:depends(e[".name"], v.id)
+            for k, v in pairs(nodes_table) do
+                o:value(v.id, v.remarks)
+                _proxy_tag:depends(e[".name"], v.id)
+            end
         end
     end
 end)
@@ -221,7 +220,6 @@ end
 
 address = s:option(Value, "address", translate("Address (Support Domain Name)"))
 address.rmempty = false
-address:depends("type", "Socks")
 address:depends("type", "SS")
 address:depends("type", "SS-Rust")
 address:depends("type", "SSR")
@@ -244,7 +242,6 @@ address:depends({ type = "Xray", protocol = "trojan" })
 --[[
 use_ipv6 = s:option(Flag, "use_ipv6", translate("Use IPv6"))
 use_ipv6.default = 0
-use_ipv6:depends("type", "Socks")
 use_ipv6:depends("type", "SS")
 use_ipv6:depends("type", "SS-Rust")
 use_ipv6:depends("type", "SSR")
@@ -267,7 +264,6 @@ use_ipv6:depends({ type = "Xray", protocol = "trojan" })
 port = s:option(Value, "port", translate("Port"))
 port.datatype = "port"
 port.rmempty = false
-port:depends("type", "Socks")
 port:depends("type", "SS")
 port:depends("type", "SS-Rust")
 port:depends("type", "SSR")
@@ -288,7 +284,6 @@ port:depends({ type = "Xray", protocol = "shadowsocks" })
 port:depends({ type = "Xray", protocol = "trojan" })
 
 username = s:option(Value, "username", translate("Username"))
-username:depends("type", "Socks")
 username:depends("type", "Naiveproxy")
 username:depends({ type = "V2ray", protocol = "http" })
 username:depends({ type = "V2ray", protocol = "socks" })
@@ -297,7 +292,6 @@ username:depends({ type = "Xray", protocol = "socks" })
 
 password = s:option(Value, "password", translate("Password"))
 password.password = true
-password:depends("type", "Socks")
 password:depends("type", "SS")
 password:depends("type", "SS-Rust")
 password:depends("type", "SSR")

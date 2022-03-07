@@ -1,5 +1,4 @@
--- Copyright (C) 2018-2020 L-WRT Team
--- Copyright (C) 2021 xiaorouji
+-- Copyright (C) 2022 xiaorouji
 
 module("luci.controller.passwall2", package.seeall)
 local api = require "luci.model.cbi.passwall2.api.api"
@@ -113,7 +112,7 @@ function autoswitch_add_node()
 	if key and key ~= "" then
 		for k, e in ipairs(api.get_valid_nodes()) do
 			if e.node_type == "normal" and e["remark"]:find(key) then
-				luci.sys.call(string.format("uci -q del_list passwall2.@auto_switch[0].tcp_node='%s' && uci -q add_list passwall2.@auto_switch[0].tcp_node='%s'", e.id, e.id))
+				luci.sys.call(string.format("uci -q del_list passwall2.@auto_switch[0].node='%s' && uci -q add_list passwall2.@auto_switch[0].node='%s'", e.id, e.id))
 			end
 		end
 	end
@@ -123,9 +122,9 @@ end
 function autoswitch_remove_node()
 	local key = luci.http.formvalue("key")
 	if key and key ~= "" then
-		for k, e in ipairs(ucic:get(appname, "@auto_switch[0]", "tcp_node") or {}) do
+		for k, e in ipairs(ucic:get(appname, "@auto_switch[0]", "node") or {}) do
 			if e and (ucic:get(appname, e, "remarks") or ""):find(key) then
-				luci.sys.call(string.format("uci -q del_list passwall2.@auto_switch[0].tcp_node='%s'", e))
+				luci.sys.call(string.format("uci -q del_list passwall2.@auto_switch[0].node='%s'", e))
 			end
 		end
 	end
@@ -134,26 +133,18 @@ end
 
 function get_now_use_node()
 	local e = {}
-	local data, code, msg = nixio.fs.readfile("/tmp/etc/passwall2/id/TCP")
+	local data, code, msg = nixio.fs.readfile("/tmp/etc/passwall2/id/global")
 	if data then
-		e["TCP"] = util.trim(data)
-	end
-	local data, code, msg = nixio.fs.readfile("/tmp/etc/passwall2/id/UDP")
-	if data then
-		e["UDP"] = util.trim(data)
+		e["global"] = util.trim(data)
 	end
 	luci.http.prepare_content("application/json")
 	luci.http.write_json(e)
 end
 
 function get_redir_log()
-	local proto = luci.http.formvalue("proto")
-	proto = proto:upper()
-	if proto == "UDP" and (ucic:get(appname, "@global[0]", "udp_node") or "nil") == "tcp" and not nixio.fs.access("/tmp/etc/passwall2/" .. proto .. ".log") then
-		proto = "TCP"
-	end
-	if nixio.fs.access("/tmp/etc/passwall2/" .. proto .. ".log") then
-		local content = luci.sys.exec("cat /tmp/etc/passwall2/" .. proto .. ".log")
+	local id = luci.http.formvalue("id")
+	if nixio.fs.access("/tmp/etc/passwall2/" .. id .. ".log") then
+		local content = luci.sys.exec("cat /tmp/etc/passwall2/" .. id .. ".log")
 		content = content:gsub("\n", "<br />")
 		luci.http.write(content)
 	else
@@ -171,16 +162,8 @@ function clear_log()
 end
 
 function status()
-	-- local dns_mode = ucic:get(appname, "@global[0]", "dns_mode")
 	local e = {}
-	e.dns_mode_status = luci.sys.call("netstat -apn | grep ':7913 ' >/dev/null") == 0
-	e["tcp_node_status"] = luci.sys.call(string.format("top -bn1 | grep -v -E 'grep|acl/|acl_' | grep '%s/bin/' | grep -i 'TCP' >/dev/null", appname)) == 0
-
-	if (ucic:get(appname, "@global[0]", "udp_node") or "nil") == "tcp" then
-		e["udp_node_status"] = e["tcp_node_status"]
-	else
-		e["udp_node_status"] = luci.sys.call(string.format("top -bn1 | grep -v -E 'grep|acl/|acl_' | grep '%s/bin/' | grep -i 'UDP' >/dev/null", appname)) == 0
-	end
+	e["global_status"] = luci.sys.call(string.format("top -bn1 | grep -v -E 'grep|acl/|acl_' | grep '%s/bin/' | grep -i 'global' >/dev/null", appname)) == 0
 	luci.http.prepare_content("application/json")
 	luci.http.write_json(e)
 end
@@ -288,15 +271,13 @@ end
 
 function clear_all_nodes()
 	ucic:set(appname, '@global[0]', "enabled", "0")
-	ucic:set(appname, '@global[0]', "tcp_node", "nil")
-	ucic:set(appname, '@global[0]', "udp_node", "nil")
-	ucic:set_list(appname, "@auto_switch[0]", "tcp_node", {})
+	ucic:set(appname, '@global[0]', "node", "nil")
+	ucic:set_list(appname, "@auto_switch[0]", "node", {})
 	ucic:foreach(appname, "socks", function(t)
 		ucic:delete(appname, t[".name"])
 	end)
 	ucic:foreach(appname, "acl_rule", function(t)
-		ucic:set(appname, t[".name"], "tcp_node", "default")
-		ucic:set(appname, t[".name"], "udp_node", "default")
+		ucic:set(appname, t[".name"], "node", "default")
 	end)
 	ucic:foreach(appname, "nodes", function(node)
 		ucic:delete(appname, node['.name'])
@@ -308,18 +289,15 @@ end
 
 function delete_select_nodes()
 	local ids = luci.http.formvalue("ids")
-	local auto_switch_tcp_node_list = ucic:get(appname, "@auto_switch[0]", "tcp_node") or {}
+	local auto_switch_node_list = ucic:get(appname, "@auto_switch[0]", "node") or {}
 	string.gsub(ids, '[^' .. "," .. ']+', function(w)
-		for k, v in ipairs(auto_switch_tcp_node_list) do
+		for k, v in ipairs(auto_switch_node_list) do
 			if v == w then
-				luci.sys.call(string.format("uci -q del_list passwall2.@auto_switch[0].tcp_node='%s'", w))
+				luci.sys.call(string.format("uci -q del_list passwall2.@auto_switch[0].node='%s'", w))
 			end
 		end
-		if (ucic:get(appname, "@global[0]", "tcp_node") or "nil") == w then
-			ucic:set(appname, '@global[0]', "tcp_node", "nil")
-		end
-		if (ucic:get(appname, "@global[0]", "udp_node") or "nil") == w then
-			ucic:set(appname, '@global[0]', "udp_node", "nil")
+		if (ucic:get(appname, "@global[0]", "node") or "nil") == w then
+			ucic:set(appname, '@global[0]', "node", "nil")
 		end
 		ucic:foreach(appname, "socks", function(t)
 			if t["node"] == w then
@@ -327,11 +305,8 @@ function delete_select_nodes()
 			end
 		end)
 		ucic:foreach(appname, "acl_rule", function(t)
-			if t["tcp_node"] == w then
-				ucic:set(appname, t[".name"], "tcp_node", "default")
-			end
-			if t["udp_node"] == w then
-				ucic:set(appname, t[".name"], "udp_node", "default")
+			if t["node"] == w then
+				ucic:set(appname, t[".name"], "node", "default")
 			end
 		end)
 		ucic:delete(appname, w)

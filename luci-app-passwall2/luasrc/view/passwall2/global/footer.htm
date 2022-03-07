@@ -41,7 +41,7 @@ local auto_switch = api.uci_get_type("auto_switch", "enable", 0)
 			var node = global.getElementsByClassName("cbi-section-node")[0];
 			var node_id = node.getAttribute("id");
 			global_id = node_id;
-			var reg1 = new RegExp("(?<=" + node_id + "-).*?(?=(_node))")
+			var reg1 = new RegExp("(?<=" + node_id + "-).*?(?=(node))")
 			for (var i = 0; i < node.childNodes.length; i++) {
 				if (node.childNodes[i].childNodes && node.childNodes[i].childNodes.length > 0) {
 					for (var k = 0; k < node.childNodes[i].childNodes.length; k++) {
@@ -53,15 +53,6 @@ local auto_switch = api.uci_get_type("auto_switch", "enable", 0)
 								var node_select = document.getElementsByName(dom_id)[0];
 								var node_select_value = node_select.value;
 								if (node_select_value && node_select_value != "nil" && node_select_value.indexOf("_default") != 0 && node_select_value.indexOf("_direct") != 0 && node_select_value.indexOf("_blackhole") != 0) {
-									if (global_id != null && node_select_value.indexOf("tcp") == 0) {
-										var d = global_id + "-tcp_node";
-										d = d.replace("cbi-", "cbid-").replace(new RegExp("-", 'g'), ".");
-										var dom = document.getElementsByName(d)[0];
-										var _node_select_value = dom.value;
-										if (_node_select_value && _node_select_value != "nil") {
-											node_select_value = _node_select_value;
-										}
-									}
 									var v = document.getElementById(dom_id + "-" + node_select_value);
 									if (v) {
 										node_select.title = v.text;
@@ -77,11 +68,11 @@ local auto_switch = api.uci_get_type("auto_switch", "enable", 0)
 									new_a.setAttribute("onclick", "location.href='" + '<%=api.url("node_config")%>' + "/" + node_select_value + "'");
 									new_html = new_a.outerHTML;
 									
-									if (s[0] == "tcp" || s[0] == "udp") {
+									if (s[0] == "") {
 										var log_a = document.createElement("a");
 										log_a.innerHTML = "<%:Log%>";
 										log_a.href = "#";
-										log_a.setAttribute("onclick", "window.open('" + '<%=api.url("get_redir_log")%>' + "?proto=" + s[0] + "', '_blank')");
+										log_a.setAttribute("onclick", "window.open('" + '<%=api.url("get_redir_log")%>' + "?id=" + "global" + "', '_blank')");
 										new_html += "&nbsp&nbsp" + log_a.outerHTML;
 									}
 									
@@ -111,15 +102,6 @@ local auto_switch = api.uci_get_type("auto_switch", "enable", 0)
 				var node_select = document.getElementsByName(dom_id)[0];
 				var node_select_value = node_select.value;
 				if (node_select_value && node_select_value != "nil") {
-					if (global_id != null && node_select_value.indexOf("tcp") == 0) {
-						var d = global_id + "-tcp_node";
-						d = d.replace("cbi-", "cbid-").replace(new RegExp("-", 'g'), ".");
-						var dom = document.getElementsByName(d)[0];
-						var _node_select_value = dom.value;
-						if (_node_select_value && _node_select_value != "nil") {
-							node_select_value = _node_select_value;
-						}
-					}
 					var v = document.getElementById(dom_id + "-" + node_select_value);
 					if (v) {
 						node_select.title = v.text;

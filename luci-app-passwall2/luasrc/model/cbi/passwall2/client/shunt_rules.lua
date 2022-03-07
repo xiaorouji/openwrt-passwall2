@@ -18,6 +18,18 @@ protocol:value("http")
 protocol:value("tls")
 protocol:value("bittorrent")
 
+network = s:option(ListValue, "network", translate("Network"))
+network:value("tcp,udp", "TCP UDP")
+network:value("tcp", "TCP")
+network:value("udp", "UDP")
+
+source = s:option(TextValue, "source", translate("Source"))
+source.wrap = "off"
+
+sourcePort = s:option(Value, "sourcePort", translate("Source port"))
+
+port = s:option(Value, "port", translate("port"))
+
 domain_list = s:option(TextValue, "domain_list", translate("Domain"))
 domain_list.rows = 10
 domain_list.wrap = "off"

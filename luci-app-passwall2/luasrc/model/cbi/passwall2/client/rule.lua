@@ -1,7 +1,5 @@
 local api = require "luci.model.cbi.passwall2.api.api"
 local appname = api.appname
-local has_v2ray = api.is_finded("v2ray")
-local has_xray = api.is_finded("xray")
 
 m = Map(appname)
 -- [[ Rule Settings ]]--
@@ -29,31 +27,29 @@ for e = 0, 23 do o:value(e, e .. translate("oclock")) end
 o.default = 0
 o:depends("auto_update", true)
 
-if has_v2ray or has_xray then
-    o = s:option(Value, "v2ray_location_asset", translate("Location of V2ray/Xray asset"), translate("This variable specifies a directory where geoip.dat and geosite.dat files are."))
-    o.default = "/usr/share/v2ray/"
-    o.rmempty = false
-    
-    s = m:section(TypedSection, "shunt_rules", "V2ray/Xray " .. translate("Shunt Rule"), "<a style='color: red'>" .. translate("Please note attention to the priority, the higher the order, the higher the priority.") .. "</a>")
-    s.template = "cbi/tblsection"
-    s.anonymous = false
-    s.addremove = true
-    s.sortable = true
-    s.extedit = api.url("shunt_rules", "%s")
-    function s.create(e, t)
-        TypedSection.create(e, t)
-        luci.http.redirect(e.extedit:format(t))
-    end
-    function s.remove(e, t)
-        m.uci:foreach(appname, "nodes", function(s)
-            if s["protocol"] and s["protocol"] == "_shunt" then
-                m:del(s[".name"], t)
-            end
-        end)
-        TypedSection.remove(e, t)
-    end
+o = s:option(Value, "v2ray_location_asset", translate("Location of V2ray/Xray asset"), translate("This variable specifies a directory where geoip.dat and geosite.dat files are."))
+o.default = "/usr/share/v2ray/"
+o.rmempty = false
 
-    o = s:option(DummyValue, "remarks", translate("Remarks"))
+s = m:section(TypedSection, "shunt_rules", "V2ray/Xray " .. translate("Shunt Rule"), "<a style='color: red'>" .. translate("Please note attention to the priority, the higher the order, the higher the priority.") .. "</a>")
+s.template = "cbi/tblsection"
+s.anonymous = false
+s.addremove = true
+s.sortable = true
+s.extedit = api.url("shunt_rules", "%s")
+function s.create(e, t)
+    TypedSection.create(e, t)
+    luci.http.redirect(e.extedit:format(t))
 end
+function s.remove(e, t)
+    m.uci:foreach(appname, "nodes", function(s)
+        if s["protocol"] and s["protocol"] == "_shunt" then
+            m:del(s[".name"], t)
+        end
+    end)
+    TypedSection.remove(e, t)
+end
+
+o = s:option(DummyValue, "remarks", translate("Remarks"))
 
 return m

@@ -62,9 +62,6 @@ remarks.default = translate("Remarks")
 remarks.rmempty = false
 
 type = s:option(ListValue, "type", translate("Type"))
-if api.is_finded("microsocks") then
-    type:value("Socks", translate("Socks"))
-end
 if api.is_finded("ss-server") then
     type:value("SS", translate("Shadowsocks"))
 end
@@ -126,7 +123,6 @@ auth.validate = function(self, value, t)
     end
     return value
 end
-auth:depends("type", "Socks")
 auth:depends({ type = "V2ray", protocol = "socks" })
 auth:depends({ type = "V2ray", protocol = "http" })
 auth:depends({ type = "Xray", protocol = "socks" })

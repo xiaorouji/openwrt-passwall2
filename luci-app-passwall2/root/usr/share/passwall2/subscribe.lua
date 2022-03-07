@@ -95,15 +95,14 @@ end
 -- 获取各项动态配置的当前服务器，可以用 get 和 set， get必须要获取到节点表
 local CONFIG = {}
 do
-	local function import_config(protocol)
-		local name = string.upper(protocol)
+	if true then
 		local szType = "@global[0]"
-		local option = protocol .. "_node"
+		local option = "node"
 		
 		local node_id = uci:get(appname, szType, option)
 		CONFIG[#CONFIG + 1] = {
 			log = true,
-			remarks = name .. "节点",
+			remarks = "节点",
 			currentNode = node_id and uci:get_all(appname, node_id) or nil,
 			set = function(o, server)
 				uci:set(appname, szType, option, server)
@@ -111,8 +110,6 @@ do
 			end
 		}
 	end
-	import_config("tcp")
-	import_config("udp")
 
 	if true then
 		local i = 0
@@ -135,31 +132,28 @@ do
 
 	if true then
 		local i = 0
-		local options = {"tcp", "udp"}
 		uci:foreach(appname, "acl_rule", function(t)
 			i = i + 1
-			for index, value in ipairs(options) do
-				local option = value .. "_node"
-				local node_id = t[option]
-				CONFIG[#CONFIG + 1] = {
-					log = true,
-					id = t[".name"],
-					remarks = "访问控制列表[" .. i .. "]",
-					currentNode = node_id and uci:get_all(appname, node_id) or nil,
-					set = function(o, server)
-						uci:set(appname, t[".name"], option, server)
-						o.newNodeId = server
-					end
-				}
-			end
+			local option = "node"
+			local node_id = t[option]
+			CONFIG[#CONFIG + 1] = {
+				log = true,
+				id = t[".name"],
+				remarks = "访问控制列表[" .. i .. "]",
+				currentNode = node_id and uci:get_all(appname, node_id) or nil,
+				set = function(o, server)
+					uci:set(appname, t[".name"], option, server)
+					o.newNodeId = server
+				end
+			}
 		end)
 	end
 
-	local tcp_node_table = uci:get(appname, "@auto_switch[0]", "tcp_node")
-	if tcp_node_table then
+	local node_table = uci:get(appname, "@auto_switch[0]", "node")
+	if node_table then
 		local nodes = {}
 		local new_nodes = {}
-		for k,node_id in ipairs(tcp_node_table) do
+		for k,node_id in ipairs(node_table) do
 			if node_id then
 				local currentNode = uci:get_all(appname, node_id) or nil
 				if currentNode then
@@ -168,11 +162,11 @@ do
 					end
 					nodes[#nodes + 1] = {
 						log = true,
-						remarks = "TCP备用节点的列表[" .. k .. "]",
+						remarks = "备用节点的列表[" .. k .. "]",
 						currentNode = currentNode,
 						set = function(o, server)
 							for kk, vv in pairs(CONFIG) do
-								if (vv.remarks == "TCP备用节点的列表") then
+								if (vv.remarks == "备用节点的列表") then
 									table.insert(vv.new_nodes, server)
 								end
 							end
@@ -182,14 +176,14 @@ do
 			end
 		end
 		CONFIG[#CONFIG + 1] = {
-			remarks = "TCP备用节点的列表",
+			remarks = "备用节点的列表",
 			nodes = nodes,
 			new_nodes = new_nodes,
 			set = function(o)
 				for kk, vv in pairs(CONFIG) do
-					if (vv.remarks == "TCP备用节点的列表") then
-						--log("刷新自动切换的TCP备用节点的列表")
-						uci:set_list(appname, "@auto_switch[0]", "tcp_node", vv.new_nodes)
+					if (vv.remarks == "备用节点的列表") then
+						--log("刷新自动切换的备用节点的列表")
+						uci:set_list(appname, "@auto_switch[0]", "node", vv.new_nodes)
 					end
 				end
 			end
@@ -202,7 +196,9 @@ do
 
 			local rules = {}
 			uci:foreach(appname, "shunt_rules", function(e)
-				table.insert(rules, e)
+				if e[".name"] and e.remarks then
+					table.insert(rules, e)
+				end
 			end)
 			table.insert(rules, {
 				[".name"] = "default_node",

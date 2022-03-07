@@ -29,7 +29,7 @@ o = s:option(Value, "retry_num", translate("Timeout retry num"))
 o.datatype = "uinteger"
 o.default = 3
     
-o = s:option(DynamicList, "tcp_node", "TCP " .. translate("List of backup nodes"))
+o = s:option(DynamicList, "node", translate("List of backup nodes"))
 for k, v in pairs(nodes_table) do
     if v.node_type == "normal" then
         o:value(v.id, v["remark"])
@@ -54,9 +54,9 @@ function o.write(self, section, value)
 	return DynamicList.write(self, section, t)
 end
 
-o = s:option(Flag, "restore_switch", "TCP " .. translate("Restore Switch"), translate("When detects main node is available, switch back to the main node."))
+o = s:option(Flag, "restore_switch", translate("Restore Switch"), translate("When detects main node is available, switch back to the main node."))
 
-o = s:option(ListValue, "shunt_logic", "TCP " .. translate("If the main node is V2ray/Xray shunt"))
+o = s:option(ListValue, "shunt_logic", translate("If the main node is shunt"))
 o:value("0", translate("Switch it"))
 o:value("1", translate("Applying to the default node"))
 o:value("2", translate("Applying to the default preproxy node"))
