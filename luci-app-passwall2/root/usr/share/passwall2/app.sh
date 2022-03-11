@@ -249,7 +249,7 @@ ln_run() {
 	#echo "${file_func} $*" >&2
 	[ -n "${file_func}" ] || echolog "  - 找不到 ${ln_name}，无法启动..."
 	${file_func:-echolog "  - ${ln_name}"} "$@" >${output} 2>&1 &
-	process_count=$(ls $TMP_SCRIPT_FUNC_PATH | wc -l)
+	process_count=$(ls $TMP_SCRIPT_FUNC_PATH | grep -v "^_" | wc -l)
 	process_count=$((process_count + 1))
 	echo "${file_func:-echolog "  - ${ln_name}"} $@ >${output}" > $TMP_SCRIPT_FUNC_PATH/$process_count
 }
@@ -329,9 +329,14 @@ run_v2ray() {
 run_socks() {
 	local flag node bind socks_port config_file http_port http_config_file relay_port log_file
 	eval_set_val $@
+	[ -n "$config_file" ] && config_file=$TMP_PATH/$config_file
 	[ -n "$http_port" ] || http_port=0
-	[ -n "$http_config_file" ] || http_config_file="nil"
-	[ -n "$log_file" ] || log_file="/dev/null"
+	[ -n "$http_config_file" ] && http_config_file=$TMP_PATH/$http_config_file
+	if [ -n "$log_file" ]; then
+		log_file=$TMP_PATH/$log_file
+	else
+		log_file="/dev/null"
+	fi
 	local type=$(echo $(config_n_get $node type) | tr 'A-Z' 'a-z')
 	local remarks=$(config_n_get $node remarks)
 	local server_host=$(config_n_get $node address)
@@ -411,7 +416,7 @@ run_socks() {
 	esac
 
 	# http to socks
-	[ "$type" != "v2ray" ] && [ "$type" != "xray" ] && [ "$type" != "socks" ] && [ "$http_port" != "0" ] && [ "$http_config_file" != "nil" ] && {
+	[ "$type" != "v2ray" ] && [ "$type" != "xray" ] && [ "$type" != "socks" ] && [ "$http_port" != "0" ] && [ -n "$http_config_file" ] && {
 		local bin=$(first_type $(config_t_get global_app v2ray_file) v2ray)
 		if [ -n "$bin" ]; then
 			type="v2ray"
@@ -450,8 +455,12 @@ node_switch() {
 			new_node=$node
 		}
 
-		[ -s "$TMP_SCRIPT_FUNC_PATH/${flag}" ] && {
-			local script_func=$(cat $TMP_SCRIPT_FUNC_PATH/${flag})
+		[ -s "$TMP_SCRIPT_FUNC_PATH/_${flag}" ] && {
+			for filename in $(ls ${TMP_SCRIPT_FUNC_PATH} | grep -v "^_"); do
+				cmd=$(cat ${TMP_SCRIPT_FUNC_PATH}/${filename})
+				[ -n "$(echo $cmd | grep "${flag}")" ] && rm -f ${TMP_SCRIPT_FUNC_PATH}/${filename}
+			done
+			local script_func=$(cat $TMP_SCRIPT_FUNC_PATH/_${flag})
 			local now_node_arg=$(echo $script_func | grep -o -E "node=.*" | awk -F ' ' '{print $1}')
 			new_script_func=$(echo $script_func | sed "s#${now_node_arg}#node=${new_node}#g")
 			${new_script_func}
@@ -518,6 +527,7 @@ run_global() {
 	V2RAY_ARGS="${V2RAY_ARGS} log_file=${V2RAY_LOG} config_file=${V2RAY_CONFIG}"
 
 	run_v2ray $V2RAY_ARGS
+	echo "run_v2ray $V2RAY_ARGS" > $TMP_SCRIPT_FUNC_PATH/_global
 }
 
 start_socks() {
@@ -531,10 +541,10 @@ start_socks() {
 				local node=$(config_n_get $id node nil)
 				[ "$node" == "nil" ] && continue
 				local port=$(config_n_get $id port)
-				local config_file=$TMP_PATH/SOCKS_${id}.json
-				local log_file=$TMP_PATH/SOCKS_${id}.log
+				local config_file="SOCKS_${id}.json"
+				local log_file="SOCKS_${id}.log"
 				local http_port=$(config_n_get $id http_port 0)
-				local http_config_file=$TMP_PATH/HTTP2SOCKS_${id}.json
+				local http_config_file="HTTP2SOCKS_${id}.json"
 				run_socks flag=$id node=$node bind=0.0.0.0 socks_port=$port config_file=$config_file http_port=$http_port http_config_file=$http_config_file
 				echo $node > $TMP_ID_PATH/SOCKS_${id}
 			done

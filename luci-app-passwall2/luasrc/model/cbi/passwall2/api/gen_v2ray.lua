@@ -77,7 +77,6 @@ function gen_outbound(node, tag, proxy_table)
         end
 
         if node.type ~= "V2ray" and node.type ~= "Xray" then
-            local node_type = "socks"
             local relay_port = node.port
             new_port = get_new_port()
             sys.call(string.format('/usr/share/%s/app.sh run_socks "%s"> /dev/null',
@@ -87,7 +86,7 @@ function gen_outbound(node, tag, proxy_table)
                     node_id, --node
                     "127.0.0.1", --bind
                     new_port, --socks port
-                    string.format("/tmp/etc/%s/%s_%s_%s_%s.json", appname, flag, node_type, node_id, new_port), --config file
+                    string.format("%s_%s_%s_%s.json", flag, tag, node_id, new_port), --config file
                     (proxy == 1 and proxy_tag ~= "nil" and relay_port) and tostring(relay_port) or "" --relay port
                     )
                 )
