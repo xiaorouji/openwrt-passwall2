@@ -329,10 +329,10 @@ run_v2ray() {
 run_socks() {
 	local flag node bind socks_port config_file http_port http_config_file relay_port log_file
 	eval_set_val $@
-	[ -n "$config_file" ] && config_file=$TMP_PATH/$config_file
+	[ -n "$config_file" ] && [ -z "$(echo ${config_file} | grep $TMP_PATH)" ] && config_file=$TMP_PATH/$config_file
 	[ -n "$http_port" ] || http_port=0
-	[ -n "$http_config_file" ] && http_config_file=$TMP_PATH/$http_config_file
-	if [ -n "$log_file" ]; then
+	[ -n "$http_config_file" ] && [ -z "$(echo ${http_config_file} | grep $TMP_PATH)" ] && http_config_file=$TMP_PATH/$http_config_file
+	if [ -n "$log_file" ] && [ -z "$(echo ${log_file} | grep $TMP_PATH)" ]; then
 		log_file=$TMP_PATH/$log_file
 	else
 		log_file="/dev/null"
@@ -431,17 +431,11 @@ run_socks() {
 }
 
 node_switch() {
-	local flag new_node shunt_logic log_output
+	local flag new_node shunt_logic
 	eval_set_val $@
 	[ -n "$flag" ] && [ -n "$new_node" ] && {
-		[ -n "$log_output" ] || LOG_FILE="/dev/null"
-		
 		pgrep -af "$TMP_BIN_PATH" | awk -v P1="${flag}" 'BEGIN{IGNORECASE=1}$0~P1 && !/acl\/|acl_/{print $1}' | xargs kill -9 >/dev/null 2>&1
 		rm -rf $TMP_PATH/${flag}*
-		local config_file=$TMP_PATH/${flag}.json
-		local log_file=$TMP_PATH/${flag}.log
-		local port=$(cat $TMP_PORT_PATH/${flag})
-
 		[ "$shunt_logic" != "0" ] && {
 			local node=$(config_t_get global node nil)
 			[ "$(config_n_get $node protocol nil)" = "_shunt" ] && {

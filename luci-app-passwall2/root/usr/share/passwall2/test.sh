@@ -141,7 +141,7 @@ test_auto_switch() {
 		[ $? -eq 0 ] && {
 			#主节点正常，切换到主节点
 			echolog "自动切换检测：${TYPE}主节点【$(config_n_get $main_node type)：[$(config_n_get $main_node remarks)]】正常，切换到主节点！"
-			/usr/share/${CONFIG}/app.sh node_switch flag=global new_node=${main_node} shunt_logic=${shunt_logic} log_output=1
+			/usr/share/${CONFIG}/app.sh node_switch flag=global new_node=${main_node} shunt_logic=${shunt_logic}
 			[ $? -eq 0 ] && {
 				echolog "自动切换检测：${TYPE}节点切换完毕！"
 				[ "$shunt_logic" != "0" ] && {
@@ -189,7 +189,7 @@ test_auto_switch() {
 				uci commit $CONFIG
 			}
 			echolog "自动切换检测：${TYPE}节点【$(config_n_get $new_node type)：[$(config_n_get $new_node remarks)]】正常，切换到此节点！"
-			/usr/share/${CONFIG}/app.sh node_switch flag=global new_node=${new_node} shunt_logic=${shunt_logic} log_output=1
+			/usr/share/${CONFIG}/app.sh node_switch flag=global new_node=${new_node} shunt_logic=${shunt_logic}
 			[ $? -eq 0 ] && {
 				[ "$restore_switch" == "1" ] && [ "$shunt_logic" != "0" ] && {
 					local node=$(config_t_get global node nil)
