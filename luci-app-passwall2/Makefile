@@ -117,6 +117,7 @@ endef
 define Package/$(PKG_NAME)/conffiles
 /etc/config/passwall2
 /etc/config/passwall2_server
+/usr/share/passwall2/domains_excluded
 endef
 
 include $(TOPDIR)/feeds/luci/luci.mk
