@@ -1171,7 +1171,7 @@ msgstr "日志"
 msgid "Log"
 msgstr "日志"
 
-msgid "Close Node Log "
+msgid "Close Node Log"
 msgstr "关闭节点日志"
 
 msgid "Log Level"
