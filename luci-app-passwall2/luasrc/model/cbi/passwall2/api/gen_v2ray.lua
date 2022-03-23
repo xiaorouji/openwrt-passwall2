@@ -287,36 +287,23 @@ if true then
     end
 
     if redir_port then
-        table.insert(inbounds, {
+        local inbound = {
             port = tonumber(redir_port),
             protocol = "dokodemo-door",
-            settings = {network = "tcp", followRedirect = true},
-            streamSettings = {sockopt = {tproxy = tcp_proxy_way}},
-            sniffing = {enabled = sniffing and true or false, destOverride = {"http", "tls", (dns_fakedns) and "fakedns"}, metadataOnly = false, routeOnly = route_only and true or nil, domainsExcluded = (sniffing and not route_only) and get_domain_excluded() or nil}
-        })
-        table.insert(inbounds, {
-            port = tonumber(redir_port),
-            protocol = "dokodemo-door",
-            settings = {network = "udp", followRedirect = true},
+            settings = {network = "tcp,udp", followRedirect = true},
             streamSettings = {sockopt = {tproxy = "tproxy"}},
             sniffing = {enabled = sniffing and true or false, destOverride = {"http", "tls", (dns_fakedns) and "fakedns"}, metadataOnly = false, routeOnly = route_only and true or nil, domainsExcluded = (sniffing and not route_only) and get_domain_excluded() or nil}
-        })
-    end
+        }
+        local tcp_inbound = api.clone(inbound)
+        tcp_inbound.tag = "tcp_redir"
+        tcp_inbound.settings.network = "tcp"
+        tcp_inbound.streamSettings.sockopt.tproxy = tcp_proxy_way
+        table.insert(inbounds, tcp_inbound)
 
-    local up_trust_doh = uci:get(appname, "@global[0]", "up_trust_doh")
-    if up_trust_doh then
-        local t = {}
-        string.gsub(up_trust_doh, '[^' .. "," .. ']+', function (w)
-            table.insert(t, w)
-        end)
-        if #t > 1 then
-            local host = sys.exec("echo -n $(echo " .. t[1] .. " | sed 's/https:\\/\\///g' | awk -F ':' '{print $1}' | awk -F '/' '{print $1}')")
-            dns = {
-                hosts = {
-                    [host] = t[2]
-                }
-            }
-        end
+        local udp_inbound = api.clone(inbound)
+        udp_inbound.tag = "udp_redir"
+        udp_inbound.settings.network = "udp"
+        table.insert(inbounds, udp_inbound)
     end
 
     local nodes = {}
@@ -674,7 +661,9 @@ end
 if inbounds or outbounds then
     local config = {
         log = {
-            -- error = string.format("/tmp/etc/%s/%s.log", appname, node[".name"]),
+            --access = string.format("/tmp/etc/%s/%s_access.log", appname, "global"),
+            --error = string.format("/tmp/etc/%s/%s_error.log", appname, "global"),
+            --dnsLog = true,
             loglevel = loglevel
         },
         -- DNS
