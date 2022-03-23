@@ -723,7 +723,7 @@ LOCALHOST_TCP_PROXY_MODE="global"
 LOCALHOST_UDP_PROXY_MODE="global"
 DNS_PROTOCOL=$(config_t_get global dns_protocol tcp)
 DNS_FORWARD=$(config_t_get global dns_forward 1.1.1.1:53 | sed 's/#/:/g' | sed -E 's/\:([^:]+)$/#\1/g')
-DNS_CACHE=$(config_t_get global dns_cache 0)
+DNS_CACHE=$(config_t_get global dns_cache 1)
 
 DEFAULT_DNS=$(uci show dhcp | grep "@dnsmasq" | grep "\.server=" | awk -F '=' '{print $2}' | sed "s/'//g" | tr ' ' '\n' | grep -v "\/" | head -2 | sed ':label;N;s/\n/,/;b label')
 [ -z "${DEFAULT_DNS}" ] && DEFAULT_DNS=$(echo -n $(sed -n 's/^nameserver[ \t]*\([^ ]*\)$/\1/p' "${RESOLVFILE}" | grep -v -E "0.0.0.0|127.0.0.1|::" | head -2) | tr ' ' ',')
