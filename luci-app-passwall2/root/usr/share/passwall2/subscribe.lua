@@ -354,9 +354,8 @@ local function processData(szType, content, add_mode, add_from)
 		result.remarks = base64Decode(params.remarks)
 	elseif szType == 'vmess' then
 		local info = jsonParse(content)
-		if has_v2ray then
-			result.type = 'V2ray'
-		elseif has_xray then
+		result.type = 'V2ray'
+		if has_xray then
 			result.type = 'Xray'
 		end
 		result.address = info.add
@@ -505,6 +504,9 @@ local function processData(szType, content, add_mode, add_from)
 		end
 		result.remarks = UrlDecode(alias)
 		result.type = 'V2ray'
+		if has_xray then
+			result.type = 'Xray'
+		end
 		result.protocol = 'trojan'
 		if content:find("@") then
 			local Info = split(content, "@")
@@ -562,10 +564,9 @@ local function processData(szType, content, add_mode, add_from)
 		result.group = content.airport
 		result.remarks = content.remarks
 	elseif szType == "vless" then
+		result.type = 'V2ray'
 		if has_xray then
 			result.type = 'Xray'
-		elseif has_v2ray then
-			result.type = 'V2ray'
 		end
 		result.protocol = "vless"
 		local alias = ""
