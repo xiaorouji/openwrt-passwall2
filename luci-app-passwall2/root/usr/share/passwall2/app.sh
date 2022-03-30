@@ -680,6 +680,8 @@ start() {
 			run_global
 			source $APP_PATH/iptables.sh start
 			source $APP_PATH/helper_dnsmasq.sh logic_restart
+			sysctl -w net.bridge.bridge-nf-call-iptables=0 2>/dev/null
+			[ "$PROXY_IPV6" == "1" ] && sysctl -w net.bridge.bridge-nf-call-ip6tables=0 2>/dev/null
 		fi
 	}
 	start_crontab
@@ -700,6 +702,7 @@ stop() {
 	rm -rf ${TMP_PATH}
 	rm -rf /tmp/lock/${CONFIG}_script.lock
 	echolog "清空并关闭相关程序和缓存完成。"
+	/etc/init.d/sysctl restart
 	exit 0
 }
 
