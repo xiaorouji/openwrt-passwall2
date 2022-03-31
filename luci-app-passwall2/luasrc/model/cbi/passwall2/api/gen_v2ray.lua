@@ -464,17 +464,17 @@ if true then
                         local source = nil
                         if e.source then
                             source = {}
-                            string.gsub(e.source, '[^' .. "\r\n" .. ']+', function(w)
+                            string.gsub(e.source, '[^' .. " " .. ']+', function(w)
                                 table.insert(source, w)
                             end)
                         end
                         local rule = {
                             type = "field",
                             outboundTag = outboundTag,
-                            network = e["network"],
+                            network = e["network"] or "tcp,udp",
                             source = source,
-                            sourcePort = e["sourcePort"] and e["sourcePort"] ~= "",
-                            port = e["port"] and e["port"] ~= "",
+                            sourcePort = e["sourcePort"] ~= "" and e["sourcePort"] or nil,
+                            port = e["port"] ~= "" and e["port"] or nil,
                             protocol = protocols
                         }
                         if domains then
