@@ -323,7 +323,11 @@ run_v2ray() {
 		;;
 	esac
 	lua $API_GEN_V2RAY -node $node -redir_port $redir_port -tcp_proxy_way $tcp_proxy_way -loglevel $loglevel ${_extra_param} > $config_file
-	ln_run "$(first_type $(config_t_get global_app ${type}_file) ${type})" ${type} $log_file -config="$config_file"
+	if [ "$type" == "v2ray" ]; then
+		ln_run "$(first_type $(config_t_get global_app ${type}_file) ${type})" ${type} $log_file run -config="$config_file"
+	else 
+		ln_run "$(first_type $(config_t_get global_app ${type}_file) ${type})" ${type} $log_file -config="$config_file"
+	fi
 }
 
 run_socks() {
