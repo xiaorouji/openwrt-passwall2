@@ -22,6 +22,7 @@ local local_dns_address = var["-local_dns_address"] or "tcp+local://119.29.29.29
 local local_dns_port = var["-local_dns_port"] or 53
 local dns_server = var["-dns_server"]
 local dns_direct_domains = {}
+local dns_proxy_domains = {}
 local dns_direct_expectIPs = {}
 local dns_tcp_server = var["-dns_tcp_server"]
 local dns_cache = var["-dns_cache"]
@@ -449,6 +450,9 @@ if true then
                                 if outboundTag == "direct" then
                                     table.insert(dns_direct_domains, w)
                                 end
+                                if outboundTag ~= "direct" and outboundTag ~= "blackhole" then
+                                    table.insert(dns_proxy_domains, w)
+                                end
                             end)
                         end
                         local ip = nil
@@ -547,24 +551,21 @@ if dns_server or dns_fakedns then
         disableFallback = true,
         disableFallbackIfMatch = true,
         servers = {
-            dns_server
+            local_dns_ip
         },
         clientIp = (dns_client_ip and dns_client_ip ~= "") and dns_client_ip or nil,
         queryStrategy = (dns_query_strategy and dns_query_strategy ~= "") and dns_query_strategy or nil
     }
+    local new_dns_server = "1.1.1.1"
     if doh_url and doh_host then
         dns.hosts = {
             [doh_host] = dns_server
         }
-        dns.servers = {
-            doh_url
-        }
+        new_dns_server = doh_url
     end
 
     if dns_tcp_server then
-        dns.servers = {
-            dns_tcp_server
-        }
+        new_dns_server = dns_tcp_server
     end
 
     if dns_fakedns then
@@ -586,6 +587,11 @@ if dns_server or dns_fakedns then
         table.insert(dns_direct_domains, w)
     end)
 
+    table.insert(dns.servers, {
+        address = new_dns_server,
+        domains = #dns_proxy_domains > 0 and dns_proxy_domains or nil
+    })
+    
     table.insert(dns.servers, {
         address = local_dns_address,
         port = tonumber(local_dns_port),
