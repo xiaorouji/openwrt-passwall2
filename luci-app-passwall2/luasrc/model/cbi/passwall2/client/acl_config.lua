@@ -152,7 +152,7 @@ for k, v in pairs(nodes_table) do
     node:value(v.id, v["remark"])
 end
 
-o = s:taboption("DNS", ListValue, "direct_dns_protocol", translate("Direct DNS Protocol"))
+o = s:option(ListValue, "direct_dns_protocol", translate("Direct DNS Protocol"))
 o.default = "auto"
 o:value("auto", translate("Auto"))
 o:value("udp", "UDP")
@@ -160,7 +160,7 @@ o:value("tcp", "TCP")
 o:value("doh", "DoH")
 o:depends({ node = "default",  ['!reverse'] = true })
 
-o = s:taboption("DNS", Value, "direct_dns", translate("Direct DNS"))
+o = s:option(Value, "direct_dns", translate("Direct DNS"))
 o.datatype = "or(ipaddr,ipaddrport)"
 o.default = "119.29.29.29"
 o:value("114.114.114.114", "114.114.114.114 (114DNS)")
@@ -169,7 +169,7 @@ o:value("223.5.5.5", "223.5.5.5 (AliDNS)")
 o:depends("direct_dns_protocol", "udp")
 o:depends("direct_dns_protocol", "tcp")
 
-o = s:taboption("DNS", Value, "direct_dns_doh", translate("Direct DNS DoH"))
+o = s:option(Value, "direct_dns_doh", translate("Direct DNS DoH"))
 o.default = "https://223.5.5.5/dns-query"
 o:value("https://1.12.12.12/dns-query", "DNSPod 1")
 o:value("https://120.53.53.53/dns-query", "DNSPod 2")
