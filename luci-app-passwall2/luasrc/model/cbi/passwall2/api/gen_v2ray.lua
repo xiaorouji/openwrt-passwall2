@@ -599,9 +599,11 @@ if remote_dns_server or remote_dns_fake then
             poolSize = 65535
         }
         remote_dns_server = "1.1.1.1"
-        dns.servers = {
-            "fakedns"
-        }
+        table.insert(dns.servers, {
+            tag = "remote",
+            address = "fakedns",
+            domains = #dns_remote_domains > 0 and dns_remote_domains or nil
+        })
     end
 
     local nodes_domain = {}
@@ -669,7 +671,7 @@ if remote_dns_server or remote_dns_fake then
     })
 
     local default_dns_flag = "remote"
-    if node_id and redir_port and not remote_dns_fake then
+    if node_id and redir_port then
         local outboundTag = node_id
         local node = uci:get_all(appname, node_id)
         if node.protocol == "_shunt" then
@@ -678,13 +680,15 @@ if remote_dns_server or remote_dns_fake then
                 default_dns_flag = "direct"
             end
         end
-        table.insert(rules, {
-            type = "field",
-            inboundTag = {
-                "dns-in1"
-            },
-            outboundTag = outboundTag
-        })
+        if not remote_dns_fake then
+            table.insert(rules, {
+                type = "field",
+                inboundTag = {
+                    "dns-in1"
+                },
+                outboundTag = outboundTag
+            })
+        end
     end
 
     if nodes_domain and #nodes_domain > 0 then
