@@ -149,7 +149,7 @@ o = s:option(Value, "tcp_redir_ports", translate("TCP Redir Ports"))
 o.default = "default"
 o:value("default", translate("Default"))
 o:value("1:65535", translate("All"))
-o:value("22,25,53,143,465,587,853,993,995,80,443", translate("Common Use"))
+o:value("22,25,53,143,465,587,853,993,995,80,443,8080", translate("Common Use"))
 o:value("80,443", "80,443")
 
 ---- UDP Redir Ports
