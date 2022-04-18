@@ -677,7 +677,7 @@ add_firewall_rule() {
 	ip -6 route add local ::/0 dev lo table 100
 
 	# 加载路由器自身代理 TCP
-	if [ "$NODE" != "nil" ]; then
+	if [ "$NODE" != "nil" ] && [ "$LOCALHOST_PROXY" = "1" ]; then
 		local ipt_tmp=$ipt_n
 		local blist_r=$(REDIRECT $REDIR_PORT)
 		echolog "加载路由器自身 TCP 代理..."
@@ -750,7 +750,7 @@ add_firewall_rule() {
 	filter_node $NODE UDP > /dev/null 2>&1 &
 
 	# 加载路由器自身代理 UDP
-	if [ "$NODE" != "nil" ]; then
+	if [ "$NODE" != "nil" ] && [ "$LOCALHOST_PROXY" = "1" ]; then
 		echolog "加载路由器自身 UDP 代理..."
 		[ "$UDP_NO_REDIR_PORTS" != "disable" ] && {
 			$ipt_m -A PSW2_OUTPUT -p udp -m multiport --dport $UDP_NO_REDIR_PORTS -j RETURN
