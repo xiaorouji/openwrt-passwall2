@@ -57,7 +57,7 @@ config PACKAGE_$(PKG_NAME)_Transparent_Proxy
 	select PACKAGE_iptables-mod-iprange
 	select PACKAGE_iptables-mod-socket
 	select PACKAGE_iptables-mod-tproxy
-	select CONFIG_PACKAGE_iptables-mod-conntrack-extra
+	select PACKAGE_iptables-mod-conntrack-extra
 	select PACKAGE_kmod-ipt-nat
 	default y
 
