@@ -749,8 +749,8 @@ start() {
 			run_global
 			source $APP_PATH/iptables.sh start
 			source $APP_PATH/helper_dnsmasq.sh logic_restart
-			sysctl -w net.bridge.bridge-nf-call-iptables=0 2>/dev/null
-			[ "$PROXY_IPV6" == "1" ] && sysctl -w net.bridge.bridge-nf-call-ip6tables=0 2>/dev/null
+			sysctl -w net.bridge.bridge-nf-call-iptables=0 >/dev/null 2>&1
+			[ "$PROXY_IPV6" == "1" ] && sysctl -w net.bridge.bridge-nf-call-ip6tables=0 >/dev/null 2>&1
 		fi
 	}
 	start_crontab
