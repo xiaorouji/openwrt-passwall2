@@ -300,6 +300,8 @@ run_v2ray() {
 		local route_only=$(config_t_get global_forwarding route_only 0)
 		[ "${route_only}" = "1" ] && _extra_param="${_extra_param} -route_only 1"
 	}
+	local buffer_size=$(config_t_get global_forwarding buffer_size)
+	[ -n "${buffer_size}" ] && _extra_param="${_extra_param} -buffer_size ${buffer_size}"
 	[ "$direct_dns_protocol" = "auto" ] && {
 		direct_dns_protocol="udp"
 		direct_dns_udp_server=${AUTO_DNS}
