@@ -638,6 +638,18 @@ if remote_dns_server or remote_dns_doh_url or remote_dns_fake then
             _remote_dns_proto = "tcp"
         end
 
+        if api.is_private_ipv4(_remote_dns.address) then
+            table.insert(routing.rules, 1, {
+                type = "field",
+                ip = {
+                    _remote_dns.address
+                },
+                port = _remote_dns.port,
+                network = _remote_dns_proto,
+                outboundTag = "direct"
+            })
+        end
+
         if remote_dns_fake then
             remote_dns_server = "1.1.1.1"
             fakedns = {}
