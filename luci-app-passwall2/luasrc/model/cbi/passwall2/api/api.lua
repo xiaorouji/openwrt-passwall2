@@ -188,15 +188,6 @@ function iprange(val)
     return false
 end
 
-function is_private_ipv4(val)
-    if val then
-        if val:match("^10%.") or val:match("^127%.") or val:match("^192%.168%.") or val:match("^172%.16%.") or val:match("^172%.19%.") or val:match("^169%.245%.") then
-            return true
-        end
-    end
-    return false
-end
-
 function get_domain_from_url(url)
     local domain = string.match(url, "//([^/]+)")
     if domain then
