@@ -396,6 +396,9 @@ function x_ss_encrypt_method.write(self, section, value)
 	m:set(section, "method", value)
 end
 
+uot = s:option(Flag, "uot", translate("UDP over TCP"), translate("Need Xray server side with Shadowsocks-2022 protocol"))
+uot:depends({ type = "Xray", protocol = "shadowsocks" })
+
 iv_check = s:option(Flag, "iv_check", translate("IV Check"))
 iv_check:depends({ type = "V2ray", protocol = "shadowsocks" })
 iv_check:depends({ type = "Xray", protocol = "shadowsocks" })
