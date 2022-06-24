@@ -15,7 +15,7 @@ local v2ray_asset_location = ucic:get_first(name, 'global_rules', "v2ray_locatio
 
 -- Custom geo file
 local geoip_api = ucic:get_first(name, 'global_rules', "geoip_url", "https://api.github.com/repos/Loyalsoldier/v2ray-rules-dat/releases/latest")
-local geosite_api = ucic:get_first(name, 'global_rules', "geosite_url",  "https://api.github.com/repos/Loyalsoldier/v2ray-rules-dat/releases/latest")
+local geosite_api = ucic:get_first(name, 'global_rules', "geosite_url", "https://api.github.com/repos/Loyalsoldier/v2ray-rules-dat/releases/latest")
 --
 
 local log = function(...)
