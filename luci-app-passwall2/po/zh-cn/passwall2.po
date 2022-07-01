@@ -1161,3 +1161,6 @@ msgstr "缓冲区大小（Xray）"
 
 msgid "Buffer size for every connection (kB)"
 msgstr "每一个连接的缓冲区大小（kB）"
+
+msgid "Custom geoip URL"
+msgstr "自定义geo文件更新链接"
