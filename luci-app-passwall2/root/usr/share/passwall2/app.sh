@@ -743,7 +743,7 @@ boot() {
 start() {
 	if [ "$(ps | grep /tmp/etc/passwall2 | grep -v grep)" != "" ]; then
 		echolog "程序已启动，无需重复启动!"
-    	return 0
+		return 0
 	fi
 	
 	ulimit -n 65535
