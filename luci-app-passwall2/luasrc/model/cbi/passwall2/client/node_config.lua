@@ -487,6 +487,13 @@ xtls.default = 0
 xtls:depends({ type = "Xray", protocol = "vless", tls = true })
 xtls:depends({ type = "Xray", protocol = "trojan", tls = true })
 
+tlsflow = s:option(Value, "tlsflow", translate("flow"))
+tlsflow.default = ""
+tlsflow:value("", translate("Disable"))
+tlsflow:value("xtls-rprx-vision")
+tlsflow:value("xtls-rprx-vision-udp443")
+tlsflow:depends({ type = "Xray", protocol = "vless", tls = true , xtls = false })
+
 flow = s:option(Value, "flow", translate("flow"))
 flow.default = "xtls-rprx-direct"
 flow:value("xtls-rprx-origin")
@@ -523,6 +530,7 @@ xray_fingerprint:value("safari")
 xray_fingerprint:value("randomized")
 xray_fingerprint.default = "disable"
 xray_fingerprint:depends({ type = "Xray", tls = true, xtls = false })
+xray_fingerprint:depends({ type = "Xray", tls = true, xtls = true })
 function xray_fingerprint.cfgvalue(self, section)
 	return m:get(section, "fingerprint")
 end
