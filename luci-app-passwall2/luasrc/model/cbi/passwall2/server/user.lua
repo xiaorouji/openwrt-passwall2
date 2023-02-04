@@ -363,17 +363,6 @@ tls:depends({ type = "Xray", protocol = "socks" })
 tls:depends({ type = "Xray", protocol = "shadowsocks" })
 tls:depends({ type = "Xray", protocol = "trojan" })
 
-xtls = s:option(Flag, "xtls", translate("XTLS"))
-xtls.default = 0
-xtls:depends({ type = "Xray", protocol = "vless", tls = true })
-xtls:depends({ type = "Xray", protocol = "trojan", tls = true })
-
-flow = s:option(Value, "flow", translate("flow"))
-flow.default = "xtls-rprx-direct"
-flow:value("xtls-rprx-origin")
-flow:value("xtls-rprx-direct")
-flow:depends("xtls", true)
-
 alpn = s:option(ListValue, "alpn", translate("alpn"))
 alpn.default = "h2,http/1.1"
 alpn:value("h2,http/1.1")
