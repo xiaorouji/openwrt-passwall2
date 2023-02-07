@@ -611,6 +611,13 @@ run_global() {
 	[ "$(config_t_get global close_log 1)" = "1" ] && V2RAY_LOG="/dev/null"
 	V2RAY_ARGS="${V2RAY_ARGS} log_file=${V2RAY_LOG} config_file=${V2RAY_CONFIG}"
 
+	node_socks_port=$(config_t_get global node_socks_port 1070)
+	V2RAY_ARGS="${V2RAY_ARGS} socks_port=${node_socks_port}"
+	echo "127.0.0.1:$node_socks_port" > $TMP_PATH/global_SOCKS_server
+
+	node_http_port=$(config_t_get global node_http_port 0)
+	[ "$node_http_port" != "0" ] && V2RAY_ARGS="${V2RAY_ARGS} http_port=${node_http_port}"
+
 	run_v2ray $V2RAY_ARGS
 	echo "run_v2ray $V2RAY_ARGS" > $TMP_SCRIPT_FUNC_PATH/_global
 }
