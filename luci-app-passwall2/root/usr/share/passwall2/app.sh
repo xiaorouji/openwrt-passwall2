@@ -267,7 +267,7 @@ lua_api() {
 
 run_v2ray() {
 	local flag node redir_port socks_address socks_port socks_username socks_password http_address http_port http_username http_password
-	local dns_listen_port direct_dns_protocol direct_dns_udp_server direct_dns_tcp_server direct_dns_doh remote_dns_protocol remote_dns_udp_server remote_dns_tcp_server remote_dns_doh remote_dns_client_ip dns_query_strategy dns_cache
+	local dns_listen_port direct_dns_protocol direct_dns_udp_server direct_dns_tcp_server direct_dns_doh direct_dns_query_strategy remote_dns_protocol remote_dns_udp_server remote_dns_tcp_server remote_dns_doh remote_dns_client_ip remote_dns_query_strategy dns_cache
 	local loglevel log_file config_file
 	local _extra_param=""
 	eval_set_val $@
@@ -343,7 +343,7 @@ run_v2ray() {
 				V2RAY_DNS_DIRECT_ARGS="${V2RAY_DNS_DIRECT_ARGS} -direct_dns_port ${_doh_port} -direct_dns_doh_url ${_doh_url} -direct_dns_doh_host ${_doh_host}"
 			;;
 		esac
-		[ -n "$dns_query_strategy" ] && V2RAY_DNS_DIRECT_ARGS="${V2RAY_DNS_DIRECT_ARGS} -dns_query_strategy ${dns_query_strategy}"
+		[ -n "$direct_dns_query_strategy" ] && V2RAY_DNS_DIRECT_ARGS="${V2RAY_DNS_DIRECT_ARGS} -dns_query_strategy ${direct_dns_query_strategy}"
 		
 		lua $API_GEN_V2RAY_DNS ${V2RAY_DNS_DIRECT_ARGS} > $V2RAY_DNS_DIRECT_CONFIG
 		ln_run "$(first_type $(config_t_get global_app ${type}_file) ${type})" ${type} $V2RAY_DNS_DIRECT_LOG run -c "$V2RAY_DNS_DIRECT_CONFIG"
@@ -383,7 +383,7 @@ run_v2ray() {
 				V2RAY_DNS_REMOTE_ARGS="${V2RAY_DNS_REMOTE_ARGS} -remote_dns_fake 1"
 			;;
 		esac
-		[ -n "$dns_query_strategy" ] && V2RAY_DNS_REMOTE_ARGS="${V2RAY_DNS_REMOTE_ARGS} -dns_query_strategy ${dns_query_strategy}"
+		[ -n "$remote_dns_query_strategy" ] && V2RAY_DNS_REMOTE_ARGS="${V2RAY_DNS_REMOTE_ARGS} -dns_query_strategy ${remote_dns_query_strategy}"
 		[ -n "$remote_dns_client_ip" ] && V2RAY_DNS_REMOTE_ARGS="${V2RAY_DNS_REMOTE_ARGS} -remote_dns_client_ip ${remote_dns_client_ip}"
 		
 		V2RAY_DNS_REMOTE_ARGS="${V2RAY_DNS_REMOTE_ARGS} -remote_dns_outbound_socks_address 127.0.0.1 -remote_dns_outbound_socks_port ${socks_port}"
@@ -582,7 +582,7 @@ run_global() {
 		PROXY_IPV6_UDP=1
 	fi
 	V2RAY_ARGS="flag=global node=$NODE redir_port=$REDIR_PORT"
-	V2RAY_ARGS="${V2RAY_ARGS} dns_listen_port=${TUN_DNS_PORT} dns_query_strategy=${DNS_QUERY_STRATEGY} dns_cache=${DNS_CACHE}"
+	V2RAY_ARGS="${V2RAY_ARGS} dns_listen_port=${TUN_DNS_PORT} direct_dns_query_strategy=${DIRECT_DNS_QUERY_STRATEGY} remote_dns_query_strategy=${REMOTE_DNS_QUERY_STRATEGY} dns_cache=${DNS_CACHE}"
 	local msg="${TUN_DNS} （"
 	[ -n "$DIRECT_DNS_PROTOCOL" ] && {
 		V2RAY_ARGS="${V2RAY_ARGS} direct_dns_protocol=${DIRECT_DNS_PROTOCOL}"
@@ -854,9 +854,10 @@ UDP_PROXY_MODE="global"
 LOCALHOST_PROXY=$(config_t_get global localhost_proxy '1')
 DIRECT_DNS_PROTOCOL=$(config_t_get global direct_dns_protocol tcp)
 DIRECT_DNS=$(config_t_get global direct_dns 119.29.29.29:53 | sed 's/#/:/g' | sed -E 's/\:([^:]+)$/#\1/g')
+DIRECT_DNS_QUERY_STRATEGY=$(config_t_get global direct_dns_query_strategy UseIP)
 REMOTE_DNS_PROTOCOL=$(config_t_get global remote_dns_protocol tcp)
 REMOTE_DNS=$(config_t_get global remote_dns 1.1.1.1:53 | sed 's/#/:/g' | sed -E 's/\:([^:]+)$/#\1/g')
-DNS_QUERY_STRATEGY=$(config_t_get global dns_query_strategy UseIPv4)
+REMOTE_DNS_QUERY_STRATEGY=$(config_t_get global remote_dns_query_strategy UseIPv4)
 DNS_CACHE=$(config_t_get global dns_cache 1)
 
 DEFAULT_DNS=$(uci show dhcp | grep "@dnsmasq" | grep "\.server=" | awk -F '=' '{print $2}' | sed "s/'//g" | tr ' ' '\n' | grep -v "\/" | head -2 | sed ':label;N;s/\n/,/;b label')

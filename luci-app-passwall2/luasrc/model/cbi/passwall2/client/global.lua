@@ -171,6 +171,12 @@ o:value("https://223.5.5.5/dns-query", "AliDNS")
 o.validate = doh_validate
 o:depends("direct_dns_protocol", "doh")
 
+o = s:taboption("DNS", ListValue, "direct_dns_query_strategy", translate("Direct Query Strategy"))
+o.default = "UseIP"
+o:value("UseIP")
+o:value("UseIPv4")
+o:value("UseIPv6")
+
 o = s:taboption("DNS", ListValue, "remote_dns_protocol", translate("Remote DNS Protocol"))
 o:value("tcp", "TCP")
 o:value("doh", "DoH")
@@ -217,11 +223,11 @@ o.datatype = "ipaddr"
 o:depends("remote_dns_protocol", "tcp")
 o:depends("remote_dns_protocol", "doh")
 
-o = s:taboption("DNS", ListValue, "dns_query_strategy", translate("Query Strategy"))
+o = s:taboption("DNS", ListValue, "remote_dns_query_strategy", translate("Remote Query Strategy"))
 o.default = "UseIPv4"
 o:value("UseIP")
 o:value("UseIPv4")
---o:value("UseIPv6")
+o:value("UseIPv6")
 
 hosts = s:taboption("DNS", TextValue, "dns_hosts", translate("Domain Override"))
 hosts.rows = 5
