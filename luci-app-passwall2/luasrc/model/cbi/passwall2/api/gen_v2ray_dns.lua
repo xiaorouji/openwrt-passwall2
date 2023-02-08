@@ -5,6 +5,7 @@ local var = api.get_args(arg)
 local dns_listen_port = var["-dns_listen_port"]
 local dns_query_strategy = var["-dns_query_strategy"]
 local dns_out_tag = var["-dns_out_tag"]
+local dns_client_ip = var["-dns_client_ip"]
 local direct_dns_server = var["-direct_dns_server"]
 local direct_dns_port = var["-direct_dns_port"]
 local direct_dns_udp_server = var["-direct_dns_udp_server"]
@@ -17,7 +18,6 @@ local remote_dns_udp_server = var["-remote_dns_udp_server"]
 local remote_dns_tcp_server = var["-remote_dns_tcp_server"]
 local remote_dns_doh_url = var["-remote_dns_doh_url"]
 local remote_dns_doh_host = var["-remote_dns_doh_host"]
-local remote_dns_client_ip = var["-remote_dns_client_ip"]
 local remote_dns_outbound_socks_address = var["-remote_dns_outbound_socks_address"]
 local remote_dns_outbound_socks_port = var["-remote_dns_outbound_socks_port"]
 local remote_dns_fake = var["-remote_dns_fake"]
@@ -70,7 +70,7 @@ if dns_listen_port then
         disableFallback = true,
         disableFallbackIfMatch = true,
         servers = {},
-        clientIp = (remote_dns_client_ip and remote_dns_client_ip ~= "") and remote_dns_client_ip or nil,
+        clientIp = (dns_client_ip and dns_client_ip ~= "") and dns_client_ip or nil,
         queryStrategy = (dns_query_strategy and dns_query_strategy ~= "") and dns_query_strategy or "UseIPv4"
     }
 

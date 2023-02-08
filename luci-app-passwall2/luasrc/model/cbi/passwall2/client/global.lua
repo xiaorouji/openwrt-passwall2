@@ -171,6 +171,13 @@ o:value("https://223.5.5.5/dns-query", "AliDNS")
 o.validate = doh_validate
 o:depends("direct_dns_protocol", "doh")
 
+o = s:taboption("DNS", Value, "direct_dns_client_ip", translate("Direct DNS EDNS Client Subnet"))
+o.description = translate("Notify the DNS server when the DNS query is notified, the location of the client (cannot be a private IP address).") .. "<br />" ..
+                translate("This feature requires the DNS server to support the Edns Client Subnet (RFC7871).")
+o.datatype = "ipaddr"
+o:depends("direct_dns_protocol", "tcp")
+o:depends("direct_dns_protocol", "doh")
+
 o = s:taboption("DNS", ListValue, "direct_dns_query_strategy", translate("Direct Query Strategy"))
 o.default = "UseIP"
 o:value("UseIP")

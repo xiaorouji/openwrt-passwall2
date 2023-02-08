@@ -23,7 +23,6 @@ local direct_dns_port = var["-direct_dns_port"]
 local direct_dns_udp_server = var["-direct_dns_udp_server"]
 local remote_dns_port = var["-remote_dns_port"]
 local remote_dns_udp_server = var["-remote_dns_udp_server"]
-local remote_dns_client_ip = var["-remote_dns_client_ip"]
 local remote_dns_fake = var["-remote_dns_fake"]
 local dns_cache = var["-dns_cache"]
 local dns_direct_domains = {}
@@ -605,7 +604,6 @@ if remote_dns_udp_server or remote_dns_fake then
         disableFallback = true,
         disableFallbackIfMatch = true,
         servers = {},
-        clientIp = (remote_dns_client_ip and remote_dns_client_ip ~= "") and remote_dns_client_ip or nil,
         queryStrategy = (dns_query_strategy and dns_query_strategy ~= "") and dns_query_strategy or "UseIPv4"
     }
 

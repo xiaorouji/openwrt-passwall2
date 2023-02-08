@@ -267,7 +267,7 @@ lua_api() {
 
 run_v2ray() {
 	local flag node redir_port socks_address socks_port socks_username socks_password http_address http_port http_username http_password
-	local dns_listen_port direct_dns_protocol direct_dns_udp_server direct_dns_tcp_server direct_dns_doh direct_dns_query_strategy remote_dns_protocol remote_dns_udp_server remote_dns_tcp_server remote_dns_doh remote_dns_client_ip remote_dns_query_strategy dns_cache
+	local dns_listen_port direct_dns_protocol direct_dns_udp_server direct_dns_tcp_server direct_dns_doh direct_dns_client_ip direct_dns_query_strategy remote_dns_protocol remote_dns_udp_server remote_dns_tcp_server remote_dns_doh remote_dns_client_ip remote_dns_query_strategy dns_cache
 	local loglevel log_file config_file
 	local _extra_param=""
 	eval_set_val $@
@@ -344,6 +344,7 @@ run_v2ray() {
 			;;
 		esac
 		[ -n "$direct_dns_query_strategy" ] && V2RAY_DNS_DIRECT_ARGS="${V2RAY_DNS_DIRECT_ARGS} -dns_query_strategy ${direct_dns_query_strategy}"
+		[ -n "$direct_dns_client_ip" ] && V2RAY_DNS_DIRECT_ARGS="${V2RAY_DNS_DIRECT_ARGS} -dns_client_ip ${direct_dns_client_ip}"
 		
 		lua $API_GEN_V2RAY_DNS ${V2RAY_DNS_DIRECT_ARGS} > $V2RAY_DNS_DIRECT_CONFIG
 		ln_run "$(first_type $(config_t_get global_app ${type}_file) ${type})" ${type} $V2RAY_DNS_DIRECT_LOG run -c "$V2RAY_DNS_DIRECT_CONFIG"
@@ -386,7 +387,7 @@ run_v2ray() {
 			esac
 			
 			[ -n "$remote_dns_query_strategy" ] && V2RAY_DNS_REMOTE_ARGS="${V2RAY_DNS_REMOTE_ARGS} -dns_query_strategy ${remote_dns_query_strategy}"
-			[ -n "$remote_dns_client_ip" ] && V2RAY_DNS_REMOTE_ARGS="${V2RAY_DNS_REMOTE_ARGS} -remote_dns_client_ip ${remote_dns_client_ip}"
+			[ -n "$remote_dns_client_ip" ] && V2RAY_DNS_REMOTE_ARGS="${V2RAY_DNS_REMOTE_ARGS} -dns_client_ip ${remote_dns_client_ip}"
 			
 			V2RAY_DNS_REMOTE_ARGS="${V2RAY_DNS_REMOTE_ARGS} -remote_dns_outbound_socks_address 127.0.0.1 -remote_dns_outbound_socks_port ${socks_port}"
 			lua $API_GEN_V2RAY_DNS ${V2RAY_DNS_REMOTE_ARGS} > $V2RAY_DNS_REMOTE_CONFIG
@@ -611,6 +612,8 @@ run_global() {
 				msg="${msg} 直连DNS：${DIRECT_DNS_DOH}"
 			;;
 		esac
+		local _direct_dns_client_ip=$(config_t_get global direct_dns_client_ip)
+		[ -n "${_direct_dns_client_ip}" ] && V2RAY_ARGS="${V2RAY_ARGS} direct_dns_client_ip=${_direct_dns_client_ip}"
 	}
 
 	[ -n "$REMOTE_DNS_PROTOCOL" ] && {

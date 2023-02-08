@@ -112,6 +112,9 @@ msgstr "直连 DNS"
 msgid "Direct DNS DoH"
 msgstr "直连 DNS DoH"
 
+msgid "Direct DNS EDNS Client Subnet"
+msgstr "直连 DNS EDNS Client Subnet"
+
 msgid "Remote DNS Protocol"
 msgstr "远程 DNS 协议"
 
