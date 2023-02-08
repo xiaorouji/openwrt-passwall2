@@ -264,9 +264,11 @@ o.default = "UseIPv4"
 o:value("UseIP")
 o:value("UseIPv4")
 --o:value("UseIPv6")
+o:depends({ node = "default",  ['!reverse'] = true })
 
 hosts = s:option(TextValue, "dns_hosts", translate("Domain Override"))
 hosts.rows = 5
 hosts.wrap = "off"
+hosts:depends({ node = "default",  ['!reverse'] = true })
 
 return m
