@@ -348,54 +348,60 @@ run_v2ray() {
 		lua $API_GEN_V2RAY_DNS ${V2RAY_DNS_DIRECT_ARGS} > $V2RAY_DNS_DIRECT_CONFIG
 		ln_run "$(first_type $(config_t_get global_app ${type}_file) ${type})" ${type} $V2RAY_DNS_DIRECT_LOG run -c "$V2RAY_DNS_DIRECT_CONFIG"
 		
-		V2RAY_DNS_REMOTE_CONFIG="${TMP_PATH}/${flag}_dns_remote.json"
-		V2RAY_DNS_REMOTE_LOG="${TMP_PATH}/${flag}_dns_remote.log"
-		V2RAY_DNS_REMOTE_ARGS="-dns_out_tag remote"
-		dns_remote_listen_port=$(get_new_port $(expr $dns_listen_port + 2) udp)
-		V2RAY_DNS_REMOTE_ARGS="${V2RAY_DNS_REMOTE_ARGS} -dns_listen_port ${dns_remote_listen_port}"
-		case "$remote_dns_protocol" in
-			udp)
-				local _dns=$(get_first_dns remote_dns_udp_server 53 | sed 's/#/:/g')
-				local _dns_address=$(echo ${_dns} | awk -F ':' '{print $1}')
-				local _dns_port=$(echo ${_dns} | awk -F ':' '{print $2}')
-				V2RAY_DNS_REMOTE_ARGS="${V2RAY_DNS_REMOTE_ARGS} -remote_dns_server ${_dns_address} -remote_dns_port ${_dns_port} -remote_dns_udp_server ${_dns_address}"
-			;;
-			tcp)
-				local _dns=$(get_first_dns remote_dns_tcp_server 53 | sed 's/#/:/g')
-				local _dns_address=$(echo ${_dns} | awk -F ':' '{print $1}')
-				local _dns_port=$(echo ${_dns} | awk -F ':' '{print $2}')
-				V2RAY_DNS_REMOTE_ARGS="${V2RAY_DNS_REMOTE_ARGS} -remote_dns_server ${_dns_address} -remote_dns_port ${_dns_port} -remote_dns_tcp_server tcp://${_dns}"
-			;;
-			doh)
-				local _doh_url=$(echo $remote_dns_doh | awk -F ',' '{print $1}')
-				local _doh_host_port=$(lua_api "get_domain_from_url(\"${_doh_url}\")")
-				#local _doh_host_port=$(echo $_doh_url | sed "s/https:\/\///g" | awk -F '/' '{print $1}')
-				local _doh_host=$(echo $_doh_host_port | awk -F ':' '{print $1}')
-				local is_ip=$(lua_api "is_ip(\"${_doh_host}\")")
-				local _doh_port=$(echo $_doh_host_port | awk -F ':' '{print $2}')
-				[ -z "${_doh_port}" ] && _doh_port=443
-				local _doh_bootstrap=$(echo $remote_dns_doh | cut -d ',' -sf 2-)
-				[ "${is_ip}" = "true" ] && _doh_bootstrap=${_doh_host}
-				[ -n "$_doh_bootstrap" ] && V2RAY_DNS_REMOTE_ARGS="${V2RAY_DNS_REMOTE_ARGS} -remote_dns_server ${_doh_bootstrap}"
-				V2RAY_DNS_REMOTE_ARGS="${V2RAY_DNS_REMOTE_ARGS} -remote_dns_port ${_doh_port} -remote_dns_doh_url ${_doh_url} -remote_dns_doh_host ${_doh_host}"
-			;;
-			fakedns)
-				V2RAY_DNS_REMOTE_ARGS="${V2RAY_DNS_REMOTE_ARGS} -remote_dns_fake 1"
-			;;
-		esac
-		[ -n "$remote_dns_query_strategy" ] && V2RAY_DNS_REMOTE_ARGS="${V2RAY_DNS_REMOTE_ARGS} -dns_query_strategy ${remote_dns_query_strategy}"
-		[ -n "$remote_dns_client_ip" ] && V2RAY_DNS_REMOTE_ARGS="${V2RAY_DNS_REMOTE_ARGS} -remote_dns_client_ip ${remote_dns_client_ip}"
-		
-		V2RAY_DNS_REMOTE_ARGS="${V2RAY_DNS_REMOTE_ARGS} -remote_dns_outbound_socks_address 127.0.0.1 -remote_dns_outbound_socks_port ${socks_port}"
-		
-		lua $API_GEN_V2RAY_DNS ${V2RAY_DNS_REMOTE_ARGS} > $V2RAY_DNS_REMOTE_CONFIG
-		ln_run "$(first_type $(config_t_get global_app ${type}_file) ${type})" ${type} $V2RAY_DNS_REMOTE_LOG run -c "$V2RAY_DNS_REMOTE_CONFIG"
+		[ "$remote_dns_protocol" != "fakedns" ] && {
+			V2RAY_DNS_REMOTE_CONFIG="${TMP_PATH}/${flag}_dns_remote.json"
+			V2RAY_DNS_REMOTE_LOG="${TMP_PATH}/${flag}_dns_remote.log"
+			V2RAY_DNS_REMOTE_ARGS="-dns_out_tag remote"
+			dns_remote_listen_port=$(get_new_port $(expr $dns_listen_port + 2) udp)
+			V2RAY_DNS_REMOTE_ARGS="${V2RAY_DNS_REMOTE_ARGS} -dns_listen_port ${dns_remote_listen_port}"
+			case "$remote_dns_protocol" in
+				udp)
+					local _dns=$(get_first_dns remote_dns_udp_server 53 | sed 's/#/:/g')
+					local _dns_address=$(echo ${_dns} | awk -F ':' '{print $1}')
+					local _dns_port=$(echo ${_dns} | awk -F ':' '{print $2}')
+					V2RAY_DNS_REMOTE_ARGS="${V2RAY_DNS_REMOTE_ARGS} -remote_dns_server ${_dns_address} -remote_dns_port ${_dns_port} -remote_dns_udp_server ${_dns_address}"
+				;;
+				tcp)
+					local _dns=$(get_first_dns remote_dns_tcp_server 53 | sed 's/#/:/g')
+					local _dns_address=$(echo ${_dns} | awk -F ':' '{print $1}')
+					local _dns_port=$(echo ${_dns} | awk -F ':' '{print $2}')
+					V2RAY_DNS_REMOTE_ARGS="${V2RAY_DNS_REMOTE_ARGS} -remote_dns_server ${_dns_address} -remote_dns_port ${_dns_port} -remote_dns_tcp_server tcp://${_dns}"
+				;;
+				doh)
+					local _doh_url=$(echo $remote_dns_doh | awk -F ',' '{print $1}')
+					local _doh_host_port=$(lua_api "get_domain_from_url(\"${_doh_url}\")")
+					#local _doh_host_port=$(echo $_doh_url | sed "s/https:\/\///g" | awk -F '/' '{print $1}')
+					local _doh_host=$(echo $_doh_host_port | awk -F ':' '{print $1}')
+					local is_ip=$(lua_api "is_ip(\"${_doh_host}\")")
+					local _doh_port=$(echo $_doh_host_port | awk -F ':' '{print $2}')
+					[ -z "${_doh_port}" ] && _doh_port=443
+					local _doh_bootstrap=$(echo $remote_dns_doh | cut -d ',' -sf 2-)
+					[ "${is_ip}" = "true" ] && _doh_bootstrap=${_doh_host}
+					[ -n "$_doh_bootstrap" ] && V2RAY_DNS_REMOTE_ARGS="${V2RAY_DNS_REMOTE_ARGS} -remote_dns_server ${_doh_bootstrap}"
+					V2RAY_DNS_REMOTE_ARGS="${V2RAY_DNS_REMOTE_ARGS} -remote_dns_port ${_doh_port} -remote_dns_doh_url ${_doh_url} -remote_dns_doh_host ${_doh_host}"
+				;;
+				fakedns)
+					V2RAY_DNS_REMOTE_ARGS="${V2RAY_DNS_REMOTE_ARGS} -remote_dns_fake 1"
+				;;
+			esac
+			
+			[ -n "$remote_dns_query_strategy" ] && V2RAY_DNS_REMOTE_ARGS="${V2RAY_DNS_REMOTE_ARGS} -dns_query_strategy ${remote_dns_query_strategy}"
+			[ -n "$remote_dns_client_ip" ] && V2RAY_DNS_REMOTE_ARGS="${V2RAY_DNS_REMOTE_ARGS} -remote_dns_client_ip ${remote_dns_client_ip}"
+			
+			V2RAY_DNS_REMOTE_ARGS="${V2RAY_DNS_REMOTE_ARGS} -remote_dns_outbound_socks_address 127.0.0.1 -remote_dns_outbound_socks_port ${socks_port}"
+			lua $API_GEN_V2RAY_DNS ${V2RAY_DNS_REMOTE_ARGS} > $V2RAY_DNS_REMOTE_CONFIG
+			ln_run "$(first_type $(config_t_get global_app ${type}_file) ${type})" ${type} $V2RAY_DNS_REMOTE_LOG run -c "$V2RAY_DNS_REMOTE_CONFIG"
+		}
 		
 		[ -n "$dns_listen_port" ] && _extra_param="${_extra_param} -dns_listen_port ${dns_listen_port}"
 		[ -n "$dns_cache" ] && _extra_param="${_extra_param} -dns_cache ${dns_cache}"
-		_extra_param="${_extra_param} -direct_dns_port ${dns_direct_listen_port} -direct_dns_udp_server 127.0.0.1"
-		_extra_param="${_extra_param} -remote_dns_port ${dns_remote_listen_port} -remote_dns_udp_server 127.0.0.1"
 		_extra_param="${_extra_param} -dns_query_strategy UseIP"
+		_extra_param="${_extra_param} -direct_dns_port ${dns_direct_listen_port} -direct_dns_udp_server 127.0.0.1"
+		if [ "$remote_dns_protocol" == "fakedns" ]; then
+			_extra_param="${_extra_param} -remote_dns_fake 1"
+		else
+			_extra_param="${_extra_param} -remote_dns_port ${dns_remote_listen_port} -remote_dns_udp_server 127.0.0.1"
+		fi
 	}
 	
 	lua $API_GEN_V2RAY -node $node -redir_port $redir_port -tcp_proxy_way $tcp_proxy_way -loglevel $loglevel ${_extra_param} > $config_file
