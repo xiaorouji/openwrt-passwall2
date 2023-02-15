@@ -25,11 +25,11 @@ IFACES=
 NO_PROXY=0
 PROXY_IPV6=0
 PROXY_IPV6_UDP=0
-LUA_API_PATH=/usr/lib/lua/luci/model/cbi/$CONFIG/api
-UTIL_SS=$LUA_API_PATH/util_shadowsocks.lua
-UTIL_XRAY=$LUA_API_PATH/util_xray.lua
-UTIL_NAIVE=$LUA_API_PATH/util_naiveproxy.lua
-UTIL_HYSTERIA=$LUA_API_PATH/util_hysteria.lua
+LUA_UTIL_PATH=/usr/lib/lua/luci/passwall2
+UTIL_SS=$LUA_UTIL_PATH/util_shadowsocks.lua
+UTIL_XRAY=$LUA_UTIL_PATH/util_xray.lua
+UTIL_NAIVE=$LUA_UTIL_PATH/util_naiveproxy.lua
+UTIL_HYSTERIA=$LUA_UTIL_PATH/util_hysteria.lua
 V2RAY_ARGS=""
 V2RAY_CONFIG=""
 
@@ -260,7 +260,7 @@ lua_api() {
 		echo "nil"
 		return
 	}
-	echo $(lua -e "local api = require 'luci.model.cbi.passwall2.api.api' print(api.${func})")
+	echo $(lua -e "local api = require 'luci.passwall2.api' print(api.${func})")
 }
 
 run_v2ray() {
