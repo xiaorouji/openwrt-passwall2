@@ -22,7 +22,8 @@ TUN_DNS_PORT=15353
 TUN_DNS="127.0.0.1#${TUN_DNS_PORT}"
 DEFAULT_DNS=
 IFACES=
-NO_PROXY=0
+ENABLED_DEFAULT_ACL=0
+ENABLED_ACLS=0
 PROXY_IPV6=0
 PROXY_IPV6_UDP=0
 LUA_UTIL_PATH=/usr/lib/lua/luci/passwall2
@@ -757,7 +758,7 @@ start_crontab() {
 		rm -rf $TMP_SUB_PATH
 	}
 
-	if [ "$NO_PROXY" == 0 ]; then
+	if [ "$ENABLED_DEFAULT_ACL" == 1 ] || [ "$ENABLED_ACLS" == 1 ]; then
 		start_daemon=$(config_t_get global_delay start_daemon 0)
 		[ "$start_daemon" = "1" ] && $APP_PATH/monitor.sh > /dev/null 2>&1 &
 
@@ -906,24 +907,25 @@ start() {
 
 	ulimit -n 65535
 	start_socks
-
-	[ "$NO_PROXY" == 1 ] || {
-		if [ -z "$(command -v iptables-legacy || command -v iptables)" ] || [ -z "$(command -v ipset)" ]; then
-			echolog "系统未安装iptables或ipset，无法透明代理！"
-		else
-			run_global
-			source $APP_PATH/iptables.sh start
-			source $APP_PATH/helper_dnsmasq.sh logic_restart
-			bridge_nf_ipt=$(sysctl -e -n net.bridge.bridge-nf-call-iptables)
-			echo -n $bridge_nf_ipt > $TMP_PATH/bridge_nf_ipt
-			sysctl -w net.bridge.bridge-nf-call-iptables=0 >/dev/null 2>&1
-			[ "$PROXY_IPV6" == "1" ] && {
-				bridge_nf_ip6t=$(sysctl -e -n net.bridge.bridge-nf-call-ip6tables)
-				echo -n $bridge_nf_ip6t > $TMP_PATH/bridge_nf_ip6t
-				sysctl -w net.bridge.bridge-nf-call-ip6tables=0 >/dev/null 2>&1
-			}
-		fi
-	}
+	
+	local USE_TABLES="iptables"
+	if [ -z "$(command -v iptables-legacy || command -v iptables)" ] || [ -z "$(command -v ipset)" ]; then
+		echolog "系统未安装iptables或ipset，无法透明代理！"
+	fi
+	
+	[ "$ENABLED_DEFAULT_ACL" == 1 ] && run_global
+	source $APP_PATH/${USE_TABLES}.sh start
+	[ "$ENABLED_DEFAULT_ACL" == 1 ] && source $APP_PATH/helper_dnsmasq.sh logic_restart
+	if [ "$ENABLED_DEFAULT_ACL" == 1 ] || [ "$ENABLED_ACLS" == 1 ]; then
+		bridge_nf_ipt=$(sysctl -e -n net.bridge.bridge-nf-call-iptables)
+		echo -n $bridge_nf_ipt > $TMP_PATH/bridge_nf_ipt
+		sysctl -w net.bridge.bridge-nf-call-iptables=0 >/dev/null 2>&1
+		[ "$PROXY_IPV6" == "1" ] && {
+			bridge_nf_ip6t=$(sysctl -e -n net.bridge.bridge-nf-call-ip6tables)
+			echo -n $bridge_nf_ip6t > $TMP_PATH/bridge_nf_ip6t
+			sysctl -w net.bridge.bridge-nf-call-ip6tables=0 >/dev/null 2>&1
+		}
+	fi
 	start_crontab
 	echolog "运行完成！\n"
 }
@@ -948,15 +950,17 @@ stop() {
 }
 
 ENABLED=$(config_t_get global enabled 0)
+NODE=$(config_t_get global node nil)
+[ "$ENABLED" == 1 ] && {
+	[ "$NODE" != "nil" ] && [ "$(config_get_type $NODE nil)" != "nil" ] && ENABLED_DEFAULT_ACL=1
+}
+ENABLED_ACLS=$(config_t_get global acl_enable 0)
+[ "$ENABLED_ACLS" == 1 ] && {
+	[ "$(uci show ${CONFIG} | grep "@acl_rule" | grep "enabled='1'" | wc -l)" == 0 ] && ENABLED_ACLS=0
+}
 SOCKS_ENABLED=$(config_t_get global socks_enabled 0)
 REDIR_PORT=$(echo $(get_new_port 1041 tcp,udp))
-[ "$ENABLED" != 1 ] && NO_PROXY=1
-NODE=$(config_t_get global node nil)
-[ "$NODE" == "nil" ] && NO_PROXY=1
-[ "$(config_get_type $NODE nil)" == "nil" ] && NO_PROXY=1
 tcp_proxy_way=$(config_t_get global_forwarding tcp_proxy_way redirect)
-RESOLVFILE=/tmp/resolv.conf.d/resolv.conf.auto
-[ -f "${RESOLVFILE}" ] && [ -s "${RESOLVFILE}" ] || RESOLVFILE=/tmp/resolv.conf.auto
 TCP_NO_REDIR_PORTS=$(config_t_get global_forwarding tcp_no_redir_ports 'disable')
 UDP_NO_REDIR_PORTS=$(config_t_get global_forwarding udp_no_redir_ports 'disable')
 TCP_REDIR_PORTS=$(config_t_get global_forwarding tcp_redir_ports '22,25,53,143,465,587,853,993,995,80,443')
@@ -972,8 +976,14 @@ REMOTE_DNS=$(config_t_get global remote_dns 1.1.1.1:53 | sed 's/#/:/g' | sed -E 
 REMOTE_DNS_QUERY_STRATEGY=$(config_t_get global remote_dns_query_strategy UseIPv4)
 DNS_CACHE=$(config_t_get global dns_cache 1)
 
+RESOLVFILE=/tmp/resolv.conf.d/resolv.conf.auto
+[ -f "${RESOLVFILE}" ] && [ -s "${RESOLVFILE}" ] || RESOLVFILE=/tmp/resolv.conf.auto
+
+ISP_DNS=$(cat $RESOLVFILE 2>/dev/null | grep -E -o "[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+" | sort -u | grep -v 0.0.0.0 | grep -v 127.0.0.1)
+ISP_DNS6=$(cat $RESOLVFILE 2>/dev/null | grep -E "([A-Fa-f0-9]{1,4}::?){1,7}[A-Fa-f0-9]{1,4}" | awk -F % '{print $1}' | awk -F " " '{print $2}'| sort -u | grep -v -Fx ::1 | grep -v -Fx ::)
+
 DEFAULT_DNS=$(uci show dhcp | grep "@dnsmasq" | grep "\.server=" | awk -F '=' '{print $2}' | sed "s/'//g" | tr ' ' '\n' | grep -v "\/" | head -2 | sed ':label;N;s/\n/,/;b label')
-[ -z "${DEFAULT_DNS}" ] && DEFAULT_DNS=$(echo -n $(sed -n 's/^nameserver[ \t]*\([^ ]*\)$/\1/p' "${RESOLVFILE}" | grep -v -E "0.0.0.0|127.0.0.1|::" | head -2) | tr ' ' ',')
+[ -z "${DEFAULT_DNS}" ] && DEFAULT_DNS=$(echo -n $ISP_DNS | tr ' ' '\n' | head -2 | tr '\n' ',')
 AUTO_DNS=${DEFAULT_DNS:-119.29.29.29}
 
 PROXY_IPV6=$(config_t_get global_forwarding ipv6_tproxy 0)
