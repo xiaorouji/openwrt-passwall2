@@ -956,27 +956,20 @@ function gen_config(var)
                     network = "tcp,udp"
                 }
             })
-            local direct_type_dns = {
-                address = direct_dns_udp_server,
-                port = tonumber(direct_dns_port) or 53,
-                network = "udp",
-            }
-            local remote_type_dns = {
-                address = remote_dns_udp_server,
-                port = tonumber(remote_dns_port) or 53,
-                network = _remote_dns_proto or "tcp",
-            }
-            local type_dns = direct_type_dns
+        
             table.insert(outbounds, {
                 tag = "dns-out",
                 protocol = "dns",
-                settings = type_dns
+                settings = {
+                    address = "1.1.1.1",
+                    port = tonumber(remote_dns_port) or 53,
+                    network = _remote_dns_proto or "tcp",
+                }
             })
+        
             table.insert(routing.rules, 1, {
                 type = "field",
-                inboundTag = {
-                    "dns-in"
-                },
+                inboundTag = {"dns-in"},
                 outboundTag = "dns-out"
             })
         end
