@@ -957,20 +957,38 @@ function gen_config(var)
                 }
             })
             local direct_type_dns = {
-                address = direct_dns_udp_server,
-                port = tonumber(direct_dns_port) or 53,
-                network = "udp",
+                settings = {
+                    address = direct_dns_udp_server,
+                    port = tonumber(direct_dns_port) or 53,
+                    network = "udp"
+                },
+                proxySettings = {
+                    tag = "direct"
+                }
             }
             local remote_type_dns = {
-                address = remote_dns_udp_server,
-                port = tonumber(remote_dns_port) or 53,
-                network = _remote_dns_proto or "tcp",
+                settings = {
+                    address = remote_dns_udp_server,
+                    port = tonumber(remote_dns_port) or 53,
+                    network = _remote_dns_proto or "tcp"
+                },
+                proxySettings = {
+                    tag = "direct"
+                }
             }
-            local type_dns = direct_type_dns
+            local custom_type_dns = {
+                settings = {
+                    address = "1.1.1.1",
+                    port = 53,
+                    network = "tcp",
+                }
+            }
+            local type_dns = remote_type_dns
             table.insert(outbounds, {
                 tag = "dns-out",
                 protocol = "dns",
-                settings = type_dns
+                proxySettings = type_dns.proxySettings,
+                settings = type_dns.settings
             })
             table.insert(routing.rules, 1, {
                 type = "field",
@@ -1386,6 +1404,9 @@ function gen_dns_config(var)
         table.insert(outbounds, {
             tag = "dns-out",
             protocol = "dns",
+            proxySettings = {
+                tag = dns_out_tag
+            },
             settings = {
                 address = other_type_dns_server or "1.1.1.1",
                 port = other_type_dns_port or 53,

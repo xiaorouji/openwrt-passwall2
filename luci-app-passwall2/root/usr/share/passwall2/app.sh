@@ -308,6 +308,7 @@ run_v2ray() {
 	[ -n "$dns_listen_port" ] && {
 		V2RAY_DNS_DIRECT_CONFIG="${TMP_PATH}/${flag}_dns_direct.json"
 		V2RAY_DNS_DIRECT_LOG="${TMP_PATH}/${flag}_dns_direct.log"
+		V2RAY_DNS_DIRECT_LOG="/dev/null"
 		V2RAY_DNS_DIRECT_ARGS="-dns_out_tag direct"
 		dns_direct_listen_port=$(get_new_port $(expr $dns_listen_port + 1) udp)
 		V2RAY_DNS_DIRECT_ARGS="${V2RAY_DNS_DIRECT_ARGS} -dns_listen_port ${dns_direct_listen_port}"
@@ -351,6 +352,7 @@ run_v2ray() {
 		[ "$remote_dns_protocol" != "fakedns" ] && {
 			V2RAY_DNS_REMOTE_CONFIG="${TMP_PATH}/${flag}_dns_remote.json"
 			V2RAY_DNS_REMOTE_LOG="${TMP_PATH}/${flag}_dns_remote.log"
+			V2RAY_DNS_REMOTE_LOG="/dev/null"
 			V2RAY_DNS_REMOTE_ARGS="-dns_out_tag remote"
 			dns_remote_listen_port=$(get_new_port $(expr $dns_listen_port + 2) udp)
 			V2RAY_DNS_REMOTE_ARGS="${V2RAY_DNS_REMOTE_ARGS} -dns_listen_port ${dns_remote_listen_port}"
