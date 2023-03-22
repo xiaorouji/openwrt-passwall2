@@ -964,6 +964,43 @@ function to_move(app_name,file)
 	return {code = 0}
 end
 
+function get_version()
+	return sys.exec("echo -n $(opkg info luci-app-passwall2 |grep 'Version'|awk '{print $2}')")
+end
+
+function to_check_self()
+	local url = "https://raw.githubusercontent.com/xiaorouji/openwrt-passwall2/main/luci-app-passwall2/Makefile"
+	local tmp_file = "/tmp/passwall2_makefile"
+	local return_code, result = curl_logic(url, tmp_file, curl_args)
+	result = return_code == 0
+	if not result then
+		exec("/bin/rm", {"-f", tmp_file})
+		return {
+			code = 1,
+			error = i18n.translatef("Failed")
+		}
+	end
+	local local_version  = get_version()
+	local remote_version = sys.exec("echo -n $(grep 'PKG_VERSION' /tmp/passwall2_makefile|awk -F '=' '{print $2}')")
+				.. "-" ..  sys.exec("echo -n $(grep 'PKG_RELEASE' /tmp/passwall2_makefile|awk -F '=' '{print $2}')")
+
+	local has_update = compare_versions(local_version, "<", remote_version)
+	if not has_update then
+		return {
+			code = 0,
+			local_version = local_version,
+			remote_version = remote_version
+		}
+	end
+	return {
+		code = 1,
+		has_update = true,
+		local_version = local_version,
+		remote_version = remote_version,
+		error = remote_version
+	}
+end
+
 function cacheFileCompareToLogic(file, str)
 	local result = nil
 	if file and str then

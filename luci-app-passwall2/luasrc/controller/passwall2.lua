@@ -76,6 +76,7 @@ function index()
 	entry({"admin", "services", appname, "update_rules"}, call("update_rules")).leaf = true
 
 	--[[Components update]]
+	entry({"admin", "services", appname, "check_passwall2"}, call("app_check")).leaf = true
 	local coms = require "luci.passwall2.com"
 	local com
 	for com, _ in pairs(coms) do
@@ -401,6 +402,11 @@ end
 
 function server_clear_log()
 	luci.sys.call("echo '' > /tmp/log/passwall2_server.log")
+end
+
+function app_check()
+	local json = api.to_check_self()
+	http_write_json(json)
 end
 
 function com_check(comname)
