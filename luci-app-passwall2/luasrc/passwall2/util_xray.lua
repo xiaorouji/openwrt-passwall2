@@ -1297,7 +1297,7 @@ function gen_dns_config(var)
         dns = {
             tag = "dns-in1",
             hosts = {},
-            disableCache = (dns_cache and dns_cache == "0") and true or false,
+            disableCache = (dns_cache == "1") and false or true,
             disableFallback = true,
             disableFallbackIfMatch = true,
             servers = {},
