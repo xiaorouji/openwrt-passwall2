@@ -13,6 +13,17 @@ command_timeout = 300
 LEDE_BOARD = nil
 DISTRIB_TARGET = nil
 
+LOG_FILE = "/tmp/log/passwall2.log"
+
+function log(...)
+    local result = os.date("%Y-%m-%d %H:%M:%S: ") .. table.concat({...}, " ")
+    local f, err = io.open(LOG_FILE, "a")
+    if f and err == nil then
+        f:write(result .. "\n")
+        f:close()
+    end
+end
+
 function exec_call(cmd)
     local process = io.popen(cmd .. '; echo -e "\n$?"')
     local lines = {}
