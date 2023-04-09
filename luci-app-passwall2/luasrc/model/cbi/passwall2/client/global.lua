@@ -46,21 +46,39 @@ s:tab("Main", translate("Main"))
 o = s:taboption("Main", Flag, "enabled", translate("Main switch"))
 o.rmempty = false
 
----- Node
-node = s:taboption("Main", ListValue, "node", "<a style='color: red'>" .. translate("Node") .. "</a>")
-node.description = ""
+local auto_switch_tip
+local auto_switch_flag
 local current_node = luci.sys.exec(string.format("[ -f '/tmp/etc/%s/id/TCP' ] && echo -n $(cat /tmp/etc/%s/id/TCP)", appname, appname))
 if current_node and current_node ~= "" and current_node ~= "nil" then
 	local n = uci:get_all(appname, current_node)
 	if n then
 		if tonumber(m:get("@auto_switch[0]", "enable") or 0) == 1 then
-			local remarks = api.get_full_node_remarks(n)
-			local url = api.url("node_config", current_node)
-			node.description = node.description .. translatef("Current node: %s", string.format('<a href="%s">%s</a>', url, remarks)) .. "<br />"
+			auto_switch_flag = ""
+			if n.protocol == "_shunt" then
+				local shunt_logic = tonumber(m:get("@auto_switch[0]", "shunt_logic"))
+				if shunt_logic == 1 then
+					auto_switch_flag = "default"
+				elseif shunt_logic == 2 then
+					auto_switch_flag = "main"
+				end
+				current_node = luci.sys.exec(string.format("[ -f '/tmp/etc/%s/id/TCP_%s' ] && echo -n $(cat /tmp/etc/%s/id/TCP_%s)", appname, auto_switch_flag, appname, auto_switch_flag))
+				if current_node and current_node ~= "" and current_node ~= "nil" then
+					n = uci:get_all(appname, current_node)
+				end
+			end
+			local remarks = api.get_node_remarks(n)
+			local url = api.url("node_config", n[".name"])
+			auto_switch_tip = translatef("Current node: %s", string.format('<a href="%s">%s</a>', url, remarks)) .. "<br />"
 		end
 	end
 end
+
+---- Node
+node = s:taboption("Main", ListValue, "node", "<a style='color: red'>" .. translate("Node") .. "</a>")
 node:value("nil", translate("Close"))
+if auto_switch_flag == "" and auto_switch_tip then
+	node.description = auto_switch_tip
+end
 
 -- 分流
 if (has_v2ray or has_xray) and #nodes_table > 0 then
@@ -110,6 +128,9 @@ if (has_v2ray or has_xray) and #nodes_table > 0 then
 		o.write = function(self, section, value)
 			m:set(v.id, id, value)
 		end
+		if auto_switch_flag == "default" and auto_switch_tip then
+			o.description = auto_switch_tip
+		end
 		
 		local id = "main_node"
 		o = s:taboption("Main", ListValue, v.id .. "." .. id, string.format('* <a style="color:red">%s</a>', translate("Default Preproxy")), translate("When using, localhost will connect this node first and then use this node to connect the default node."))
@@ -123,6 +144,9 @@ if (has_v2ray or has_xray) and #nodes_table > 0 then
 		end
 		o.write = function(self, section, value)
 			m:set(v.id, id, value)
+		end
+		if auto_switch_flag == "main" and auto_switch_tip then
+			o.description = auto_switch_tip
 		end
 	end
 end
