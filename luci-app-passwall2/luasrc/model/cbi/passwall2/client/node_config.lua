@@ -648,7 +648,7 @@ wireguard_mtu.default = "1420"
 wireguard_mtu:depends({ type = "Xray", protocol = "wireguard" })
 
 if api.compare_versions(api.get_xray_version(), ">=", "1.8.0") then
-	wireguard_reserved = s:option(Value, "wireguard_reserved", translate("Reserved"))
+	wireguard_reserved = s:option(Value, "wireguard_reserved", translate("Reserved"), translate("Decimal numbers separated by \",\" or Base64-encoded strings."))
 	wireguard_reserved:depends({ type = "Xray", protocol = "wireguard" })
 end
 
