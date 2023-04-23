@@ -901,8 +901,8 @@ start() {
 	start_socks
 
 	local USE_TABLES="iptables"
-	if [ -z "$(command -v iptables-legacy || command -v iptables)" ] || [ -z "$(command -v ipset)" ]; then
-		echolog "系统未安装iptables或ipset，无法透明代理！"
+	if [ -z "$(command -v iptables-legacy || command -v iptables)" ] || [ -z "$(command -v ipset)" ] || [ -z "$(dnsmasq --version | grep 'Compile time options:.* ipset')" ]; then
+		echolog "系统未安装iptables或ipset或Dnsmasq没有开启ipset支持，无法透明代理！"
 	fi
 
 	[ "$ENABLED_DEFAULT_ACL" == 1 ] && run_global
