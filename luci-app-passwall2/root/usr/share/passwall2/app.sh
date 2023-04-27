@@ -350,7 +350,7 @@ run_v2ray() {
 		ln_run "$(first_type $(config_t_get global_app ${type}_file) ${type})" ${type} $V2RAY_DNS_DIRECT_LOG run -c "$V2RAY_DNS_DIRECT_CONFIG"
 		
 		direct_dnsmasq_listen_port=$(get_new_port $(expr $dns_direct_listen_port + 1) udp)
-		run_direct_ipset_dnsmasq listen_port=${direct_dnsmasq_listen_port} server_dns=127.0.0.1#${dns_direct_listen_port} ipset=whitelist,whitelist6 config_file=$TMP_PATH/dnsmasq_global_direct.conf
+		run_direct_ipset_dnsmasq listen_port=${direct_dnsmasq_listen_port} server_dns=127.0.0.1#${dns_direct_listen_port} ipset=whitelist,whitelist6 config_file=$TMP_PATH/dnsmasq_${flag}_direct.conf
 
 		V2RAY_DNS_REMOTE_CONFIG="${TMP_PATH}/${flag}_dns_remote.json"
 		V2RAY_DNS_REMOTE_LOG="${TMP_PATH}/${flag}_dns_remote.log"
@@ -398,7 +398,7 @@ run_v2ray() {
 		_extra_param="${_extra_param} -dns_query_strategy UseIP"
 		_extra_param="${_extra_param} -direct_dns_port ${direct_dnsmasq_listen_port} -direct_dns_udp_server 127.0.0.1"
 		_extra_param="${_extra_param} -remote_dns_port ${dns_remote_listen_port} -remote_dns_udp_server 127.0.0.1"
-		[ -n "$remote_fakedns" ] && _extra_param="${_extra_param} -remote_dns_fake 1"
+		[ "$remote_fakedns" = "1" ] && _extra_param="${_extra_param} -remote_dns_fake 1"
 	}
 
 	lua $UTIL_XRAY gen_config -node $node -redir_port $redir_port -tcp_proxy_way $tcp_proxy_way -loglevel $loglevel ${_extra_param} > $config_file
@@ -802,7 +802,7 @@ acl_app() {
 		echolog "访问控制："
 		for item in $items; do
 			index=$(expr $index + 1)
-			local enabled sid remarks sources node direct_dns_protocol direct_dns direct_dns_doh direct_dns_client_ip direct_dns_query_strategy remote_dns_protocol remote_dns remote_dns_doh remote_dns_client_ip remote_dns_query_strategy
+			local enabled sid remarks sources node direct_dns_protocol direct_dns direct_dns_doh direct_dns_client_ip direct_dns_query_strategy remote_dns_protocol remote_dns remote_dns_doh remote_dns_client_ip remote_fakedns remote_dns_query_strategy
 			local _ip _mac _iprange _ipset _ip_or_mac rule_list config_file
 			sid=$(uci -q show "${CONFIG}.${item}" | grep "=acl_rule" | awk -F '=' '{print $1}' | awk -F '.' '{print $2}')
 			eval $(uci -q show "${CONFIG}.${item}" | cut -d'.' -sf 3-)
@@ -838,6 +838,7 @@ acl_app() {
 			remote_dns_protocol=${remote_dns_protocol:-tcp}
 			remote_dns=${remote_dns:-1.1.1.1}
 			[ "$remote_dns_protocol" = "doh" ] && remote_dns=${remote_dns_doh:-https://1.1.1.1/dns-query}
+			remote_fakedns=${remote_fakedns:-0}
 			remote_dns_query_strategy=${remote_dns_query_strategy:-UseIPv4}
 
 			[ "$node" != "nil" ] && {
@@ -857,7 +858,7 @@ acl_app() {
 								config_file=$TMP_ACL_PATH/${node}_TCP_UDP_DNS_${redir_port}.json
 								dns_port=$(get_new_port $(expr $dns_port + 1))
 								local acl_socks_port=$(get_new_port $(expr $redir_port + $index))
-								run_v2ray flag=acl_$sid node=$node redir_port=$redir_port socks_address=127.0.0.1 socks_port=$acl_socks_port dns_listen_port=${dns_port} direct_dns_protocol=${direct_dns_protocol} direct_dns_udp_server=${direct_dns} direct_dns_tcp_server=${direct_dns} direct_dns_doh="${direct_dns}" direct_dns_client_ip=${direct_dns_client_ip} direct_dns_query_strategy=${direct_dns_query_strategy} remote_dns_protocol=${remote_dns_protocol} remote_dns_tcp_server=${remote_dns} remote_dns_udp_server=${remote_dns} remote_dns_doh="${remote_dns}" remote_dns_client_ip=${remote_dns_client_ip} remote_dns_query_strategy=${remote_dns_query_strategy} config_file=${config_file}
+								run_v2ray flag=acl_$sid node=$node redir_port=$redir_port socks_address=127.0.0.1 socks_port=$acl_socks_port dns_listen_port=${dns_port} direct_dns_protocol=${direct_dns_protocol} direct_dns_udp_server=${direct_dns} direct_dns_tcp_server=${direct_dns} direct_dns_doh="${direct_dns}" direct_dns_client_ip=${direct_dns_client_ip} direct_dns_query_strategy=${direct_dns_query_strategy} remote_dns_protocol=${remote_dns_protocol} remote_dns_tcp_server=${remote_dns} remote_dns_udp_server=${remote_dns} remote_dns_doh="${remote_dns}" remote_dns_client_ip=${remote_dns_client_ip} remote_fakedns=${remote_fakedns} remote_dns_query_strategy=${remote_dns_query_strategy} config_file=${config_file}
 							fi
 							dnsmasq_port=$(get_new_port $(expr $dnsmasq_port + 1))
 							redirect_dns_port=$dnsmasq_port
@@ -889,7 +890,7 @@ acl_app() {
 				echo "${redir_port}" > $TMP_ACL_PATH/$sid/var_port
 			}
 			[ -n "$redirect_dns_port" ] && echo "${redirect_dns_port}" > $TMP_ACL_PATH/$sid/var_redirect_dns_port
-			unset enabled sid remarks sources node direct_dns_protocol direct_dns direct_dns_doh direct_dns_client_ip direct_dns_query_strategy remote_dns_protocol remote_dns remote_dns_doh remote_dns_client_ip remote_dns_query_strategy
+			unset enabled sid remarks sources node direct_dns_protocol direct_dns direct_dns_doh direct_dns_client_ip direct_dns_query_strategy remote_dns_protocol remote_dns remote_dns_doh remote_dns_client_ip remote_fakedns remote_dns_query_strategy
 			unset _ip _mac _iprange _ipset _ip_or_mac rule_list config_file
 			unset redirect_dns_port
 		done

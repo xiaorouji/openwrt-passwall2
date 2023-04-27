@@ -939,7 +939,7 @@ function gen_config(var)
 				}
 				if not remote_dns_fake then
 					_remote_dns.domains = #dns_remote_domains > 0 and dns_remote_domains or nil
-					_remote_dns.expectIPs = #dns_remote_expectIPs > 0 and dns_remote_expectIPs or nil
+					--_remote_dns.expectIPs = #dns_remote_expectIPs > 0 and dns_remote_expectIPs or nil
 				end
 				_remote_dns_proto = "udp"
 				table.insert(dns.servers, _remote_dns)
