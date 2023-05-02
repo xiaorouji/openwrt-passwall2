@@ -776,6 +776,48 @@ stop_crontab() {
 	#echolog "清除定时执行命令。"
 }
 
+add_ip2route() {
+	local ip=$(get_host_ip "ipv4" $1)
+	[ -z "$ip" ] && {
+		echolog "  - 无法解析[${1}]，路由表添加失败！"
+		return 1
+	}
+	local remarks="${1}"
+	[ "$remarks" != "$ip" ] && remarks="${1}(${ip})"
+
+	. /lib/functions/network.sh
+	local gateway device
+	network_get_gateway gateway "$2"
+	network_get_device device "$2"
+	[ -z "${device}" ] && device="$2"
+
+	if [ -n "${gateway}" ]; then
+		route add -host ${ip} gw ${gateway} dev ${device} >/dev/null 2>&1
+		echo "$ip" >> $TMP_ROUTE_PATH/${device}
+		echolog "  - [${remarks}]添加到接口[${device}]路由表成功！"
+	else
+		echolog "  - [${remarks}]添加到接口[${device}]路由表失功！原因是找不到[${device}]网关。"
+	fi
+}
+
+delete_ip2route() {
+	[ -d "${TMP_ROUTE_PATH}" ] && {
+		for interface in $(ls ${TMP_ROUTE_PATH}); do
+			for ip in $(cat ${TMP_ROUTE_PATH}/${interface}); do
+				route del -host ${ip} dev ${interface} >/dev/null 2>&1
+			done
+		done
+	}
+}
+
+start_haproxy() {
+	[ "$(config_t_get global_haproxy balancing_enable 0)" != "1" ] && return
+	haproxy_path=${TMP_PATH}/haproxy
+	haproxy_conf="config.cfg"
+	lua $APP_PATH/haproxy.lua -path ${haproxy_path} -conf ${haproxy_conf} -dns ${LOCAL_DNS}
+	ln_run "$(first_type haproxy)" haproxy "/dev/null" -f "${haproxy_path}/${haproxy_conf}"
+}
+
 run_ipset_dnsmasq() {
 	local listen_port server_dns ipset config_file
 	eval_set_val $@
@@ -907,6 +949,7 @@ start() {
 	}
 
 	ulimit -n 65535
+	start_haproxy
 	start_socks
 
 	local USE_TABLES="iptables"
@@ -934,6 +977,7 @@ start() {
 stop() {
 	clean_log
 	source $APP_PATH/iptables.sh stop
+	delete_ip2route
 	kill_all v2ray-plugin obfs-local
 	pgrep -f "sleep.*(6s|9s|58s)" | xargs kill -9 >/dev/null 2>&1
 	pgrep -af "${CONFIG}/" | awk '! /app\.sh|subscribe\.lua|rule_update\.lua/{print $1}' | xargs kill -9 >/dev/null 2>&1
@@ -997,6 +1041,9 @@ mkdir -p /tmp/etc $TMP_PATH $TMP_BIN_PATH $TMP_SCRIPT_FUNC_PATH $TMP_ID_PATH $TM
 arg1=$1
 shift
 case $arg1 in
+add_ip2route)
+	add_ip2route $@
+	;;
 get_new_port)
 	get_new_port $@
 	;;

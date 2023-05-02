@@ -30,6 +30,9 @@ function index()
 	entry({"admin", "services", appname, "node_subscribe"}, cbi(appname .. "/client/node_subscribe"), _("Node Subscribe"), 3).dependent = true
 	entry({"admin", "services", appname, "auto_switch"}, cbi(appname .. "/client/auto_switch"), _("Auto Switch"), 4).leaf = true
 	entry({"admin", "services", appname, "other"}, cbi(appname .. "/client/other", {autoapply = true}), _("Other Settings"), 92).leaf = true
+	if nixio.fs.access("/usr/sbin/haproxy") then
+		entry({"admin", "services", appname, "haproxy"}, cbi(appname .. "/client/haproxy"), _("Load Balancing"), 93).leaf = true
+	end
 	entry({"admin", "services", appname, "app_update"}, cbi(appname .. "/client/app_update"), _("App Update"), 95).leaf = true
 	entry({"admin", "services", appname, "rule"}, cbi(appname .. "/client/rule"), _("Rule Manage"), 96).leaf = true
 	entry({"admin", "services", appname, "node_subscribe_config"}, cbi(appname .. "/client/node_subscribe_config")).leaf = true
@@ -56,6 +59,7 @@ function index()
 	entry({"admin", "services", appname, "get_log"}, call("get_log")).leaf = true
 	entry({"admin", "services", appname, "clear_log"}, call("clear_log")).leaf = true
 	entry({"admin", "services", appname, "status"}, call("status")).leaf = true
+	entry({"admin", "services", appname, "haproxy_status"}, call("haproxy_status")).leaf = true
 	entry({"admin", "services", appname, "socks_status"}, call("socks_status")).leaf = true
 	entry({"admin", "services", appname, "connect_status"}, call("connect_status")).leaf = true
 	entry({"admin", "services", appname, "ping_node"}, call("ping_node")).leaf = true
@@ -179,6 +183,12 @@ function status()
 	luci.http.write_json(e)
 end
 
+function haproxy_status()
+	local e = luci.sys.call(string.format("top -bn1 | grep -v grep | grep '%s/bin/' | grep haproxy >/dev/null", appname)) == 0
+	luci.http.prepare_content("application/json")
+	luci.http.write_json(e)
+end
+
 function socks_status()
 	local e = {}
 	local index = luci.http.formvalue("index")
@@ -291,6 +301,9 @@ function clear_all_nodes()
 	ucic:foreach(appname, "socks", function(t)
 		ucic:delete(appname, t[".name"])
 	end)
+	ucic:foreach(appname, "haproxy_config", function(t)
+		ucic:delete(appname, t[".name"])
+	end)
 	ucic:foreach(appname, "acl_rule", function(t)
 		ucic:set(appname, t[".name"], "node", "default")
 	end)
@@ -317,6 +330,11 @@ function delete_select_nodes()
 		end
 		ucic:foreach(appname, "socks", function(t)
 			if t["node"] == w then
+				ucic:delete(appname, t[".name"])
+			end
+		end)
+		ucic:foreach(appname, "haproxy_config", function(t)
+			if t["lbss"] == w then
 				ucic:delete(appname, t[".name"])
 			end
 		end)

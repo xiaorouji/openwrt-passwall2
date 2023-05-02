@@ -15,6 +15,9 @@ config global
 dns.google.com 8.8.8.8'
 	option close_log '0'
 	option loglevel 'error'
+	
+config global_haproxy
+	option balancing_enable '0'
 
 config global_delay
 	option auto_on '0'
