@@ -385,6 +385,14 @@ load_acl() {
 	}
 }
 
+filter_haproxy() {
+	for item in $(uci show $CONFIG | grep ".lbss=" | cut -d "'" -f 2); do
+		local ip=$(get_host_ip ipv4 $(echo $item | awk -F ":" '{print $1}') 1)
+		[ -n "$ip" ] && ipset -q add $IPSET_VPSIPLIST $ip
+	done
+	echolog "加入负载均衡的节点到ipset[$IPSET_VPSIPLIST]直连完成"
+}
+
 filter_vpsip() {
 	uci show $CONFIG | grep ".address=" | cut -d "'" -f 2 | grep -E "([0-9]{1,3}[\.]){3}[0-9]{1,3}" | sed -e "/^$/d" | sed -e "s/^/add $IPSET_VPSIPLIST &/g" | awk '{print $0} END{print "COMMIT"}' | ipset -! -R
 	uci show $CONFIG | grep ".address=" | cut -d "'" -f 2 | grep -E "([A-Fa-f0-9]{1,4}::?){1,7}[A-Fa-f0-9]{1,4}" | sed -e "/^$/d" | sed -e "s/^/add $IPSET_VPSIPLIST6 &/g" | awk '{print $0} END{print "COMMIT"}' | ipset -! -R
@@ -554,6 +562,7 @@ add_firewall_rule() {
 
 	#  过滤所有节点IP
 	filter_vpsip > /dev/null 2>&1 &
+	filter_haproxy > /dev/null 2>&1 &
 
 	accept_icmp=$(config_t_get global_forwarding accept_icmp 0)
 	accept_icmpv6=$(config_t_get global_forwarding accept_icmpv6 0)
