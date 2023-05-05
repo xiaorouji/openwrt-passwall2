@@ -819,12 +819,16 @@ start_haproxy() {
 }
 
 run_ipset_dnsmasq() {
-	local listen_port server_dns ipset config_file
+	local listen_port server_dns ipset cache_size dns_forward_max config_file
 	eval_set_val $@
 	cat <<-EOF > $config_file
 		port=${listen_port}
 		server=${server_dns}
 		ipset=${ipset}
+		no-poll
+		no-resolv
+		cache-size=${cache_size:-0}
+		dns-forward-max=${dns_forward_max:-1000}
 	EOF
 	ln_run "$(first_type dnsmasq)" "dnsmasq" "/dev/null" -C $config_file
 }

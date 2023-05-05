@@ -1074,7 +1074,7 @@ function gen_config(var)
 			local dns_servers = nil
 			for index, value in ipairs(dns.servers) do
 				if not dns_servers and value["_flag"] == default_dns_flag then
-					if value["_flag"] == default_dns_flag and remote_dns_fake then
+					if value["_flag"] == "remote" and remote_dns_fake then
 						value["_flag"] = "default"
 						break
 					end
@@ -1088,6 +1088,15 @@ function gen_config(var)
 			end
 			if dns_servers then
 				table.insert(dns.servers, 1, dns_servers)
+			end
+
+			for i = #dns.servers, 1, -1 do
+				local v = dns.servers[i]
+				if v["_flag"] ~= "default" then
+					if not v.domains or #v.domains == 0 then
+						table.remove(dns.servers, i)
+					end
+				end
 			end
 		end
 	
