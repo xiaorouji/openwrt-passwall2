@@ -298,7 +298,7 @@ s.anonymous = true
 s.addremove = true
 s.template = "cbi/tblsection"
 function s.create(e, t)
-	TypedSection.create(e, api.gen_uuid())
+	TypedSection.create(e, api.gen_short_uuid())
 end
 
 o = s:option(DummyValue, "status", translate("Status"))
