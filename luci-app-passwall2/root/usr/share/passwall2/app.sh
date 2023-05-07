@@ -350,7 +350,7 @@ run_v2ray() {
 		ln_run "$(first_type $(config_t_get global_app ${type}_file) ${type})" ${type} $V2RAY_DNS_DIRECT_LOG run -c "$V2RAY_DNS_DIRECT_CONFIG"
 		
 		direct_dnsmasq_listen_port=$(get_new_port $(expr $dns_direct_listen_port + 1) udp)
-		run_ipset_dnsmasq listen_port=${direct_dnsmasq_listen_port} server_dns=127.0.0.1#${dns_direct_listen_port} ipset=whitelist,whitelist6 config_file=$TMP_PATH/dnsmasq_${flag}_direct.conf
+		run_ipset_dnsmasq listen_port=${direct_dnsmasq_listen_port} server_dns=127.0.0.1#${dns_direct_listen_port} ipset=passwall2_whitelist,passwall2_whitelist6 config_file=$TMP_PATH/dnsmasq_${flag}_direct.conf
 
 		V2RAY_DNS_REMOTE_CONFIG="${TMP_PATH}/${flag}_dns_remote.json"
 		V2RAY_DNS_REMOTE_LOG="${TMP_PATH}/${flag}_dns_remote.log"
