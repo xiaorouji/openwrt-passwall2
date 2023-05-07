@@ -350,7 +350,12 @@ run_v2ray() {
 		ln_run "$(first_type $(config_t_get global_app ${type}_file) ${type})" ${type} $V2RAY_DNS_DIRECT_LOG run -c "$V2RAY_DNS_DIRECT_CONFIG"
 		
 		direct_dnsmasq_listen_port=$(get_new_port $(expr $dns_direct_listen_port + 1) udp)
-		run_ipset_dnsmasq listen_port=${direct_dnsmasq_listen_port} server_dns=127.0.0.1#${dns_direct_listen_port} ipset=passwall2_whitelist,passwall2_whitelist6 config_file=$TMP_PATH/dnsmasq_${flag}_direct.conf
+		if [ "${nftflag}" = "1" ]; then
+			local direct_nftset="4#inet#fw4#passwall2_whitelist,6#inet#fw4#passwall2_whitelist6"
+		else
+			local direct_ipset="passwall2_whitelist,passwall2_whitelist6"
+		fi
+		run_ipset_dnsmasq listen_port=${direct_dnsmasq_listen_port} server_dns=127.0.0.1#${dns_direct_listen_port} ipset="${direct_ipset}" nftset="${direct_nftset}" config_file=$TMP_PATH/dnsmasq_${flag}_direct.conf
 
 		V2RAY_DNS_REMOTE_CONFIG="${TMP_PATH}/${flag}_dns_remote.json"
 		V2RAY_DNS_REMOTE_LOG="${TMP_PATH}/${flag}_dns_remote.log"
@@ -641,7 +646,7 @@ run_global() {
 	echolog ${msg}
 
 	source $APP_PATH/helper_dnsmasq.sh stretch
-	source $APP_PATH/helper_dnsmasq.sh add TMP_DNSMASQ_PATH=$TMP_DNSMASQ_PATH DNSMASQ_CONF_FILE=/tmp/dnsmasq.d/dnsmasq-passwall2.conf DEFAULT_DNS=$AUTO_DNS LOCAL_DNS=$LOCAL_DNS TUN_DNS=$TUN_DNS
+	source $APP_PATH/helper_dnsmasq.sh add TMP_DNSMASQ_PATH=$TMP_DNSMASQ_PATH DNSMASQ_CONF_FILE=/tmp/dnsmasq.d/dnsmasq-passwall2.conf DEFAULT_DNS=$AUTO_DNS LOCAL_DNS=$LOCAL_DNS TUN_DNS=$TUN_DNS NFTFLAG=${nftflag:-0}
 
 	V2RAY_CONFIG=$TMP_PATH/global.json
 	V2RAY_LOG=$TMP_PATH/global.log
@@ -819,17 +824,18 @@ start_haproxy() {
 }
 
 run_ipset_dnsmasq() {
-	local listen_port server_dns ipset cache_size dns_forward_max config_file
+	local listen_port server_dns ipset nftset cache_size dns_forward_max config_file
 	eval_set_val $@
 	cat <<-EOF > $config_file
 		port=${listen_port}
 		server=${server_dns}
-		ipset=${ipset}
 		no-poll
 		no-resolv
 		cache-size=${cache_size:-0}
 		dns-forward-max=${dns_forward_max:-1000}
 	EOF
+	[ -n "${ipset}" ] && echo "ipset=${ipset}" >> $config_file
+	[ -n "${nftset}" ] && echo "nftset=${nftset}" >> $config_file
 	ln_run "$(first_type dnsmasq)" "dnsmasq" "/dev/null" -C $config_file
 }
 
@@ -926,7 +932,7 @@ acl_app() {
 							echo "server=127.0.0.1#${dns_port}" >> $TMP_ACL_PATH/$sid/dnsmasq.conf
 							echo "no-poll" >> $TMP_ACL_PATH/$sid/dnsmasq.conf
 							echo "no-resolv" >> $TMP_ACL_PATH/$sid/dnsmasq.conf
-							#source $APP_PATH/helper_dnsmasq.sh add TMP_DNSMASQ_PATH=$TMP_ACL_PATH/$sid/dnsmasq.d DNSMASQ_CONF_FILE=/dev/null DEFAULT_DNS=$AUTO_DNS TUN_DNS=127.0.0.1#${dns_port} NO_LOGIC_LOG=1
+							#source $APP_PATH/helper_dnsmasq.sh add TMP_DNSMASQ_PATH=$TMP_ACL_PATH/$sid/dnsmasq.d DNSMASQ_CONF_FILE=/dev/null DEFAULT_DNS=$AUTO_DNS TUN_DNS=127.0.0.1#${dns_port} NFTFLAG=${nftflag:-0} NO_LOGIC_LOG=1
 							ln_run "$(first_type dnsmasq)" "dnsmasq_${sid}" "/dev/null" -C $TMP_ACL_PATH/$sid/dnsmasq.conf -x $TMP_ACL_PATH/$sid/dnsmasq.pid
 							eval node_${node}_$(echo -n "${tcp_proxy_mode}${remote_dns}" | md5sum | cut -d " " -f1)=${dnsmasq_port}
 							filter_node $node TCP > /dev/null 2>&1 &
@@ -955,14 +961,22 @@ start() {
 	ulimit -n 65535
 	start_haproxy
 	start_socks
-
-	local USE_TABLES="iptables"
-	if [ -z "$(command -v iptables-legacy || command -v iptables)" ] || [ -z "$(command -v ipset)" ] || [ -z "$(dnsmasq --version | grep 'Compile time options:.* ipset')" ]; then
+	nftflag=0
+	local use_nft=$(config_t_get global_forwarding use_nft 0)
+	local USE_TABLES
+	if [ "$use_nft" == 1 ] && [ -z "$(dnsmasq --version | grep 'Compile time options:.* nftset')" ]; then
+		echolog "Dnsmasq软件包不满足nftables透明代理要求，如需使用请确保dnsmasq版本在2.87以上并开启nftset支持。"
+	elif [ "$use_nft" == 1 ] && [ -n "$(dnsmasq --version | grep 'Compile time options:.* nftset')" ]; then
+		USE_TABLES="nftables"
+		nftflag=1
+	elif [ -z "$(command -v iptables-legacy || command -v iptables)" ] || [ -z "$(command -v ipset)" ] || [ -z "$(dnsmasq --version | grep 'Compile time options:.* ipset')" ]; then
 		echolog "系统未安装iptables或ipset或Dnsmasq没有开启ipset支持，无法透明代理！"
+	else
+		USE_TABLES="iptables"
 	fi
 
 	[ "$ENABLED_DEFAULT_ACL" == 1 ] && run_global
-	source $APP_PATH/${USE_TABLES}.sh start
+	[ -n "$USE_TABLES" ] && source $APP_PATH/${USE_TABLES}.sh start
 	[ "$ENABLED_DEFAULT_ACL" == 1 ] && source $APP_PATH/helper_dnsmasq.sh logic_restart
 	if [ "$ENABLED_DEFAULT_ACL" == 1 ] || [ "$ENABLED_ACLS" == 1 ]; then
 		bridge_nf_ipt=$(sysctl -e -n net.bridge.bridge-nf-call-iptables)
@@ -980,6 +994,8 @@ start() {
 
 stop() {
 	clean_log
+	[ -n "$($(source $APP_PATH/iptables.sh get_ipt_bin) -t mangle -t nat -L -nv 2>/dev/null | grep "PSW2")" ] && source $APP_PATH/iptables.sh stop
+	[ -n "$(nft list chains 2>/dev/null | grep "PSW2")" ] && source $APP_PATH/nftables.sh stop
 	source $APP_PATH/iptables.sh stop
 	delete_ip2route
 	kill_all v2ray-plugin obfs-local

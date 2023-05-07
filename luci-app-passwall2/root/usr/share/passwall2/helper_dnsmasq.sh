@@ -65,36 +65,43 @@ restart() {
 }
 
 gen_items() {
-	local ipsets dnss outf ipsetoutf
+	local dnss settype setnames outf ipsetoutf
 	eval_set_val $@
 	
-	awk -v ipsets="${ipsets}" -v dnss="${dnss}" -v outf="${outf}" -v ipsetoutf="${ipsetoutf}" '
+	awk -v dnss="${dnss}" -v settype="${settype}" -v setnames="${setnames}" -v outf="${outf}" -v ipsetoutf="${ipsetoutf}" '
 		BEGIN {
 			if(outf == "") outf="/dev/stdout";
 			if(ipsetoutf == "") ipsetoutf=outf;
-			split(dnss, dns, ","); setdns=length(dns)>0; setlist=length(ipsets)>0;
+			split(dnss, dns, ","); setdns=length(dns)>0; setlist=length(setnames)>0;
 			if(setdns) for(i in dns) if(length(dns[i])==0) delete dns[i];
 			fail=1;
 		}
 		! /^$/&&!/^#/ {
 			fail=0
 			if(setdns) for(i in dns) printf("server=/.%s/%s\n", $0, dns[i]) >>outf;
-			if(setlist) printf("ipset=/.%s/%s\n", $0, ipsets) >>ipsetoutf;
+			if(setlist) printf("%s=/.%s/%s\n", settype, $0, setnames) >>ipsetoutf;
 		}
 		END {fflush(outf); close(outf); fflush(ipsetoutf); close(ipsetoutf); exit(fail);}
 	'
 }
 
 add() {
-	local TMP_DNSMASQ_PATH DNSMASQ_CONF_FILE DEFAULT_DNS LOCAL_DNS TUN_DNS NO_LOGIC_LOG
+	local TMP_DNSMASQ_PATH DNSMASQ_CONF_FILE DEFAULT_DNS LOCAL_DNS TUN_DNS NFTFLAG NO_LOGIC_LOG
 	eval_set_val $@
 	_LOG_FILE=$LOG_FILE
 	[ -n "$NO_LOGIC_LOG" ] && LOG_FILE="/dev/null"
 	mkdir -p "${TMP_DNSMASQ_PATH}" "${DNSMASQ_PATH}" "/tmp/dnsmasq.d"
 	
+	local set_type="ipset"
+	[ "${NFTFLAG}" = "1" ] && {
+		set_type="nftset"
+		local setflag_4="4#inet#fw4#"
+		local setflag_6="6#inet#fw4#"
+	}
+	
 	#始终用国内DNS解析节点域名
 	servers=$(uci show "${CONFIG}" | grep ".address=" | cut -d "'" -f 2)
-	hosts_foreach "servers" host_from_url | grep '[a-zA-Z]$' | sort -u | gen_items ipsets="passwall2_vpslist,passwall2_vpslist6" dnss="${LOCAL_DNS:-${DEFAULT_DNS}}" outf="${TMP_DNSMASQ_PATH}/10-vpslist_host.conf" ipsetoutf="${TMP_DNSMASQ_PATH}/ipset.conf"
+	hosts_foreach "servers" host_from_url | grep '[a-zA-Z]$' | sort -u | gen_items settype="${set_type}" setnames="${setflag_4}passwall2_vpslist,${setflag_6}passwall2_vpslist6" dnss="${LOCAL_DNS:-${DEFAULT_DNS}}" outf="${TMP_DNSMASQ_PATH}/10-vpslist_host.conf" ipsetoutf="${TMP_DNSMASQ_PATH}/ipset.conf"
 	echolog "  - [$?]节点列表中的域名(vpslist)：${DEFAULT_DNS:-默认}"
 	
 	echo "conf-dir=${TMP_DNSMASQ_PATH}" > $DNSMASQ_CONF_FILE

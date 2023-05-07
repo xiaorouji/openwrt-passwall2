@@ -9,8 +9,8 @@ PKG_VERSION:=1.15-5
 PKG_RELEASE:=
 
 PKG_CONFIG_DEPENDS:= \
-	CONFIG_PACKAGE_$(PKG_NAME)_Transparent_Proxy \
-	CONFIG_PACKAGE_$(PKG_NAME)_Transparent_Proxy_Iptables-nft \
+	CONFIG_PACKAGE_$(PKG_NAME)_Iptables_Transparent_Proxy \
+	CONFIG_PACKAGE_$(PKG_NAME)_Nftables_Transparent_Proxy \
 	CONFIG_PACKAGE_$(PKG_NAME)_INCLUDE_Brook \
 	CONFIG_PACKAGE_$(PKG_NAME)_INCLUDE_Haproxy \
 	CONFIG_PACKAGE_$(PKG_NAME)_INCLUDE_Hysteria \
@@ -52,32 +52,30 @@ LUCI_DEPENDS:=+coreutils +coreutils-base64 +coreutils-nohup +curl \
 define Package/$(PKG_NAME)/config
 menu "Configuration"
 
-config PACKAGE_$(PKG_NAME)_Transparent_Proxy
-	bool "Transparent Proxy"
+config PACKAGE_$(PKG_NAME)_Iptables_Transparent_Proxy
+	bool "Iptables Transparent Proxy"
 	select PACKAGE_dnsmasq-full
 	select PACKAGE_dnsmasq_full_ipset
 	select PACKAGE_ipset
 	select PACKAGE_iptables
+	select PACKAGE_iptables-nft
 	select PACKAGE_iptables-zz-legacy
+	select PACKAGE_iptables-mod-conntrack-extra
 	select PACKAGE_iptables-mod-iprange
 	select PACKAGE_iptables-mod-socket
 	select PACKAGE_iptables-mod-tproxy
-	select PACKAGE_iptables-mod-conntrack-extra
 	select PACKAGE_kmod-ipt-nat
 	depends on PACKAGE_$(PKG_NAME)
 	default y if ! PACKAGE_firewall4
-
-config PACKAGE_$(PKG_NAME)_Transparent_Proxy_Iptables-nft
-	bool "Transparent Proxy Use Iptables-nft"
+	
+config PACKAGE_$(PKG_NAME)_Nftables_Transparent_Proxy
+	bool "Nftables Transparent Proxy"
 	select PACKAGE_dnsmasq-full
-	select PACKAGE_dnsmasq_full_ipset
-	select PACKAGE_ipset
-	select PACKAGE_iptables-nft
-	select PACKAGE_iptables-mod-iprange
-	select PACKAGE_iptables-mod-socket
-	select PACKAGE_iptables-mod-tproxy
-	select PACKAGE_iptables-mod-conntrack-extra
-	select PACKAGE_kmod-ipt-nat
+	select PACKAGE_dnsmasq_full_nftset
+	select PACKAGE_nftables
+	select PACKAGE_kmod-nft-socket
+	select PACKAGE_kmod-nft-tproxy
+	select PACKAGE_kmod-nft-nat
 	depends on PACKAGE_$(PKG_NAME)
 	default y if PACKAGE_firewall4
 
