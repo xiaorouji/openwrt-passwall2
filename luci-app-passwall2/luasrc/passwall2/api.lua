@@ -1,4 +1,5 @@
 module("luci.passwall2.api", package.seeall)
+local com = require "luci.passwall2.com"
 bin = require "nixio".bin
 fs = require "nixio.fs"
 sys = require "luci.sys"
@@ -11,8 +12,8 @@ i18n = require "luci.i18n"
 appname = "passwall2"
 curl_args = {"-skfL", "--connect-timeout 3", "--retry 3", "-m 60"}
 command_timeout = 300
-LEDE_BOARD = nil
-DISTRIB_TARGET = nil
+OPENWRT_ARCH = nil
+DISTRIB_ARCH = nil
 
 LOG_FILE = "/tmp/log/passwall2.log"
 
@@ -384,7 +385,6 @@ function is_finded(e)
 	return luci.sys.exec('type -t -p "/bin/%s" -p "/usr/bin/%s" -p "%s" "%s"' % {e, e, get_customed_path(e), e}) ~= "" and true or false
 end
 
-
 function clone(org)
 	local function copy(org, res)
 		for k,v in pairs(org) do
@@ -402,7 +402,7 @@ function clone(org)
 	return res
 end
 
-function get_bin_version_cache(file, cmd)
+local function get_bin_version_cache(file, cmd)
 	sys.call("mkdir -p /tmp/etc/passwall2_tmp")
 	if fs.access(file) then
 		chmod_755(file)
@@ -420,48 +420,16 @@ function get_bin_version_cache(file, cmd)
 	return ""
 end
 
-function get_v2ray_path()
-	local path = uci_get_type("global_app", "v2ray_file")
+function get_app_path(app_name)
+	local def_path = com[app_name].default_path
+	local path = uci_get_type("global_app", app_name:gsub("%-","_") .. "_file")
+	path = path and (#path>0 and path or def_path) or def_path
 	return path
 end
 
-function get_v2ray_version(file)
-	if file == nil then file = get_v2ray_path() end
-	local cmd = "version | awk '{print $2}' | sed -n 1P"
-	return get_bin_version_cache(file, cmd)
-end
-
-function get_xray_path()
-	local path = uci_get_type("global_app", "xray_file")
-	return path
-end
-
-function get_xray_version(file)
-	if file == nil then file = get_xray_path() end
-	local cmd = "-version | awk '{print $2}' | sed -n 1P"
-	return get_bin_version_cache(file, cmd)
-end
-
-function get_brook_path()
-	local path = uci_get_type("global_app", "brook_file")
-	return path
-end
-
-function get_brook_version(file)
-	if file == nil then file = get_brook_path() end
-	local cmd = "-v | awk '{print $3}'"
-	return get_bin_version_cache(file, cmd)
-end
-
-function get_hysteria_path()
-	local path = uci_get_type("global_app", "hysteria_file")
-	return path
-end
-
-function get_hysteria_version(file)
-	if file == nil then file = get_hysteria_path() end
-	local cmd = "-v | awk '{print $3}'"
-	return get_bin_version_cache(file, cmd)
+function get_app_version(app_name, file)
+	if file == nil then file = get_app_path(app_name) end
+	return get_bin_version_cache(file, com[app_name].cmd_version)
 end
 
 function is_file(path)
@@ -593,27 +561,37 @@ function compare_versions(ver1, comp, ver2)
 	return not (comp == "<" or comp == ">")
 end
 
-function auto_get_arch()
+local function auto_get_arch()
 	local arch = nixio.uname().machine or ""
-	if fs.access("/usr/lib/os-release") then
-		LEDE_BOARD = sys.exec("echo -n $(grep 'LEDE_BOARD' /usr/lib/os-release | awk -F '[\\042\\047]' '{print $2}')")
+	if not OPENWRT_ARCH and fs.access("/usr/lib/os-release") then
+		OPENWRT_ARCH = sys.exec("echo -n $(grep 'OPENWRT_ARCH' /usr/lib/os-release | awk -F '[\\042\\047]' '{print $2}')")
+		if OPENWRT_ARCH == "" then OPENWRT_ARCH = nil end
 	end
-	if fs.access("/etc/openwrt_release") then
-		DISTRIB_TARGET = sys.exec("echo -n $(grep 'DISTRIB_TARGET' /etc/openwrt_release | awk -F '[\\042\\047]' '{print $2}')")
+	if not DISTRIB_ARCH and fs.access("/etc/openwrt_release") then
+		DISTRIB_ARCH = sys.exec("echo -n $(grep 'DISTRIB_ARCH' /etc/openwrt_release | awk -F '[\\042\\047]' '{print $2}')")
+		if DISTRIB_ARCH == "" then DISTRIB_ARCH = nil end
 	end
 
-	if arch == "mips" then
-		if LEDE_BOARD and LEDE_BOARD ~= "" then
-			if string.match(LEDE_BOARD, "ramips") == "ramips" then
-				arch = "ramips"
-			else
-				arch = sys.exec("echo '" .. LEDE_BOARD .. "' | grep -oE 'ramips|ar71xx'")
+	if arch:match("^i[%d]86$") then
+		arch = "x86"
+	elseif arch:match("armv5") then  -- armv5l
+		arch = "armv5"
+	elseif arch:match("armv6") then
+		arch = "armv6"
+	elseif arch:match("armv7") then  -- armv7l
+		arch = "armv7"
+	end
+
+	if OPENWRT_ARCH or DISTRIB_ARCH then
+		if arch == "mips" then
+			if OPENWRT_ARCH and OPENWRT_ARCH:match("mipsel") == "mipsel"
+			or DISTRIB_ARCH and DISTRIB_ARCH:match("mipsel") == "mipsel" then
+				arch = "mipsel"
 			end
-		elseif DISTRIB_TARGET and DISTRIB_TARGET ~= "" then
-			if string.match(DISTRIB_TARGET, "ramips") == "ramips" then
-				arch = "ramips"
-			else
-				arch = sys.exec("echo '" .. DISTRIB_TARGET .. "' | grep -oE 'ramips|ar71xx'")
+		elseif arch == "armv7" then
+			if OPENWRT_ARCH and not OPENWRT_ARCH:match("vfp") and not OPENWRT_ARCH:match("neon")
+			or DISTRIB_ARCH and not DISTRIB_ARCH:match("vfp") and not DISTRIB_ARCH:match("neon") then
+				arch = "armv5"
 			end
 		end
 	end
@@ -621,34 +599,17 @@ function auto_get_arch()
 	return util.trim(arch)
 end
 
-function get_file_info(arch)
-	local file_tree = ""
-	local sub_version = ""
-
-	if arch == "x86_64" then
-		file_tree = "amd64"
-	elseif arch == "aarch64" then
-		file_tree = "arm64"
-	elseif arch == "ramips" then
-		file_tree = "mipsle"
-	elseif arch == "ar71xx" then
-		file_tree = "mips"
-	elseif arch:match("^i[%d]86$") then
-		file_tree = "386"
-	elseif arch:match("^armv[5-8]") then
-		file_tree = "arm"
-		sub_version = arch:match("[5-8]")
-		if LEDE_BOARD and string.match(LEDE_BOARD, "bcm53xx") == "bcm53xx" then
-			sub_version = "5"
-		elseif DISTRIB_TARGET and string.match(DISTRIB_TARGET, "bcm53xx") ==
-			"bcm53xx" then
-			sub_version = "5"
-		end
-		sub_version = "5"
-	end
-
-	return file_tree, sub_version
-end
+local default_file_tree = {
+	x86_64  = "amd64",
+	x86     = "386",
+	aarch64 = "arm64",
+	mips    = "mips",
+	mipsel  = "mipsle",
+	armv5   = "arm.*5",
+	armv6   = "arm.*6[^4]*",
+	armv7   = "arm.*7",
+	armv8   = "arm64"
+}
 
 function get_api_json(url)
 	local jsonc = require "luci.jsonc"
@@ -657,8 +618,40 @@ function get_api_json(url)
 	return jsonc.parse(content) or {}
 end
 
-function common_to_check(api_url, local_version, match_file_name)
-	local json = get_api_json(api_url)
+local function check_path(app_name)
+	local path = get_app_path(app_name) or ""
+	if path == "" then
+		return {
+			code = 1,
+			error = i18n.translatef("You did not fill in the %s path. Please save and apply then update manually.", app_name)
+		}
+	end
+	return {
+		code = 0,
+		app_path = path
+	}
+end
+
+function to_check(arch, app_name)
+	local result = check_path(app_name)
+	if result.code ~= 0 then
+		return result
+	end
+
+	if not arch or arch == "" then arch = auto_get_arch() end
+
+	local file_tree = com[app_name].file_tree[arch] or default_file_tree[arch] or ""
+
+	if file_tree == "" then
+		return {
+			code = 1,
+			error = i18n.translate("Can't determine ARCH, or ARCH not supported.")
+		}
+	end
+
+	local local_version = get_app_version(app_name)
+	local match_file_name = string.format(com[app_name].match_fmt_str, file_tree)
+	local json = get_api_json(com[app_name]:get_url())
 
 	if #json > 0 then
 		json = json[1]
@@ -708,4 +701,143 @@ function common_to_check(api_url, local_version, match_file_name)
 		html_url = json.html_url,
 		data = asset
 	}
+end
+
+function to_download(app_name, url, size)
+	local result = check_path(app_name)
+	if result.code ~= 0 then
+		return result
+	end
+
+	if not url or url == "" then
+		return {code = 1, error = i18n.translate("Download url is required.")}
+	end
+
+	sys.call("/bin/rm -f /tmp/".. app_name .."_download.*")
+
+	local tmp_file = util.trim(util.exec("mktemp -u -t ".. app_name .."_download.XXXXXX"))
+
+	if size then
+		local kb1 = get_free_space("/tmp")
+		if tonumber(size) > tonumber(kb1) then
+			return {code = 1, error = i18n.translatef("%s not enough space.", "/tmp")}
+		end
+	end
+
+	local return_code, result = curl_logic(url, tmp_file, curl_args)
+	result = return_code == 0
+
+	if not result then
+		exec("/bin/rm", {"-f", tmp_file})
+		return {
+			code = 1,
+			error = i18n.translatef("File download failed or timed out: %s", url)
+		}
+	end
+
+	return {code = 0, file = tmp_file, zip = com[app_name].zipped }
+end
+
+function to_extract(app_name, file, subfix)
+	local result = check_path(app_name)
+	if result.code ~= 0 then
+		return result
+	end
+
+	if not file or file == "" or not fs.access(file) then
+		return {code = 1, error = i18n.translate("File path required.")}
+	end
+
+	if sys.exec("echo -n $(opkg list-installed | grep -c unzip)") ~= "1" then
+		exec("/bin/rm", {"-f", file})
+		return {
+			code = 1,
+			error = i18n.translate("Not installed unzip, Can't unzip!")
+		}
+	end
+
+	sys.call("/bin/rm -rf /tmp/".. app_name .."_extract.*")
+
+	local new_file_size = get_file_space(file)
+	local tmp_free_size = get_free_space("/tmp")
+	if tmp_free_size <= 0 or tmp_free_size <= new_file_size then
+		return {code = 1, error = i18n.translatef("%s not enough space.", "/tmp")}
+	end
+
+	local tmp_dir = util.trim(util.exec("mktemp -d -t ".. app_name .."_extract.XXXXXX"))
+
+	local output = {}
+	exec("/usr/bin/unzip", {"-o", file, app_name, "-d", tmp_dir},
+			 function(chunk) output[#output + 1] = chunk end)
+
+	local files = util.split(table.concat(output))
+
+	exec("/bin/rm", {"-f", file})
+
+	return {code = 0, file = tmp_dir}
+end
+
+function to_move(app_name,file)
+	local result = check_path(app_name)
+	if result.code ~= 0 then
+		return result
+	end
+
+	local app_path = result.app_path
+	local bin_path = file
+	local cmd_rm_tmp = "/bin/rm -rf /tmp/" .. app_name .. "_download.*"
+	if fs.stat(file, "type") == "dir" then
+		bin_path = file .. "/" .. app_name
+		cmd_rm_tmp = "/bin/rm -rf /tmp/" .. app_name .. "_extract.*"
+	end
+
+	if not file or file == "" then
+		sys.call(cmd_rm_tmp)
+		return {code = 1, error = i18n.translate("Client file is required.")}
+	end
+
+	local new_version = get_app_version(app_name, bin_path)
+	if new_version == "" then
+		sys.call(cmd_rm_tmp)
+		return {
+			code = 1,
+			error = i18n.translate("The client file is not suitable for current device.")..app_name.."__"..bin_path
+		}
+	end
+
+	local flag = sys.call('pgrep -af "passwall2/.*'.. app_name ..'" >/dev/null')
+	if flag == 0 then
+		sys.call("/etc/init.d/passwall2 stop")
+	end
+
+	local old_app_size = 0
+	if fs.access(app_path) then
+		old_app_size = get_file_space(app_path)
+	end
+	local new_app_size = get_file_space(bin_path)
+	local final_dir = get_final_dir(app_path)
+	local final_dir_free_size = get_free_space(final_dir)
+	if final_dir_free_size > 0 then
+		final_dir_free_size = final_dir_free_size + old_app_size
+		if new_app_size > final_dir_free_size then
+			sys.call(cmd_rm_tmp)
+			return {code = 1, error = i18n.translatef("%s not enough space.", final_dir)}
+		end
+	end
+
+	result = exec("/bin/mv", { "-f", bin_path, app_path }, nil, command_timeout) == 0
+
+	sys.call(cmd_rm_tmp)
+	if flag == 0 then
+		sys.call("/etc/init.d/passwall2 restart >/dev/null 2>&1 &")
+	end
+
+	if not result or not fs.access(app_path) then
+		return {
+			code = 1,
+			error = i18n.translatef("Can't move new file to path: %s", app_path)
+		}
+	end
+
+	return {code = 0}
 end
