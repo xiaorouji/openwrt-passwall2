@@ -29,11 +29,15 @@ local function cmd(cmd)
 end
 
 local function ipt(arg)
-	cmd(ipt_bin .. " -w " .. arg)
+	if ipt_bin and #ipt_bin > 0 then
+		cmd(ipt_bin .. " -w " .. arg)
+	end
 end
 
 local function ip6t(arg)
-	cmd(ip6t_bin .. " -w " .. arg)
+	if ip6t_bin and #ip6t_bin > 0 then
+		cmd(ip6t_bin .. " -w " .. arg)
+	end
 end
 
 local function ln_run(s, d, command, output)
