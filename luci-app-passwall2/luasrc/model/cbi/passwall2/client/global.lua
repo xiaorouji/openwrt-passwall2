@@ -86,70 +86,146 @@ end
 -- 分流
 if (has_v2ray or has_xray) and #nodes_table > 0 then
 	local normal_list = {}
+	local balancing_list = {}
 	local shunt_list = {}
 	for k, v in pairs(nodes_table) do
 		if v.node_type == "normal" then
 			normal_list[#normal_list + 1] = v
 		end
+		if v.protocol and v.protocol == "_balancing" then
+			balancing_list[#balancing_list + 1] = v
+		end
 		if v.protocol and v.protocol == "_shunt" then
 			shunt_list[#shunt_list + 1] = v
 		end
 	end
-	for k, v in pairs(shunt_list) do
-		uci:foreach(appname, "shunt_rules", function(e)
-			local id = e[".name"]
-			if id and e.remarks then
-				o = s:taboption("Main", ListValue, v.id .. "." .. id .. "_node", string.format('* <a href="%s" target="_blank">%s</a>', api.url("shunt_rules", id), e.remarks))
-				o:depends("node", v.id)
-				o:value("nil", translate("Close"))
-				o:value("_default", translate("Default"))
-				o:value("_direct", translate("Direct Connection"))
-				o:value("_blackhole", translate("Blackhole"))
-				for k1, v1 in pairs(normal_list) do
-					o:value(v1.id, v1["remark"])
+
+	local function get_cfgvalue(shunt_node_id, option)
+		return function(self, section)
+			return m:get(shunt_node_id, option) or "nil"
+		end
+	end
+	local function get_write(shunt_node_id, option)
+		return function(self, section, value)
+			m:set(shunt_node_id, option, value)
+		end
+	end
+	if #normal_list > 0 then
+		for k, v in pairs(shunt_list) do
+			local vid = v.id
+			-- shunt node type, V2ray or Xray
+			local type = s:taboption("Main", ListValue, vid .. "-type", translate("Type"))
+			if has_v2ray then
+				type:value("V2ray", translate("V2ray"))
+			end
+			if has_xray then
+				type:value("Xray", translate("Xray"))
+			end
+			type.cfgvalue = get_cfgvalue(v.id, "type")
+			type.write = get_write(v.id, "type")
+			
+			-- pre-proxy
+			o = s:taboption("Main", Flag, vid .. "-preproxy_enabled", translate("Preproxy"))
+			o:depends("node", v.id)
+			o.rmempty = false
+			o.cfgvalue = get_cfgvalue(v.id, "preproxy_enabled")
+			o.write = get_write(v.id, "preproxy_enabled")
+
+			o = s:taboption("Main", Value, vid .. "-main_node", string.format('<a style="color:red">%s</a>', translate("Preproxy Node")), translate("Set the node to be used as a pre-proxy. Each rule (including <code>Default</code>) has a separate switch that controls whether this rule uses the pre-proxy or not."))
+			o:depends(vid .. "-preproxy_enabled", "1")
+			for k1, v1 in pairs(balancing_list) do
+				o:value(v1.id, v1.remark)
+			end
+			for k1, v1 in pairs(normal_list) do
+				o:value(v1.id, v1.remark)
+			end
+			if #o.keylist > 0 then
+				o.default = o.keylist[1]
+			end
+			o.cfgvalue = get_cfgvalue(v.id, "main_node")
+			o.write = get_write(v.id, "main_node")
+			if shunt_remark == "main" and auto_switch_tip then
+				o.description = auto_switch_tip
+			end
+
+			if (has_v2ray and has_xray) or (v.type == "V2ray" and not has_v2ray) or (v.type == "Xray" and not has_xray) then
+				type:depends("node", v.id)
+			else
+				type:depends("node", "hide") --不存在的依赖，即始终隐藏
+			end
+
+			uci:foreach(appname, "shunt_rules", function(e)
+				local id = e[".name"]
+				local node_option = vid .. "-" .. id .. "_node"
+				if id and e.remarks then
+					o = s:taboption("Main", Value, node_option, string.format('* <a href="%s" target="_blank">%s</a>', api.url("shunt_rules", id), e.remarks))
+					o.cfgvalue = get_cfgvalue(v.id, id)
+					o.write = get_write(v.id, id)
+					o:depends("node", v.id)
+					o.default = "nil"
+					o:value("nil", translate("Close"))
+					o:value("_default", translate("Default"))
+					o:value("_direct", translate("Direct Connection"))
+					o:value("_blackhole", translate("Blackhole"))
+
+					local pt = s:taboption("Main", ListValue, vid .. "-".. id .. "_proxy_tag", string.format('* <a style="color:red">%s</a>', e.remarks .. " " .. translate("Preproxy")))
+					pt.cfgvalue = get_cfgvalue(v.id, id .. "_proxy_tag")
+					pt.write = get_write(v.id, id .. "_proxy_tag")
+					pt:value("nil", translate("Close"))
+					pt:value("main", translate("Preproxy Node"))
+					pt.default = "nil"
+					for k1, v1 in pairs(balancing_list) do
+						o:value(v1.id, v1.remark)
+					end
+					for k1, v1 in pairs(normal_list) do
+						o:value(v1.id, v1.remark)
+						pt:depends({ [node_option] = v1.id, [vid .. "-preproxy_enabled"] = "1" })
+					end
 				end
-				o.cfgvalue = function(self, section)
-					return m:get(v.id, id) or "nil"
-				end
-				o.write = function(self, section, value)
-					m:set(v.id, id, value)
+			end)
+
+			local id = "default_node"
+			o = s:taboption("Main", Value, vid .. "-" .. id, string.format('* <a style="color:red">%s</a>', translate("Default")))
+			o.cfgvalue = get_cfgvalue(v.id, id)
+			o.write = get_write(v.id, id)
+			o:depends("node", v.id)
+			o.default = "_direct"
+			o:value("_direct", translate("Direct Connection"))
+			o:value("_blackhole", translate("Blackhole"))
+			for k1, v1 in pairs(balancing_list) do
+				o:value(v1.id, v1.remark)
+			end
+			for k1, v1 in pairs(normal_list) do
+				o:value(v1.id, v1.remark)
+			end
+			if shunt_remark == "default" and auto_switch_tip then
+				o.description = auto_switch_tip
+			end
+
+			local id = "default_proxy_tag"
+			o = s:taboption("Main", ListValue, vid .. "-" .. id, string.format('* <a style="color:red">%s</a>', translate("Default Preproxy")), translate("When using, localhost will connect this node first and then use this node to connect the default node."))
+			o.cfgvalue = get_cfgvalue(v.id, id)
+			o.write = get_write(v.id, id)
+			o:value("nil", translate("Close"))
+			o:value("main", translate("Preproxy Node"))
+			for k1, v1 in pairs(normal_list) do
+				if v1.protocol ~= "_balancing" then
+					o:depends({ [vid .. "-default_node"] = v1.id, [vid .. "-preproxy_enabled"] = "1" })
 				end
 			end
-		end)
-
-		local id = "default_node"
-		o = s:taboption("Main", ListValue, v.id .. "." .. id, string.format('* <a style="color:red">%s</a>', translate("Default")))
-		o:depends("node", v.id)
-		o:value("_direct", translate("Direct Connection"))
-		o:value("_blackhole", translate("Blackhole"))
-		for k1, v1 in pairs(normal_list) do
-			o:value(v1.id, v1["remark"])
 		end
-		o.cfgvalue = function(self, section)
-			return m:get(v.id, id) or "nil"
+	else
+		local tips = s:taboption("Main", DummyValue, "tips", " ")
+		tips.rawhtml = true
+		tips.cfgvalue = function(t, n)
+			return string.format('<a style="color: red">%s</a>', translate("There are no available nodes, please add or subscribe nodes first."))
 		end
-		o.write = function(self, section, value)
-			m:set(v.id, id, value)
+		tips:depends({ node = "nil", ["!reverse"] = true })
+		for k, v in pairs(shunt_list) do
+			tips:depends("node", v.id)
 		end
-		if shunt_remark == "default" and auto_switch_tip then
-			o.description = auto_switch_tip
-		end
-		
-		local id = "main_node"
-		o = s:taboption("Main", ListValue, v.id .. "." .. id, string.format('* <a style="color:red">%s</a>', translate("Default Preproxy")), translate("When using, localhost will connect this node first and then use this node to connect the default node."))
-		o:depends("node", v.id)
-		o:value("nil", translate("Close"))
-		for k1, v1 in pairs(normal_list) do
-			o:value(v1.id, v1["remark"])
-		end
-		o.cfgvalue = function(self, section)
-			return m:get(v.id, id) or "nil"
-		end
-		o.write = function(self, section, value)
-			m:set(v.id, id, value)
-		end
-		if shunt_remark == "main" and auto_switch_tip then
-			o.description = auto_switch_tip
+		for k, v in pairs(balancing_list) do
+			tips:depends("node", v.id)
 		end
 	end
 end

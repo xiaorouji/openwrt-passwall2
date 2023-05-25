@@ -119,9 +119,16 @@ iface.default = "eth1"
 iface:depends("protocol", "_iface")
 
 local nodes_table = {}
+local balancers_table = {}
 for k, e in ipairs(api.get_valid_nodes()) do
 	if e.node_type == "normal" then
 		nodes_table[#nodes_table + 1] = {
+			id = e[".name"],
+			remarks = e["remark"]
+		}
+	end
+	if e.protocol == "_balancing" then
+		balancers_table[#balancers_table + 1] = {
 			id = e[".name"],
 			remarks = e["remark"]
 		}
@@ -138,16 +145,39 @@ balancingStrategy:depends("protocol", "_balancing")
 balancingStrategy:value("random")
 balancingStrategy:value("leastPing")
 balancingStrategy.default = "random"
-
+-- 探测地址
+local useCustomProbeUrl = s:option(Flag, "useCustomProbeUrl", translate("Use Custome Probe URL"), translate("By default the built-in probe URL will be used, enable this option to use a custom probe URL."))
+useCustomProbeUrl:depends("balancingStrategy", "leastPing")
+local probeUrl = s:option(Value, "probeUrl", translate("Probe URL"))
+probeUrl:depends("useCustomProbeUrl", true)
+probeUrl.default = "https://www.google.com/generate_204"
+probeUrl.description = translate("The URL used to detect the connection status.")
+-- 探测间隔
 local probeInterval = s:option(Value, "probeInterval", translate("Probe Interval"))
 probeInterval:depends("balancingStrategy", "leastPing")
 probeInterval.default = "1m"
 probeInterval.description = translate("The interval between initiating probes. Every time this time elapses, a server status check is performed on a server. The time format is numbers + units, such as '10s', '2h45m', and the supported time units are <code>ns</code>, <code>us</code>, <code>ms</code>, <code>s</code>, <code>m</code>, <code>h</code>, which correspond to nanoseconds, microseconds, milliseconds, seconds, minutes, and hours, respectively.")
 
 -- 分流
+if #nodes_table > 0 then
+	o = s:option(Flag, "preproxy_enabled", translate("Preproxy"))
+	o:depends("protocol", "_shunt")
+	o = s:option(Value, "main_node", string.format('<a style="color:red">%s</a>', translate("Preproxy Node")), translate("Set the node to be used as a pre-proxy. Each rule (including <code>Default</code>) has a separate switch that controls whether this rule uses the pre-proxy or not."))
+	o:depends("preproxy_enabled", "1")
+	for k, v in pairs(balancers_table) do
+		o:value(v.id, v.remarks)
+	end
+	for k, v in pairs(nodes_table) do
+		o:value(v.id, v.remarks)
+	end
+	if #o.keylist > 0 then
+		o.default = o.keylist[1]
+	end
+end
 uci:foreach(appname, "shunt_rules", function(e)
 	if e[".name"] and e.remarks then
-		o = s:option(ListValue, e[".name"], string.format('* <a href="%s" target="_blank">%s</a>', api.url("shunt_rules", e[".name"]), e.remarks))
+		o = s:option(Value, e[".name"], string.format('* <a href="%s" target="_blank">%s</a>', api.url("shunt_rules", e[".name"]), e.remarks))
+		o.default = "nil"
 		o:value("nil", translate("Close"))
 		o:value("_default", translate("Default"))
 		o:value("_direct", translate("Direct Connection"))
@@ -155,15 +185,16 @@ uci:foreach(appname, "shunt_rules", function(e)
 		o:depends("protocol", "_shunt")
 
 		if #nodes_table > 0 then
-			_proxy_tag = s:option(ListValue, e[".name"] .. "_proxy_tag", string.format('* <a style="color:red">%s</a>', e.remarks .. " " .. translate("Preproxy")))
-			_proxy_tag:value("nil", translate("Close"))
-			_proxy_tag:value("default", translate("Default"))
-			_proxy_tag:value("main", translate("Default Preproxy"))
-			_proxy_tag.default = "nil"
-
+			for k, v in pairs(balancers_table) do
+				o:value(v.id, v.remarks)
+			end
+			local pt = s:option(ListValue, e[".name"] .. "_proxy_tag", string.format('* <a style="color:red">%s</a>', e.remarks .. " " .. translate("Preproxy")))
+			pt:value("nil", translate("Close"))
+			pt:value("main", translate("Preproxy Node"))
+			pt.default = "nil"
 			for k, v in pairs(nodes_table) do
 				o:value(v.id, v.remarks)
-				_proxy_tag:depends(e[".name"], v.id)
+				pt:depends({ preproxy_enabled = "1", [e[".name"]] = v.id })
 			end
 		end
 	end
@@ -176,18 +207,23 @@ shunt_tips.cfgvalue = function(t, n)
 end
 shunt_tips:depends("protocol", "_shunt")
 
-default_node = s:option(ListValue, "default_node", string.format('* <a style="color:red">%s</a>', translate("Default")))
+local default_node = s:option(Value, "default_node", string.format('* <a style="color:red">%s</a>', translate("Default")))
+default_node:depends("protocol", "_shunt")
+default_node.default = "_direct"
 default_node:value("_direct", translate("Direct Connection"))
 default_node:value("_blackhole", translate("Blackhole"))
-for k, v in pairs(nodes_table) do default_node:value(v.id, v.remarks) end
-default_node:depends("protocol", "_shunt")
 
 if #nodes_table > 0 then
-	o = s:option(ListValue, "main_node", string.format('* <a style="color:red">%s</a>', translate("Default Preproxy")), translate("When using, localhost will connect this node first and then use this node to connect the default node."))
-	o:value("nil", translate("Close"))
+	for k, v in pairs(balancers_table) do
+		default_node:value(v.id, v.remarks)
+	end
+	local dpt = s:option(ListValue, "default_proxy_tag", string.format('* <a style="color:red">%s</a>', translate("Default Preproxy")), translate("When using, localhost will connect this node first and then use this node to connect the default node."))
+	dpt:value("nil", translate("Close"))
+	dpt:value("main", translate("Preproxy Node"))
+	dpt.default = "nil"
 	for k, v in pairs(nodes_table) do
-		o:value(v.id, v.remarks)
-		o:depends("default_node", v.id)
+		default_node:value(v.id, v.remarks)
+		dpt:depends({ preproxy_enabled = "1", default_node = v.id })
 	end
 end
 
