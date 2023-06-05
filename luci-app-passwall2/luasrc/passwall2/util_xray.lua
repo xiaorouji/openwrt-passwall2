@@ -517,6 +517,7 @@ function gen_config(var)
 	local remote_dns_port = var["-remote_dns_port"]
 	local remote_dns_udp_server = var["-remote_dns_udp_server"]
 	local remote_dns_fake = var["-remote_dns_fake"]
+	local remote_dns_fake_strategy = var["-remote_dns_fake_strategy"]
 	local dns_cache = var["-dns_cache"]
 
 	local dns_direct_domains = {}
@@ -1032,15 +1033,21 @@ function gen_config(var)
 			end
 			if remote_dns_fake then
 				fakedns = {}
-				fakedns[#fakedns + 1] = {
+				local fakedns4 = {
 					ipPool = "198.18.0.0/16",
 					poolSize = 65535
 				}
-				if dns_query_strategy == "UseIP" then
-					fakedns[#fakedns + 1] = {
-						ipPool = "fc00::/18",
-						poolSize = 65535
-					}
+				local fakedns6 = {
+					ipPool = "fc00::/18",
+					poolSize = 65535
+				}
+				if remote_dns_fake_strategy == "UseIP" then
+					table.insert(fakedns, fakedns4)
+					table.insert(fakedns, fakedns6)
+				elseif remote_dns_fake_strategy == "UseIPv4" then
+					table.insert(fakedns, fakedns4)
+				elseif remote_dns_fake_strategy == "UseIPv6" then
+					table.insert(fakedns, fakedns6)
 				end
 				local _remote_dns = {
 					_flag = "remote_fakedns",
