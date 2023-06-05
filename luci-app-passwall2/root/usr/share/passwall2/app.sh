@@ -995,8 +995,7 @@ start() {
 stop() {
 	clean_log
 	[ -n "$($(source $APP_PATH/iptables.sh get_ipt_bin) -t mangle -t nat -L -nv 2>/dev/null | grep "PSW2")" ] && source $APP_PATH/iptables.sh stop
-	[ -n "$(nft list chains 2>/dev/null | grep "PSW2")" ] && source $APP_PATH/nftables.sh stop
-	source $APP_PATH/iptables.sh stop
+	[ -n "$(nft list sets 2>/dev/null | grep "${CONFIG}_")" ] && source $APP_PATH/nftables.sh stop
 	delete_ip2route
 	kill_all v2ray-plugin obfs-local
 	pgrep -f "sleep.*(6s|9s|58s)" | xargs kill -9 >/dev/null 2>&1
