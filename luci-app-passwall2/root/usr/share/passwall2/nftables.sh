@@ -10,7 +10,7 @@ NFTSET_LANLIST6="passwall2_lanlist6"
 NFTSET_VPSLIST6="passwall2_vpslist6"
 NFTSET_WHITELIST6="passwall2_whitelist6"
 
-FORCE_INDEX=2
+FORCE_INDEX=0
 
 . /lib/functions/network.sh
 
@@ -117,10 +117,8 @@ destroy_nftset() {
 insert_nftset() {
 	local nftset_name="${1}"; shift
 	local nftset_elements
-	for element in $@
-	do
-		nftset_elements="$element,$nftset_elements"
-	done
+
+	nftset_elements=$(echo -e $@ | sed 's/\s/, /g')
 	[ -n "${nftset_elements}" ] && {
 		mkdir -p $TMP_PATH2/nftset
 
@@ -273,8 +271,8 @@ load_acl() {
 						msg2="${msg2}所有端口"
 
 						if [ -z "${is_tproxy}" ]; then
-							nft "add rule inet fw4 PSW2 ${_ipt_source} ip daddr $FAKE_IP $(REDIRECT $redir_port) comment \"$remarks\""
-							nft "add rule inet fw4 PSW2 ${_ipt_source} $(factor $tcp_redir_ports "tcp dport") $(REDIRECT $redir_port) comment \"$remarks\""
+							nft "add rule inet fw4 PSW2_NAT ${_ipt_source} ip daddr $FAKE_IP $(REDIRECT $redir_port) comment \"$remarks\""
+							nft "add rule inet fw4 PSW2_NAT ${_ipt_source} $(factor $tcp_redir_ports "tcp dport") $(REDIRECT $redir_port) comment \"$remarks\""
 						else
 							nft "add rule inet fw4 PSW2_MANGLE ip protocol tcp ${_ipt_source} ip daddr $FAKE_IP counter jump PSW2_RULE comment \"$remarks\""
 							nft "add rule inet fw4 PSW2_MANGLE ip protocol tcp ${_ipt_source} $(factor $tcp_redir_ports "tcp dport") counter jump PSW2_RULE comment \"$remarks\""
@@ -358,8 +356,8 @@ load_acl() {
 				}
 
 				if [ -z "${is_tproxy}" ]; then
-					nft "add rule inet fw4 PSW2 ip protocol tcp ip daddr $FAKE_IP $(REDIRECT $REDIR_PORT) comment \"默认\""
-					nft "add rule inet fw4 PSW2 ip protocol tcp $(factor $TCP_REDIR_PORTS "tcp dport") $(REDIRECT $REDIR_PORT) comment \"默认\""
+					nft "add rule inet fw4 PSW2_NAT ip protocol tcp ip daddr $FAKE_IP $(REDIRECT $REDIR_PORT) comment \"默认\""
+					nft "add rule inet fw4 PSW2_NAT ip protocol tcp $(factor $TCP_REDIR_PORTS "tcp dport") $(REDIRECT $REDIR_PORT) comment \"默认\""
 				else
 					nft "add rule inet fw4 PSW2_MANGLE ip protocol tcp ip daddr $FAKE_IP counter jump PSW2_RULE comment \"默认\""
 					nft "add rule inet fw4 PSW2_MANGLE ip protocol tcp $(factor $TCP_REDIR_PORTS "tcp dport") jump PSW2_RULE comment \"默认\""
@@ -459,7 +457,7 @@ filter_node() {
 
 		local ADD_INDEX=$FORCE_INDEX
 		for _ipt in 4 6; do
-			[ "$_ipt" == "4" ] && _ip_type=ip4 && _set_name=$NFTSET_VPSLIST
+			[ "$_ipt" == "4" ] && _ip_type=ip && _set_name=$NFTSET_VPSLIST
 			[ "$_ipt" == "6" ] && _ip_type=ip6 && _set_name=$NFTSET_VPSLIST6
 			nft "list chain inet fw4 $nft_output_chain" 2>/dev/null | grep -q "${address}:${port}"
 			if [ $? -ne 0 ]; then
@@ -475,8 +473,7 @@ filter_node() {
 					dst_rule="return"
 					msg2="直连代理"
 				}
-				nft "insert rule inet fw4 $nft_output_chain position $ADD_INDEX comment \"${address}:${port}\" meta l4proto $stream $_ip_type daddr $address tcp dport $port $dst_rule" 2>/dev/null
-				nft "insert rule inet fw4 $nft_output_chain position $ADD_INDEX comment \"${address}:${port}\" meta l4proto $stream $_ip_type daddr $address udp dport $port $dst_rule" 2>/dev/null
+				nft "insert rule inet fw4 $nft_output_chain position $ADD_INDEX meta l4proto $stream $_ip_type daddr $address $stream dport $port $dst_rule comment \"${address}:${port}\"" 2>/dev/null
 			else
 				msg2="已配置过的节点，"
 			fi
@@ -588,8 +585,8 @@ add_firewall_rule() {
 	local tcp_proxy_way=$(config_t_get global_forwarding tcp_proxy_way redirect)
 	if [ "$tcp_proxy_way" = "redirect" ]; then
 		unset is_tproxy
-		nft_prerouting_chain="PSW2"
-		nft_output_chain="PSW2_OUTPUT"
+		nft_prerouting_chain="PSW2_NAT"
+		nft_output_chain="PSW2_OUTPUT_NAT"
 	elif [ "$tcp_proxy_way" = "tproxy" ]; then
 		is_tproxy="TPROXY"
 		nft_prerouting_chain="PSW2_MANGLE"
@@ -635,19 +632,19 @@ add_firewall_rule() {
 
 	#ipv4 tcp redirect mode
 	[ -z "${is_tproxy}" ] && {
-		nft "add chain inet fw4 PSW2"
-		nft "flush chain inet fw4 PSW2"
-		nft "add rule inet fw4 PSW2 ip daddr @$NFTSET_LANLIST counter return"
-		nft "add rule inet fw4 PSW2 ip daddr @$NFTSET_VPSLIST counter return"
-		nft "add rule inet fw4 PSW2 ip daddr @$NFTSET_WHITELIST counter return"
-		nft "add rule inet fw4 dstnat ip protocol tcp counter jump PSW2"
+		nft "add chain inet fw4 PSW2_NAT"
+		nft "flush chain inet fw4 PSW2_NAT"
+		nft "add rule inet fw4 PSW2_NAT ip daddr @$NFTSET_LANLIST counter return"
+		nft "add rule inet fw4 PSW2_NAT ip daddr @$NFTSET_VPSLIST counter return"
+		nft "add rule inet fw4 PSW2_NAT ip daddr @$NFTSET_WHITELIST counter return"
+		nft "add rule inet fw4 dstnat ip protocol tcp counter jump PSW2_NAT"
 
-		nft "add chain inet fw4 PSW2_OUTPUT"
-		nft "flush chain inet fw4 PSW2_OUTPUT"
-		nft "add rule inet fw4 PSW2_OUTPUT ip daddr @$NFTSET_LANLIST counter return"
-		nft "add rule inet fw4 PSW2_OUTPUT ip daddr @$NFTSET_VPSLIST counter return"
-		nft "add rule inet fw4 PSW2_OUTPUT ip daddr @$NFTSET_WHITELIST counter return"
-		nft "add rule inet fw4 PSW2_OUTPUT meta mark 0xff counter return"
+		nft "add chain inet fw4 PSW2_OUTPUT_NAT"
+		nft "flush chain inet fw4 PSW2_OUTPUT_NAT"
+		nft "add rule inet fw4 PSW2_OUTPUT_NAT ip daddr @$NFTSET_LANLIST counter return"
+		nft "add rule inet fw4 PSW2_OUTPUT_NAT ip daddr @$NFTSET_VPSLIST counter return"
+		nft "add rule inet fw4 PSW2_OUTPUT_NAT ip daddr @$NFTSET_WHITELIST counter return"
+		nft "add rule inet fw4 PSW2_OUTPUT_NAT meta mark 0xff counter return"
 	}
 
 	#icmp ipv6-icmp redirect
@@ -670,7 +667,7 @@ add_firewall_rule() {
 
 	WAN_IP=$(get_wan_ip)
 	if [ -n "${WAN_IP}" ]; then
-		[ -n "${is_tproxy}" ] && nft "add rule inet fw4 PSW2_MANGLE ip daddr ${WAN_IP} counter return comment \"WAN_IP_RETURN\"" || nft "add rule inet fw4 PSW2 ip daddr ${WAN_IP} counter return comment \"WAN_IP_RETURN\""
+		[ -n "${is_tproxy}" ] && nft "add rule inet fw4 PSW2_MANGLE ip daddr ${WAN_IP} counter return comment \"WAN_IP_RETURN\"" || nft "add rule inet fw4 PSW2_NAT ip daddr ${WAN_IP} counter return comment \"WAN_IP_RETURN\""
 	fi
 	unset WAN_IP
 
@@ -694,7 +691,7 @@ add_firewall_rule() {
 	# jump chains
 	[ "$PROXY_IPV6" == "1" ] && {
 		nft "add rule inet fw4 mangle_prerouting meta nfproto {ipv6} counter jump PSW2_MANGLE_V6"
-		nft "add rule inet fw4 mangle_output meta nfproto {ipv6} counter jump PSW2_OUTPUT_MANGLE_V6 comment \"mangle-OUTPUT-PSW2\""
+		nft "add rule inet fw4 mangle_output meta nfproto {ipv6} counter jump PSW2_OUTPUT_MANGLE_V6 comment \"PSW2_OUTPUT_MANGLE\""
 
 		WAN6_IP=$(get_wan6_ip)
 		[ -n "${WAN6_IP}" ] && nft "add rule inet fw4 PSW2_MANGLE_V6 ip6 daddr ${WAN6_IP} counter return comment \"WAN6_IP_RETURN\""
@@ -751,15 +748,15 @@ add_firewall_rule() {
 			}
 
 			if [ -z "${is_tproxy}" ]; then
-				nft "add rule inet fw4 PSW2_OUTPUT ip protocol tcp ip daddr $FAKE_IP $(REDIRECT $REDIR_PORT)"
-				nft "add rule inet fw4 PSW2_OUTPUT ip protocol tcp $(factor $TCP_REDIR_PORTS "tcp dport") $(REDIRECT $REDIR_PORT)"
-				nft "add rule inet fw4 nat_output ip protocol tcp counter jump PSW2_OUTPUT"
+				nft "add rule inet fw4 PSW2_OUTPUT_NAT ip protocol tcp ip daddr $FAKE_IP $(REDIRECT $REDIR_PORT)"
+				nft "add rule inet fw4 PSW2_OUTPUT_NAT ip protocol tcp $(factor $TCP_REDIR_PORTS "tcp dport") $(REDIRECT $REDIR_PORT)"
+				nft "add rule inet fw4 nat_output ip protocol tcp counter jump PSW2_OUTPUT_NAT"
 			else
 				nft "add rule inet fw4 PSW2_OUTPUT_MANGLE ip protocol tcp ip daddr $FAKE_IP counter jump PSW2_RULE"
 				nft "add rule inet fw4 PSW2_OUTPUT_MANGLE ip protocol tcp $(factor $TCP_REDIR_PORTS "tcp dport") jump PSW2_RULE"
 				nft "add rule inet fw4 PSW2_MANGLE meta l4proto tcp iif lo $(REDIRECT $REDIR_PORT TPROXY) comment \"本机\""
 				nft "add rule inet fw4 PSW2_MANGLE ip protocol tcp iif lo counter return comment \"本机\""
-				nft "add rule inet fw4 mangle_output meta nfproto {ipv4} meta l4proto tcp counter jump PSW2_OUTPUT_MANGLE comment \"mangle-OUTPUT-PSW2\""
+				nft "add rule inet fw4 mangle_output meta nfproto {ipv4} meta l4proto tcp counter jump PSW2_OUTPUT_MANGLE comment \"PSW2_OUTPUT_MANGLE\""
 			fi
 
 			[ "$PROXY_IPV6" == "1" ] && {
@@ -793,7 +790,7 @@ add_firewall_rule() {
 			nft "add rule inet fw4 PSW2_OUTPUT_MANGLE ip protocol udp $(factor $UDP_REDIR_PORTS "udp dport") jump PSW2_RULE"
 			nft "add rule inet fw4 PSW2_MANGLE meta l4proto udp iif lo $(REDIRECT $REDIR_PORT TPROXY) comment \"本机\""
 			nft "add rule inet fw4 PSW2_MANGLE ip protocol udp iif lo counter return comment \"本机\""
-			nft "add rule inet fw4 mangle_output meta nfproto {ipv4} meta l4proto udp counter jump PSW2_OUTPUT_MANGLE comment \"mangle-OUTPUT-PSW2\""
+			nft "add rule inet fw4 mangle_output meta nfproto {ipv4} meta l4proto udp counter jump PSW2_OUTPUT_MANGLE comment \"PSW2_OUTPUT_MANGLE\""
 
 			if [ "$PROXY_IPV6_UDP" == "1" ]; then
 				nft "add rule inet fw4 PSW2_OUTPUT_MANGLE_V6 meta l4proto udp ip6 daddr $FAKE_IP_6 jump PSW2_RULE"
@@ -808,8 +805,8 @@ add_firewall_rule() {
 			done
 		fi
 
-		nft "add rule inet fw4 mangle_output oif lo counter return comment \"mangle-OUTPUT-PSW2\""
-		nft "add rule inet fw4 mangle_output meta mark 1 counter return comment \"mangle-OUTPUT-PSW2\""
+		nft "add rule inet fw4 mangle_output oif lo counter return comment \"PSW2_OUTPUT_MANGLE\""
+		nft "add rule inet fw4 mangle_output meta mark 1 counter return comment \"PSW2_OUTPUT_MANGLE\""
 
 		nft "add rule inet fw4 PSW2_MANGLE ip protocol udp udp dport 53 counter return"
 		nft "add rule inet fw4 PSW2_MANGLE_V6 meta l4proto udp udp dport 53 counter return"
@@ -832,14 +829,14 @@ add_firewall_rule() {
 }
 
 del_firewall_rule() {
-	for nft in "input" "forward" "dstnat" "srcnat" "nat_output" "mangle_prerouting" "mangle_output"; do
-        local handles=$(nft -a list chain inet fw4 ${nft} 2>/dev/null | grep -E "PSW2" | awk -F '# handle ' '{print$2}')
+	for nft in "forward" "dstnat" "srcnat" "nat_output" "mangle_prerouting" "mangle_output"; do
+        local handles=$(nft -a list chain inet fw4 ${nft} 2>/dev/null | grep -E "PSW2_" | awk -F '# handle ' '{print$2}')
 		for handle in $handles; do
 			nft delete rule inet fw4 ${nft} handle ${handle} 2>/dev/null
 		done
 	done
 
-	for handle in $(nft -a list chains | grep -E "chain PSW2" | grep -v "PSW2_RULE" | awk -F '# handle ' '{print$2}'); do
+	for handle in $(nft -a list chains | grep -E "chain PSW2_" | grep -v "PSW2_RULE" | awk -F '# handle ' '{print$2}'); do
 		nft delete chain inet fw4 handle ${handle} 2>/dev/null
 	done
 
@@ -875,60 +872,70 @@ flush_include() {
 }
 
 gen_include() {
-	local nft_chain_file=$TMP_PATH/PSW2.nft
-	echo "" > $nft_chain_file
-	for chain in $(nft -a list chains | grep -E "chain PSW2" |awk -F ' ' '{print$2}'); do
+	local nft_chain_file=$TMP_PATH/PSW2_RULE.nft
+	local nft_set_file=$TMP_PATH/PSW2_SETS.nft
+	echo "#!/usr/sbin/nft -f" > $nft_chain_file
+	echo "#!/usr/sbin/nft -f" > $nft_set_file
+	for chain in $(nft -a list chains | grep -E "chain PSW2_" | awk -F ' ' '{print$2}'); do
 		nft list chain inet fw4 ${chain} >> $nft_chain_file
+	done
+	
+	for set_name in $(nft -a list sets | grep -E "set passwall2_" | awk -F ' ' '{print$2}'); do
+		nft list set inet fw4 ${set_name} >> $nft_set_file
 	done
 
 	local __nft=" "
-	[ -z "${nft}" ] && {
-		__nft=$(cat <<- EOF
-			nft -f ${nft_chain_file}
+	__nft=$(cat <<- EOF
 
-			nft "add rule inet fw4 dstnat jump PSW2_REDIRECT"
+		[ -z "\$(nft list sets 2>/dev/null | grep "passwall2_")" ] && nft -f ${nft_set_file}
+		[ -z "\$(nft list chain inet fw4 nat_output 2>/dev/null)" ] && nft "add chain inet fw4 nat_output { type nat hook output priority -1; }"
+		nft -f ${nft_chain_file}
 
-			[ "$accept_icmp" == "1" ] && {
-				nft "add rule inet fw4 dstnat meta l4proto {icmp,icmpv6} counter jump PSW2_ICMP_REDIRECT"
-				nft "add rule inet fw4 nat_output meta l4proto {icmp,icmpv6} counter jump PSW2_ICMP_REDIRECT"
-			}
+		nft "add rule inet fw4 dstnat jump PSW2_REDIRECT"
 
-			[ -z "${is_tproxy}" ] && {
-				PR_INDEX=\$(${MY_PATH} RULE_LAST_INDEX "inet fw4" PSW2 WAN_IP_RETURN -1)
-				if [ \$PR_INDEX -ge 0 ]; then
-					WAN_IP=\$(${MY_PATH} get_wan_ip)
-					[ ! -z "\${WAN_IP}" ] && nft "replace rule inet fw4 PSW2 handle \$PR_INDEX ip daddr "\${WAN_IP}" counter return comment \"WAN_IP_RETURN\""
-				fi
-				nft "add rule inet fw4 dstnat ip protocol tcp counter jump PSW2"
-				nft "add rule inet fw4 nat_output ip protocol tcp counter jump PSW2_OUTPUT"
-			}
+		[ "$accept_icmp" == "1" ] && {
+			nft "add rule inet fw4 dstnat meta l4proto {icmp,icmpv6} counter jump PSW2_ICMP_REDIRECT"
+			nft "add rule inet fw4 nat_output meta l4proto {icmp,icmpv6} counter jump PSW2_ICMP_REDIRECT"
+		}
 
-			[ -n "${is_tproxy}" ] && {
-				PR_INDEX=\$(${MY_PATH} RULE_LAST_INDEX "inet fw4" PSW2_MANGLE WAN_IP_RETURN -1)
-				if [ \$PR_INDEX -ge 0 ]; then
-					WAN_IP=\$(${MY_PATH} get_wan_ip)
-					[ ! -z "\${WAN_IP}" ] && nft "replace rule inet fw4 PSW2_MANGLE handle \$PR_INDEX ip daddr "\${WAN_IP}" counter return comment \"WAN_IP_RETURN\""
-				fi
-				nft "add rule inet fw4 mangle_prerouting meta nfproto {ipv4} counter jump PSW2_MANGLE"
-				nft "add rule inet fw4 mangle_output meta nfproto {ipv4} meta l4proto tcp counter jump PSW2_OUTPUT_MANGLE comment \"mangle-OUTPUT-PSW2\""
-			}
-			\$(${MY_PATH} insert_rule_before "inet fw4" "mangle_prerouting" "PSW2_MANGLE" "counter jump PSW2_DIVERT")
+		[ -z "${is_tproxy}" ] && {
+			PR_INDEX=\$(sh ${MY_PATH} RULE_LAST_INDEX "inet fw4" PSW2_NAT WAN_IP_RETURN -1)
+			if [ \$PR_INDEX -ge 0 ]; then
+				WAN_IP=\$(sh ${MY_PATH} get_wan_ip)
+				[ ! -z "\${WAN_IP}" ] && nft "replace rule inet fw4 PSW2_NAT handle \$PR_INDEX ip daddr "\${WAN_IP}" counter return comment \"WAN_IP_RETURN\""
+			fi
+			nft "add rule inet fw4 dstnat ip protocol tcp counter jump PSW2_NAT"
+			nft "add rule inet fw4 nat_output ip protocol tcp counter jump PSW2_OUTPUT_NAT"
+		}
 
-			[ "$PROXY_IPV6" == "1" ] && {
-				PR_INDEX=\$(${MY_PATH} RULE_LAST_INDEX "inet fw4" PSW2_MANGLE_V6 WAN6_IP_RETURN -1)
-				if [ \$PR_INDEX -ge 0 ]; then
-					WAN6_IP=\$(${MY_PATH} get_wan6_ip)
-					[ ! -z "\${WAN_IP}" ] && nft "replace rule inet fw4 PSW2_MANGLE_V6 handle \$PR_INDEX ip6 daddr "\${WAN6_IP}" counter return comment \"WAN6_IP_RETURN\""
-				fi
-				nft "add rule inet fw4 mangle_prerouting meta nfproto {ipv6} counter jump PSW2_MANGLE_V6"
-				nft "add rule inet fw4 mangle_output meta nfproto {ipv6} counter jump PSW2_OUTPUT_MANGLE_V6 comment \"mangle-OUTPUT-PSW2\""
-			}
+		[ -n "${is_tproxy}" ] && {
+			PR_INDEX=\$(sh ${MY_PATH} RULE_LAST_INDEX "inet fw4" PSW2_MANGLE WAN_IP_RETURN -1)
+			if [ \$PR_INDEX -ge 0 ]; then
+				WAN_IP=\$(sh ${MY_PATH} get_wan_ip)
+				[ ! -z "\${WAN_IP}" ] && nft "replace rule inet fw4 PSW2_MANGLE handle \$PR_INDEX ip daddr "\${WAN_IP}" counter return comment \"WAN_IP_RETURN\""
+			fi
+			nft "add rule inet fw4 mangle_prerouting meta nfproto {ipv4} counter jump PSW2_MANGLE"
+			nft "add rule inet fw4 mangle_output meta nfproto {ipv4} meta l4proto tcp counter jump PSW2_OUTPUT_MANGLE comment \"PSW2_OUTPUT_MANGLE\""
+		}
+		\$(sh ${MY_PATH} insert_rule_before "inet fw4" "mangle_prerouting" "PSW2_MANGLE" "counter jump PSW2_DIVERT")
 
-			nft "add rule inet fw4 mangle_output oif lo counter return comment \"mangle-OUTPUT-PSW2\""
-			nft "add rule inet fw4 mangle_output meta mark 1 counter return comment \"mangle-OUTPUT-PSW2\""
-		EOF
-		)
-	}
+		[ "$UDP_NODE" != "nil" -o "$TCP_UDP" = "1" ] && nft "add rule inet fw4 mangle_output meta nfproto {ipv4} meta l4proto udp counter jump PSW2_OUTPUT_MANGLE comment \"PSW2_OUTPUT_MANGLE\""
+
+		[ "$PROXY_IPV6" == "1" ] && {
+			PR_INDEX=\$(sh ${MY_PATH} RULE_LAST_INDEX "inet fw4" PSW2_MANGLE_V6 WAN6_IP_RETURN -1)
+			if [ \$PR_INDEX -ge 0 ]; then
+				WAN6_IP=\$(sh ${MY_PATH} get_wan6_ip)
+				[ ! -z "\${WAN_IP}" ] && nft "replace rule inet fw4 PSW2_MANGLE_V6 handle \$PR_INDEX ip6 daddr "\${WAN6_IP}" counter return comment \"WAN6_IP_RETURN\""
+			fi
+			nft "add rule inet fw4 mangle_prerouting meta nfproto {ipv6} counter jump PSW2_MANGLE_V6"
+			nft "add rule inet fw4 mangle_output meta nfproto {ipv6} counter jump PSW2_OUTPUT_MANGLE_V6 comment \"PSW2_OUTPUT_MANGLE\""
+		}
+
+		nft "add rule inet fw4 mangle_output oif lo counter return comment \"PSW2_OUTPUT_MANGLE\""
+		nft "add rule inet fw4 mangle_output meta mark 1 counter return comment \"PSW2_OUTPUT_MANGLE\""
+	EOF
+	)
+
 	cat <<-EOF >> $FWI
 	${__nft}
 	EOF
