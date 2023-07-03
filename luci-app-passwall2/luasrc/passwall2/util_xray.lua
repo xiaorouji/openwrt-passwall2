@@ -905,7 +905,7 @@ function gen_config(var)
 
 			if default_outboundTag or default_balancerTag then
 				table.insert(rules, {
-					_flag = "defalut",
+					_flag = "default",
 					type = "field",
 					outboundTag = default_outboundTag,
 					balancerTag = default_balancerTag,
@@ -953,7 +953,7 @@ function gen_config(var)
 				rules = {}
 			}
 			table.insert(routing.rules, {
-				_flag = "defalut",
+				_flag = "default",
 				type = "field",
 				outboundTag = node_id,
 				network = "tcp,udp"
