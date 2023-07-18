@@ -137,6 +137,7 @@ jobs:
           echo "CONFIG_PACKAGE_luci-app-passwall2_INCLUDE_ShadowsocksR_Libev_Client=n" >> .config
           echo "CONFIG_PACKAGE_luci-app-passwall2_INCLUDE_ShadowsocksR_Libev_Server=n" >> .config
           echo "CONFIG_PACKAGE_luci-app-passwall2_INCLUDE_Simple_Obfs=n" >> .config
+          echo "CONFIG_PACKAGE_luci-app-passwall2_INCLUDE_tuic_client=n" >> .config
           echo "CONFIG_PACKAGE_luci-app-passwall2_INCLUDE_V2ray=n" >> .config
           echo "CONFIG_PACKAGE_luci-app-passwall2_INCLUDE_V2ray_Plugin=n" >> .config
 
@@ -277,6 +278,7 @@ jobs:
           echo "CONFIG_PACKAGE_luci-app-passwall2_INCLUDE_ShadowsocksR_Libev_Client=y" >> .config
           echo "CONFIG_PACKAGE_luci-app-passwall2_INCLUDE_ShadowsocksR_Libev_Server=y" >> .config
           echo "CONFIG_PACKAGE_luci-app-passwall2_INCLUDE_Simple_Obfs=y" >> .config
+          echo "CONFIG_PACKAGE_luci-app-passwall2_INCLUDE_tuic_client=y" >> .config
           echo "CONFIG_PACKAGE_luci-app-passwall2_INCLUDE_V2ray=y" >> .config
           echo "CONFIG_PACKAGE_luci-app-passwall2_INCLUDE_V2ray_Plugin=y" >> .config
 
