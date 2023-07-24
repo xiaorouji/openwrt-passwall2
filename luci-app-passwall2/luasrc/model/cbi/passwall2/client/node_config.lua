@@ -899,6 +899,14 @@ hysteria_disable_mtu_discovery:depends("type", "Hysteria")
 hysteria_lazy_start = s:option(Flag, "hysteria_lazy_start", translate("Lazy Start"))
 hysteria_lazy_start:depends("type", "Hysteria")
 
+-- [[ TUIC ]]
+-- Tuic Password for remote server connect
+tuic_passwd = s:option(Value, "tuic_password", translate("TUIC User Password For Connect Remote Server"))
+tuic_passwd.password = true
+tuic_passwd.rmempty = true
+tuic_passwd.default = ""
+tuic_passwd:depends("type", "TUIC")
+
 --[[
 -- Tuic username for local socks connect
 tuic_passwd = s:option(Value, "tuic_socks_username", translate("TUIC UserName For Local Socks"))
