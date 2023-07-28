@@ -216,7 +216,9 @@ load_acl() {
 			[ "$udp_no_redir_ports" = "default" ] && udp_no_redir_ports=$UDP_NO_REDIR_PORTS
 			[ "$tcp_redir_ports" = "default" ] && tcp_redir_ports=$TCP_REDIR_PORTS
 			[ "$udp_redir_ports" = "default" ] && udp_redir_ports=$UDP_REDIR_PORTS
-			
+			[ "$tcp_no_redir_ports" = "1:65535" ] && tcp_proxy_mode="disable"
+			[ "$udp_no_redir_ports" = "1:65535" ] && udp_proxy_mode="disable"
+
 			node_remark=$(config_n_get $NODE remarks)
 			[ -s "${TMP_ACL_PATH}/${sid}/var_node" ] && node=$(cat ${TMP_ACL_PATH}/${sid}/var_node)
 			[ -s "${TMP_ACL_PATH}/${sid}/var_port" ] && redir_port=$(cat ${TMP_ACL_PATH}/${sid}/var_port)
@@ -264,7 +266,7 @@ load_acl() {
 						}
 
 						[ "$tcp_no_redir_ports" != "disable" ] && {
-							nft "add rule inet fw4 $nft_prerouting_chain ${_ipt_source} ip protocol tcp tcp dport {$tcp_no_redir_ports} counter return comment \"$remarks\""
+							nft "add rule inet fw4 $nft_prerouting_chain ${_ipt_source} ip protocol tcp $(factor $tcp_no_redir_ports "tcp dport") counter return comment \"$remarks\""
 							nft "add rule inet fw4 PSW2_MANGLE_V6 comment ${_ipt_source} meta l4proto tcp tcp dport {$tcp_no_redir_ports} counter return comment \"$remarks\""
 							msg2="${msg2}[$?]除${tcp_no_redir_ports}外的"
 						}
@@ -298,8 +300,8 @@ load_acl() {
 						msg2="${msg}使用UDP节点[$node_remark] [$(get_action_chain_name $udp_proxy_mode)]"
 						msg2="${msg2}(TPROXY:${redir_port})代理"
 						[ "$udp_no_redir_ports" != "disable" ] && {
-							nft add rule inet fw4 PSW2_MANGLE meta l4proto udp ${_ipt_source} $(factor $udp_no_redir_ports "udp dport") counter return
-							nft add rule inet fw4 PSW2_MANGLE_V6 meta l4proto udp ${_ipt_source} $(factor $udp_no_redir_ports "udp dport") counter return 2>/dev/null
+							nft "add rule inet fw4 PSW2_MANGLE meta l4proto udp ${_ipt_source} $(factor $udp_no_redir_ports "udp dport") counter return comment \"$remarks\""
+							nft "add rule inet fw4 PSW2_MANGLE_V6 meta l4proto udp ${_ipt_source} $(factor $udp_no_redir_ports "udp dport") counter return comment \"$remarks\"" 2>/dev/null
 							msg2="${msg2}[$?]除${udp_no_redir_ports}外的"
 						}
 						msg2="${msg2}所有端口"
