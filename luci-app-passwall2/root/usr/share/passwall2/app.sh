@@ -364,12 +364,18 @@ run_v2ray() {
 		ln_run "$(first_type $(config_t_get global_app ${type}_file) ${type})" ${type} $V2RAY_DNS_DIRECT_LOG run -c "$V2RAY_DNS_DIRECT_CONFIG"
 		
 		direct_dnsmasq_listen_port=$(get_new_port $(expr $dns_direct_listen_port + 1) udp)
+		local set_flag="${flag}"
+		local direct_ipset_conf=$TMP_PATH/dnsmasq_${flag}_direct.conf
+		[ -n "$(echo ${flag} | grep '^acl')" ] && {
+			direct_ipset_conf=${TMP_ACL_PATH}/${sid}/dnsmasq_${flag}_direct.conf
+			set_flag=$(echo ${flag} | awk -F '_' '{print $2}')
+		}
 		if [ "${nftflag}" = "1" ]; then
-			local direct_nftset="4#inet#fw4#passwall2_whitelist,6#inet#fw4#passwall2_whitelist6"
+			local direct_nftset="4#inet#fw4#passwall2_${set_flag}_whitelist,6#inet#fw4#passwall2_${set_flag}_whitelist6"
 		else
-			local direct_ipset="passwall2_whitelist,passwall2_whitelist6"
+			local direct_ipset="passwall2_${set_flag}_whitelist,passwall2_${set_flag}_whitelist6"
 		fi
-		run_ipset_dnsmasq listen_port=${direct_dnsmasq_listen_port} server_dns=127.0.0.1#${dns_direct_listen_port} ipset="${direct_ipset}" nftset="${direct_nftset}" config_file=$TMP_PATH/dnsmasq_${flag}_direct.conf
+		run_ipset_dnsmasq listen_port=${direct_dnsmasq_listen_port} server_dns=127.0.0.1#${dns_direct_listen_port} ipset="${direct_ipset}" nftset="${direct_nftset}" config_file=${direct_ipset_conf}
 
 		V2RAY_DNS_REMOTE_CONFIG="${TMP_PATH}/${flag}_dns_remote.json"
 		V2RAY_DNS_REMOTE_LOG="${TMP_PATH}/${flag}_dns_remote.log"
@@ -871,7 +877,6 @@ acl_app() {
 		redir_port=11200
 		dns_port=11300
 		dnsmasq_port=11400
-		echolog "访问控制："
 		for item in $items; do
 			index=$(expr $index + 1)
 			local enabled sid remarks sources node direct_dns_protocol direct_dns direct_dns_doh direct_dns_client_ip direct_dns_query_strategy remote_dns_protocol remote_dns remote_dns_doh remote_dns_client_ip remote_fakedns remote_dns_query_strategy
