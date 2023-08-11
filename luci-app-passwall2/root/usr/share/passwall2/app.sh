@@ -12,6 +12,7 @@ TMP_ID_PATH=$TMP_PATH/id
 TMP_PORT_PATH=$TMP_PATH/port
 TMP_ROUTE_PATH=$TMP_PATH/route
 TMP_ACL_PATH=$TMP_PATH/acl
+TMP_IFACE_PATH=$TMP_PATH/iface
 TMP_PATH2=/tmp/etc/${CONFIG}_tmp
 DNSMASQ_PATH=/etc/dnsmasq.d
 TMP_DNSMASQ_PATH=/tmp/dnsmasq.d/passwall2
@@ -21,7 +22,6 @@ RULES_PATH=/usr/share/${CONFIG}/rules
 TUN_DNS_PORT=15353
 TUN_DNS="127.0.0.1#${TUN_DNS_PORT}"
 DEFAULT_DNS=
-IFACES=
 ENABLED_DEFAULT_ACL=0
 ENABLED_ACLS=0
 PROXY_IPV6=0
@@ -318,11 +318,6 @@ run_v2ray() {
 	}
 	local buffer_size=$(config_t_get global_forwarding buffer_size)
 	[ -n "${buffer_size}" ] && _extra_param="${_extra_param} -buffer_size ${buffer_size}"
-
-	local protocol=$(config_n_get $node protocol)
-	[ "$protocol" == "_iface" ] && {
-		IFACES="$IFACES $(config_n_get $node iface)"
-	}
 
 	[ -n "$dns_listen_port" ] && {
 		V2RAY_DNS_DIRECT_CONFIG="${TMP_PATH}/${flag}_dns_direct.json"
@@ -1092,7 +1087,7 @@ PROXY_IPV6=$(config_t_get global_forwarding ipv6_tproxy 0)
 
 export V2RAY_LOCATION_ASSET=$(config_t_get global_rules v2ray_location_asset "/usr/share/v2ray/")
 export XRAY_LOCATION_ASSET=$V2RAY_LOCATION_ASSET
-mkdir -p /tmp/etc $TMP_PATH $TMP_BIN_PATH $TMP_SCRIPT_FUNC_PATH $TMP_ID_PATH $TMP_PORT_PATH $TMP_ROUTE_PATH $TMP_ACL_PATH $TMP_PATH2
+mkdir -p /tmp/etc $TMP_PATH $TMP_BIN_PATH $TMP_SCRIPT_FUNC_PATH $TMP_ID_PATH $TMP_PORT_PATH $TMP_ROUTE_PATH $TMP_ACL_PATH $TMP_IFACE_PATH $TMP_PATH2
 
 arg1=$1
 shift

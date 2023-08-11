@@ -740,8 +740,8 @@ add_firewall_rule() {
 				$ip6t_m -A PSW2 $(comment "本机") -p tcp -i lo -j RETURN
 				$ip6t_m -A OUTPUT -p tcp -j PSW2_OUTPUT
 			fi
-			
-			for iface in $IFACES; do
+
+			for iface in $(ls ${TMP_IFACE_PATH}); do
 				$ipt_n -I PSW2_OUTPUT -o $iface -p tcp -j RETURN
 				$ipt_m -I PSW2_OUTPUT -o $iface -p tcp -j RETURN
 			done
@@ -774,8 +774,8 @@ add_firewall_rule() {
 				$ip6t_m -A PSW2 $(comment "本机") -p udp -i lo -j RETURN
 				$ip6t_m -A OUTPUT -p udp -j PSW2_OUTPUT
 			fi
-			
-			for iface in $IFACES; do
+
+			for iface in $(ls ${TMP_IFACE_PATH}); do
 				$ipt_n -I PSW2_OUTPUT -o $iface -p udp -j RETURN
 				$ipt_m -I PSW2_OUTPUT -o $iface -p udp -j RETURN
 			done

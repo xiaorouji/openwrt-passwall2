@@ -767,8 +767,8 @@ add_firewall_rule() {
 				nft "add rule inet fw4 PSW2_MANGLE_V6 meta l4proto tcp iif lo $(REDIRECT $REDIR_PORT TPROXY) comment \"本机\""
 				nft "add rule inet fw4 PSW2_MANGLE_V6 meta l4proto tcp iif lo counter return comment \"本机\""
 			}
-			
-			for iface in $IFACES; do
+
+			for iface in $(ls ${TMP_IFACE_PATH}); do
 				nft "insert rule inet fw4 $nft_output_chain ip protocol tcp oif $iface counter return"
 				nft "insert rule inet fw4 PSW2_OUTPUT_MANGLE_V6 ip protocol tcp oif $iface counter return"
 			done
@@ -800,8 +800,8 @@ add_firewall_rule() {
 				nft "add rule inet fw4 PSW2_MANGLE_V6 meta l4proto udp iif lo $(REDIRECT $REDIR_PORT TPROXY) comment \"本机\""
 				nft "add rule inet fw4 PSW2_MANGLE_V6 meta l4proto udp iif lo counter return comment \"本机\""
 			fi
-			
-			for iface in $IFACES; do
+
+			for iface in $(ls ${TMP_IFACE_PATH}); do
 				nft "insert rule inet fw4 $nft_output_chain ip protocol udp oif $iface counter return"
 				nft "insert rule inet fw4 PSW2_OUTPUT_MANGLE_V6 ip protocol udp oif $iface counter return"
 			done
