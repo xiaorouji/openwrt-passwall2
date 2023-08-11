@@ -189,10 +189,12 @@ end
 o = s:option(ListValue, "direct_dns_protocol", translate("Direct DNS Protocol"))
 o.default = "auto"
 o:value("auto", translate("Auto"))
+--[[
 o:value("udp", "UDP")
 o:value("tcp", "TCP")
 o:value("doh", "DoH")
 o:depends({ node = "default",  ['!reverse'] = true })
+]]--
 ---- DNS Forward
 o = s:option(Value, "direct_dns", translate("Direct DNS"))
 o.datatype = "or(ipaddr,ipaddrport)"

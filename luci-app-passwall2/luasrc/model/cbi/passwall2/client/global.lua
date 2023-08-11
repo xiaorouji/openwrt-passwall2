@@ -264,9 +264,11 @@ s:tab("DNS", translate("DNS"))
 o = s:taboption("DNS", ListValue, "direct_dns_protocol", translate("Direct DNS Protocol"))
 o.default = "auto"
 o:value("auto", translate("Auto"))
+--[[
 o:value("udp", "UDP")
 o:value("tcp", "TCP")
 o:value("doh", "DoH")
+]]--
 
 ---- DNS Forward
 o = s:taboption("DNS", Value, "direct_dns", translate("Direct DNS"))

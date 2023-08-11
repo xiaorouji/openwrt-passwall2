@@ -908,7 +908,7 @@ acl_app() {
 			tcp_proxy_mode="global"
 			udp_proxy_mode="global"
 			node=${node:-default}
-			direct_dns_protocol=${direct_dns_protocol:-auto}
+			direct_dns_protocol="auto"
 			direct_dns=${direct_dns:-119.29.29.29}
 			[ "$direct_dns_protocol" = "doh" ] && direct_dns=${direct_dns_doh:-https://223.5.5.5/dns-query}
 			direct_dns_query_strategy=${direct_dns_query_strategy:-UseIP}
@@ -1070,6 +1070,7 @@ TCP_PROXY_MODE="global"
 UDP_PROXY_MODE="global"
 LOCALHOST_PROXY=$(config_t_get global localhost_proxy '1')
 DIRECT_DNS_PROTOCOL=$(config_t_get global direct_dns_protocol tcp)
+DIRECT_DNS_PROTOCOL="auto"
 DIRECT_DNS=$(config_t_get global direct_dns 119.29.29.29:53 | sed 's/#/:/g' | sed -E 's/\:([^:]+)$/#\1/g')
 DIRECT_DNS_QUERY_STRATEGY=$(config_t_get global direct_dns_query_strategy UseIP)
 REMOTE_DNS_PROTOCOL=$(config_t_get global remote_dns_protocol tcp)
