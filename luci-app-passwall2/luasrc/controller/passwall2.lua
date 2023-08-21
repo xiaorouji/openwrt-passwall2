@@ -24,7 +24,6 @@ function index()
 	entry({"admin", "services", appname, "settings"}, cbi(appname .. "/client/global"), _("Basic Settings"), 1).dependent = true
 	entry({"admin", "services", appname, "node_list"}, cbi(appname .. "/client/node_list"), _("Node List"), 2).dependent = true
 	entry({"admin", "services", appname, "node_subscribe"}, cbi(appname .. "/client/node_subscribe"), _("Node Subscribe"), 3).dependent = true
-	entry({"admin", "services", appname, "auto_switch"}, cbi(appname .. "/client/auto_switch"), _("Auto Switch"), 4).leaf = true
 	entry({"admin", "services", appname, "other"}, cbi(appname .. "/client/other", {autoapply = true}), _("Other Settings"), 92).leaf = true
 	if nixio.fs.access("/usr/sbin/haproxy") then
 		entry({"admin", "services", appname, "haproxy"}, cbi(appname .. "/client/haproxy"), _("Load Balancing"), 93).leaf = true
@@ -48,8 +47,6 @@ function index()
 	entry({"admin", "services", appname, "server_get_log"}, call("server_get_log")).leaf = true
 	entry({"admin", "services", appname, "server_clear_log"}, call("server_clear_log")).leaf = true
 	entry({"admin", "services", appname, "link_add_node"}, call("link_add_node")).leaf = true
-	entry({"admin", "services", appname, "autoswitch_add_node"}, call("autoswitch_add_node")).leaf = true
-	entry({"admin", "services", appname, "autoswitch_remove_node"}, call("autoswitch_remove_node")).leaf = true
 	entry({"admin", "services", appname, "get_now_use_node"}, call("get_now_use_node")).leaf = true
 	entry({"admin", "services", appname, "get_redir_log"}, call("get_redir_log")).leaf = true
 	entry({"admin", "services", appname, "get_log"}, call("get_log")).leaf = true
@@ -105,41 +102,6 @@ function link_add_node()
 	local link = luci.http.formvalue("link")
 	luci.sys.call('echo \'' .. link .. '\' > ' .. lfile)
 	luci.sys.call("lua /usr/share/passwall2/subscribe.lua add log")
-end
-
-function autoswitch_add_node()
-	local key = luci.http.formvalue("key")
-	if key and key ~= "" then
-		local new_list = ucic:get(appname, "@auto_switch[0]", "node") or {}
-		for i = #new_list, 1, -1 do
-			if (ucic:get(appname, new_list[i], "remarks") or ""):find(key) then
-				table.remove(new_list, i)
-			end
-		end
-		for k, e in ipairs(api.get_valid_nodes()) do
-			if e.node_type == "normal" and e["remark"]:find(key) then
-				table.insert(new_list, e.id)
-			end
-		end
-		ucic:set_list(appname, "@auto_switch[0]", "node", new_list)
-		ucic:commit(appname)
-	end
-	luci.http.redirect(api.url("auto_switch"))
-end
-
-function autoswitch_remove_node()
-	local key = luci.http.formvalue("key")
-	if key and key ~= "" then
-		local new_list = ucic:get(appname, "@auto_switch[0]", "node") or {}
-		for i = #new_list, 1, -1 do
-			if (ucic:get(appname, new_list[i], "remarks") or ""):find(key) then
-				table.remove(new_list, i)
-			end
-		end
-		ucic:set_list(appname, "@auto_switch[0]", "node", new_list)
-		ucic:commit(appname)
-	end
-	luci.http.redirect(api.url("auto_switch"))
 end
 
 function get_now_use_node()
@@ -293,7 +255,6 @@ end
 function clear_all_nodes()
 	ucic:set(appname, '@global[0]', "enabled", "0")
 	ucic:set(appname, '@global[0]', "node", "nil")
-	ucic:set_list(appname, "@auto_switch[0]", "node", {})
 	ucic:foreach(appname, "socks", function(t)
 		ucic:delete(appname, t[".name"])
 	end)
@@ -313,14 +274,7 @@ end
 
 function delete_select_nodes()
 	local ids = luci.http.formvalue("ids")
-	local auto_switch_node_list = ucic:get(appname, "@auto_switch[0]", "node") or {}
 	string.gsub(ids, '[^' .. "," .. ']+', function(w)
-		for i = #auto_switch_node_list, 1, -1 do
-			if w == auto_switch_node_list[i] then
-				table.remove(auto_switch_node_list, i)
-			end
-		end
-		ucic:set_list(appname, "@auto_switch[0]", "node", auto_switch_node_list)
 		if (ucic:get(appname, "@global[0]", "node") or "nil") == w then
 			ucic:set(appname, '@global[0]', "node", "nil")
 		end
