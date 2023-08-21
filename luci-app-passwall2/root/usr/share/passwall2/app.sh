@@ -535,6 +535,29 @@ run_socks() {
 	unset http_flag
 }
 
+socks_node_switch() {
+	local flag new_node
+	eval_set_val $@
+	[ -n "$flag" ] && [ -n "$new_node" ] && {
+		pgrep -af "$TMP_BIN_PATH" | awk -v P1="${flag}" 'BEGIN{IGNORECASE=1}$0~P1 && !/acl\/|acl_/{print $1}' | xargs kill -9 >/dev/null 2>&1
+		rm -rf $TMP_PATH/SOCKS_${flag}*
+		rm -rf $TMP_PATH/HTTP2SOCKS_${flag}*
+
+		for filename in $(ls ${TMP_SCRIPT_FUNC_PATH}); do
+			cmd=$(cat ${TMP_SCRIPT_FUNC_PATH}/${filename})
+			[ -n "$(echo $cmd | grep "${flag}")" ] && rm -f ${TMP_SCRIPT_FUNC_PATH}/${filename}
+		done
+		local port=$(config_n_get $flag port)
+		local config_file="SOCKS_${flag}.json"
+		local log_file="SOCKS_${flag}.log"
+		local http_port=$(config_n_get $flag http_port 0)
+		local http_config_file="HTTP2SOCKS_${flag}.json"
+		LOG_FILE="/dev/null"
+		run_socks flag=$flag node=$new_node bind=0.0.0.0 socks_port=$port config_file=$config_file http_port=$http_port http_config_file=$http_config_file
+		echo $new_node > $TMP_ID_PATH/socks_${flag}
+	}
+}
+
 run_global() {
 	[ "$NODE" = "nil" ] && return 1
 	TYPE=$(echo $(config_n_get $NODE type nil) | tr 'A-Z' 'a-z')
@@ -642,7 +665,11 @@ start_socks() {
 				local http_port=$(config_n_get $id http_port 0)
 				local http_config_file="HTTP2SOCKS_${id}.json"
 				run_socks flag=$id node=$node bind=0.0.0.0 socks_port=$port config_file=$config_file http_port=$http_port http_config_file=$http_config_file
-				echo $node > $TMP_ID_PATH/SOCKS_${id}
+				echo $node > $TMP_ID_PATH/socks_${id}
+
+				#自动切换逻辑
+				local enable_autoswitch=$(config_n_get $id enable_autoswitch 0)
+				[ "$enable_autoswitch" = "1" ] && $APP_PATH/socks_auto_switch.sh ${id} > /dev/null 2>&1 &
 			done
 		}
 	}
@@ -980,6 +1007,7 @@ stop() {
 	[ -s "$TMP_PATH/bridge_nf_ipt" ] && sysctl -w net.bridge.bridge-nf-call-iptables=$(cat $TMP_PATH/bridge_nf_ipt) >/dev/null 2>&1
 	[ -s "$TMP_PATH/bridge_nf_ip6t" ] && sysctl -w net.bridge.bridge-nf-call-ip6tables=$(cat $TMP_PATH/bridge_nf_ip6t) >/dev/null 2>&1
 	rm -rf ${TMP_PATH}
+	rm -rf /tmp/lock/${CONFIG}_socks_auto_switch*
 	echolog "清空并关闭相关程序和缓存完成。"
 	exit 0
 }
@@ -1042,6 +1070,9 @@ run_v2ray)
 	;;
 run_socks)
 	run_socks $@
+	;;
+socks_node_switch)
+	socks_node_switch $@
 	;;
 echolog)
 	echolog $@
