@@ -261,47 +261,6 @@ end
 
 s:tab("DNS", translate("DNS"))
 
-o = s:taboption("DNS", ListValue, "direct_dns_protocol", translate("Direct DNS Protocol"))
-o.default = "auto"
-o:value("auto", translate("Auto"))
---[[
-o:value("udp", "UDP")
-o:value("tcp", "TCP")
-o:value("doh", "DoH")
-]]--
-
----- DNS Forward
-o = s:taboption("DNS", Value, "direct_dns", translate("Direct DNS"))
-o.datatype = "or(ipaddr,ipaddrport)"
-o.default = "119.29.29.29"
-o:value("114.114.114.114", "114.114.114.114 (114DNS)")
-o:value("119.29.29.29", "119.29.29.29 (DNSPod)")
-o:value("223.5.5.5", "223.5.5.5 (AliDNS)")
-o:depends("direct_dns_protocol", "udp")
-o:depends("direct_dns_protocol", "tcp")
-
----- DoH
-o = s:taboption("DNS", Value, "direct_dns_doh", translate("Direct DNS DoH"))
-o.default = "https://223.5.5.5/dns-query"
-o:value("https://1.12.12.12/dns-query", "DNSPod 1")
-o:value("https://120.53.53.53/dns-query", "DNSPod 2")
-o:value("https://223.5.5.5/dns-query", "AliDNS")
-o.validate = doh_validate
-o:depends("direct_dns_protocol", "doh")
-
-o = s:taboption("DNS", Value, "direct_dns_client_ip", translate("Direct DNS EDNS Client Subnet"))
-o.description = translate("Notify the DNS server when the DNS query is notified, the location of the client (cannot be a private IP address).") .. "<br />" ..
-				translate("This feature requires the DNS server to support the Edns Client Subnet (RFC7871).")
-o.datatype = "ipaddr"
-o:depends("direct_dns_protocol", "tcp")
-o:depends("direct_dns_protocol", "doh")
-
-o = s:taboption("DNS", ListValue, "direct_dns_query_strategy", translate("Direct Query Strategy"))
-o.default = "UseIP"
-o:value("UseIP")
-o:value("UseIPv4")
-o:value("UseIPv6")
-
 o = s:taboption("DNS", ListValue, "remote_dns_protocol", translate("Remote DNS Protocol"))
 o:value("tcp", "TCP")
 o:value("doh", "DoH")
