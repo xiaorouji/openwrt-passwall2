@@ -64,18 +64,18 @@ o = s:option(Flag, "enable_autoswitch", translate("Auto Switch"))
 o.default = 0
 o.rmempty = false
 
-o = s:option(Value, "autoswitch_testing_time", translate("How often to test"), translate("Units:minutes"))
-o.datatype = "uinteger"
-o.default = 1
+o = s:option(Value, "autoswitch_testing_time", translate("How often to test"), translate("Units:seconds"))
+o.datatype = "min(10)"
+o.default = 30
 o:depends("enable_autoswitch", true)
 
 o = s:option(Value, "autoswitch_connect_timeout", translate("Timeout seconds"), translate("Units:seconds"))
-o.datatype = "uinteger"
+o.datatype = "min(1)"
 o.default = 3
 o:depends("enable_autoswitch", true)
 
 o = s:option(Value, "autoswitch_retry_num", translate("Timeout retry num"))
-o.datatype = "uinteger"
+o.datatype = "min(1)"
 o.default = 1
 o:depends("enable_autoswitch", true)
 	
@@ -105,12 +105,11 @@ o:depends("enable_autoswitch", true)
 
 o = s:option(Value, "autoswitch_probe_url", translate("Probe URL"), translate("The URL used to detect the connection status."))
 o.default = "https://www.google.com/generate_204"
+o:depends("enable_autoswitch", true)
 
 for k, v in pairs(nodes_table) do
-	if v.node_type == "normal" then
-		autoswitch_backup_node:value(v.id, v["remark"])
-		socks_node:value(v.id, v["remark"])
-	end
+	autoswitch_backup_node:value(v.id, v["remark"])
+	socks_node:value(v.id, v["remark"])
 end
 
 m:append(Template(appname .. "/socks_auto_switch/footer"))
