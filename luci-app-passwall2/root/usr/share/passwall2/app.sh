@@ -1065,9 +1065,6 @@ add_ip2route)
 get_new_port)
 	get_new_port $@
 	;;
-run_v2ray)
-	run_v2ray $@
-	;;
 run_socks)
 	run_socks $@
 	;;

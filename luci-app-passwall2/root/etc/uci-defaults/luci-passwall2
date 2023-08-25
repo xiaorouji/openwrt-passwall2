@@ -43,6 +43,19 @@ use_nft=$(uci -q get passwall2.@global_forwarding[0].use_nft || echo "0")
 	fi
 }
 
+global_xray=$(uci -q get passwall2.@global_xray[0])
+[ -z "${global_xray}" ] && {
+	cfgid=$(uci add passwall2 global_xray)
+	uci -q set passwall2.${cfgid}.sniffing=$(uci -q get passwall2.@global_forwarding[0].sniffing || echo "1")
+	uci -q set passwall2.${cfgid}.route_only=$(uci -q get passwall2.@global_forwarding[0].route_only || echo "0")
+	uci -q set passwall2.${cfgid}.buffer_size=$(uci -q get passwall2.@global_forwarding[0].buffer_size || echo "")
+	
+	uci -q delete passwall2.@global_forwarding[0].sniffing
+	uci -q delete passwall2.@global_forwarding[0].route_only
+	uci -q delete passwall2.@global_forwarding[0].buffer_size
+	uci -q commit passwall2
+}
+
 rm -f /tmp/luci-indexcache
 rm -rf /tmp/luci-modulecache/
 killall -HUP rpcd 2>/dev/null
