@@ -282,7 +282,7 @@ function get_valid_nodes()
 				local address = e.address
 				if is_ip(address) or datatypes.hostname(address) then
 					local type = e.type
-					if (type == "V2ray" or type == "Xray") and e.protocol then
+					if (type == "sing-box" or type == "V2ray" or type == "Xray") and e.protocol then
 						local protocol = e.protocol
 						if protocol == "vmess" then
 							protocol = "VMess"
@@ -314,7 +314,7 @@ function get_node_remarks(n)
 			remarks = "%s：[%s] " % {n.type .. " " .. i18n.translatef(n.protocol), n.remarks}
 		else
 			local type2 = n.type
-			if (n.type == "V2ray" or n.type == "Xray") and n.protocol then
+			if (n.type == "sing-box" or n.type == "V2ray" or n.type == "Xray") and n.protocol then
 				local protocol = n.protocol
 				if protocol == "vmess" then
 					protocol = "VMess"
@@ -381,8 +381,12 @@ function get_customed_path(e)
 	return uci_get_type("global_app", e .. "_file")
 end
 
+function finded(e)
+	return luci.sys.exec('echo -n $(type -t -p "/bin/%s" -p "/usr/bin/%s" -p "%s" "%s" | head -n1)' % {e, e, get_customed_path(e), e})
+end
+
 function is_finded(e)
-	return luci.sys.exec('type -t -p "/bin/%s" -p "/usr/bin/%s" -p "%s" "%s"' % {e, e, get_customed_path(e), e}) ~= "" and true or false
+	return finded(e) ~= "" and true or false
 end
 
 function clone(org)

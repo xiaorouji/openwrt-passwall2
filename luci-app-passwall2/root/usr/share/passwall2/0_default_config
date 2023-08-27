@@ -52,6 +52,7 @@ config global_app
 	option xray_file '/usr/bin/xray'
 	option brook_file '/usr/bin/brook'
 	option hysteria_file '/usr/bin/hysteria'
+	option singbox_file '/usr/bin/sing-box'
 
 config global_subscribe
 	option filter_keyword_mode '1'
@@ -59,10 +60,17 @@ config global_subscribe
 	list filter_discard_list '剩余流量'
 	list filter_discard_list 'QQ群'
 	list filter_discard_list '官网'
+	
+config global_singbox
+	option sniff_override_destination '1'
+	option geoip_path '/tmp/singbox/geoip.db'
+	option geoip_url 'https://github.com/SagerNet/sing-geoip/releases/latest/download/geoip.db'
+	option geosite_path '/tmp/singbox/geosite.db'
+	option geosite_url 'https://github.com/SagerNet/sing-geosite/releases/latest/download/geosite.db'
 
 config nodes 'myshunt'
 	option remarks '分流总节点'
-	option type 'Xray'
+	option type 'sing-box'
 	option protocol '_shunt'
 	option DirectGame '_direct'
 	option ProxyGame '_default'
