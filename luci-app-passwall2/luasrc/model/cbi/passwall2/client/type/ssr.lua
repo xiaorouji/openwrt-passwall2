@@ -2,7 +2,7 @@ local m, s = ...
 
 local api = require "luci.passwall2.api"
 
-if not api.is_finded("ssr-redir") then
+if not api.is_finded("ssr-local") then
 	return
 end
 
