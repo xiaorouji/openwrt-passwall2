@@ -299,8 +299,10 @@ do
 				end
 			end
 		else
-			if v.currentNode == nil and v.delete then
-				v.delete()
+			if v.currentNode == nil then
+				if v.delete then
+					v.delete()
+				end
 				CONFIG[k] = nil
 			end
 		end
@@ -793,7 +795,7 @@ local function truncate_nodes(add_from)
 			end
 			config.set(config)
 		else
-			if config.currentNode.add_mode == "2" then
+			if config.currentNode and config.currentNode.add_mode == "2" then
 				if add_from then
 					if config.currentNode.add_from and config.currentNode.add_from == add_from then
 						config.set(config, "nil")
@@ -933,7 +935,7 @@ local function select_node(nodes, config)
 			config.set(config, server)
 		end
 	else
-		config.set(config, nil)
+		config.set(config, "nil")
 	end
 end
 
