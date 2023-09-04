@@ -60,6 +60,9 @@ end
 if singbox_tags:find("with_quic") then
 	o:value("tuic", "TUIC")
 end
+if singbox_tags:find("with_quic") then
+	o:value("hysteria2", "Hysteria2")
+end
 o:value("direct", "Direct")
 
 o = s:option(Value, option_name("port"), translate("Listen Port"))
@@ -144,6 +147,30 @@ if singbox_tags:find("with_quic") then
 	o.datatype = "uinteger"
 	o.default = "3"
 	o:depends({ [option_name("protocol")] = "tuic" })
+end
+
+if singbox_tags:find("with_quic") then
+	o = s:option(Flag, option_name("hysteria2_ignore_client_bandwidth"), translate("Commands the client to use the BBR flow control algorithm"))
+	o.default = 0
+	o:depends({ [option_name("protocol")] = "hysteria2" })
+
+	o = s:option(Value, option_name("hysteria2_up_mbps"), translate("Max upload Mbps"))
+	o:depends({ [option_name("protocol")] = "hysteria2", [option_name("hysteria2_ignore_client_bandwidth")] = false })
+
+	o = s:option(Value, option_name("hysteria2_down_mbps"), translate("Max download Mbps"))
+	o:depends({ [option_name("protocol")] = "hysteria2", [option_name("hysteria2_ignore_client_bandwidth")] = false })
+
+	o = s:option(ListValue, option_name("hysteria2_obfs_type"), translate("Obfs Type"))
+	o:value("", translate("Disable"))
+	o:value("salamander")
+	o:depends({ [option_name("protocol")] = "hysteria2" })
+
+	o = s:option(Value, option_name("hysteria2_obfs_password"), translate("Obfs Password"))
+	o:depends({ [option_name("protocol")] = "hysteria2" })
+
+	o = s:option(Value, option_name("hysteria2_auth_password"), translate("Auth Password"))
+	o.password = true
+	o:depends({ [option_name("protocol")] = "hysteria2"})
 end
 
 o = s:option(ListValue, option_name("d_protocol"), translate("Destination protocol"))
