@@ -57,6 +57,9 @@ o:value("naive", "Naive")
 if singbox_tags:find("with_quic") then
 	o:value("hysteria", "Hysteria")
 end
+if singbox_tags:find("with_quic") then
+	o:value("tuic", "TUIC")
+end
 o:value("direct", "Direct")
 
 o = s:option(Value, option_name("port"), translate("Listen Port"))
@@ -86,6 +89,7 @@ o.password = true
 o:depends({ [option_name("auth")] = true })
 o:depends({ [option_name("protocol")] = "shadowsocks" })
 o:depends({ [option_name("protocol")] = "naive" })
+o:depends({ [option_name("protocol")] = "tuic" })
 
 if singbox_tags:find("with_quic") then
 	o = s:option(Value, option_name("hysteria_up_mbps"), translate("Max upload Mbps"))
@@ -122,6 +126,24 @@ if singbox_tags:find("with_quic") then
 
 	o = s:option(Flag, option_name("hysteria_disable_mtu_discovery"), translate("Disable MTU detection"))
 	o:depends({ [option_name("protocol")] = "hysteria" })
+end
+
+if singbox_tags:find("with_quic") then
+	o = s:option(ListValue, option_name("tuic_congestion_control"), translate("Congestion control algorithm"))
+	o.default = "cubic"
+	o:value("bbr", translate("BBR"))
+	o:value("cubic", translate("CUBIC"))
+	o:value("new_reno", translate("New Reno"))
+	o:depends({ [option_name("protocol")] = "tuic" })
+
+	o = s:option(Flag, option_name("tuic_zero_rtt_handshake"), translate("Enable 0-RTT QUIC handshake"))
+	o.default = 0
+	o:depends({ [option_name("protocol")] = "tuic" })
+
+	o = s:option(Value, option_name("tuic_heartbeat"), translate("Heartbeat interval(second)"))
+	o.datatype = "uinteger"
+	o.default = "3"
+	o:depends({ [option_name("protocol")] = "tuic" })
 end
 
 o = s:option(ListValue, option_name("d_protocol"), translate("Destination protocol"))
@@ -161,6 +183,7 @@ end
 o:depends({ [option_name("protocol")] = "vmess" })
 o:depends({ [option_name("protocol")] = "vless" })
 o:depends({ [option_name("protocol")] = "trojan" })
+o:depends({ [option_name("protocol")] = "tuic" })
 
 o = s:option(Flag, option_name("tls"), translate("TLS"))
 o.default = 0
