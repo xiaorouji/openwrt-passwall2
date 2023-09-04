@@ -294,6 +294,12 @@ o:depends({ [option_name("protocol")] = "vmess" })
 o:depends({ [option_name("protocol")] = "vless" })
 o:depends({ [option_name("protocol")] = "tuic" })
 
+o = s:option(ListValue, option_name("flow"), translate("flow"))
+o.default = ""
+o:value("", translate("Disable"))
+o:value("xtls-rprx-vision")
+o:depends({ [option_name("protocol")] = "vless", [option_name("tls")] = true })
+
 if singbox_tags:find("with_quic") then
 	o = s:option(Value, option_name("hysteria_obfs"), translate("Obfs Password"))
 	o:depends({ [option_name("protocol")] = "hysteria" })
@@ -385,15 +391,8 @@ o:depends({ [option_name("protocol")] = "trojan" })
 o:depends({ [option_name("protocol")] = "shadowsocks" })
 o:depends({ [option_name("protocol")] = "shadowtls" })
 
-o = s:option(Value, option_name("flow"), translate("flow"))
-o.default = ""
-o:value("", translate("Disable"))
-o:value("xtls-rprx-vision")
-o:value("xtls-rprx-vision-udp443")
-o:depends({ [option_name("protocol")] = "vless", [option_name("tls")] = true })
-
 if singbox_tags:find("with_reality") then
-	o = s:option(Flag, option_name("reality"), translate("REALITY"), translate("Only recommend to use with VLESS-TCP-XTLS-Vision."))
+	o = s:option(Flag, option_name("reality"), translate("REALITY"))
 	o.default = 0
 	o:depends({ [option_name("protocol")] = "vless", [option_name("tls")] = true })
 

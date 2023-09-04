@@ -70,7 +70,7 @@ config global_singbox
 
 config nodes 'myshunt'
 	option remarks '分流总节点'
-	option type 'sing-box'
+	option type 'Xray'
 	option protocol '_shunt'
 	option DirectGame '_direct'
 	option ProxyGame '_default'
