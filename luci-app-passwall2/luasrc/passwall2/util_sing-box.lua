@@ -657,7 +657,7 @@ function gen_config(var)
 	local inbounds = {}
 	local outbounds = {}
 
-	local singbox_settings = uci:get_all(appname, "@global_singbox[0]" or {})
+	local singbox_settings = uci:get_all(appname, "@global_singbox[0]") or {}
 
 	local route = {
 		rules = {},

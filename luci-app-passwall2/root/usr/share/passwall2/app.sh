@@ -566,7 +566,7 @@ eof
 	}
 
 	lua $UTIL_SINGBOX gen_config -node $node -redir_port $redir_port -tcp_proxy_way $tcp_proxy_way ${_extra_param} > $config_file
-	ln_run "$(first_type $(config_t_get global_app singbox_file) sing-box)" "sing-box" "/dev/null" run -c "$config_file"
+	ln_run "$(first_type $(config_t_get global_app singbox_file) sing-box)" "sing-box" "${log_file}" run -c "$config_file"
 }
 
 run_socks() {
