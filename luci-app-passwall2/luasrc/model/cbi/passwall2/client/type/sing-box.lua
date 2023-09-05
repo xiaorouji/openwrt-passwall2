@@ -180,27 +180,19 @@ end
 -- [[ 分流模块 End ]]
 
 o = s:option(Value, option_name("address"), translate("Address (Support Domain Name)"))
-o:depends({ [option_name("protocol")] = "vmess" })
-o:depends({ [option_name("protocol")] = "vless" })
-o:depends({ [option_name("protocol")] = "http" })
-o:depends({ [option_name("protocol")] = "socks" })
-o:depends({ [option_name("protocol")] = "shadowsocks" })
-o:depends({ [option_name("protocol")] = "shadowsocksr" })
-o:depends({ [option_name("protocol")] = "trojan" })
-o:depends({ [option_name("protocol")] = "wireguard" })
-o:depends({ [option_name("protocol")] = "shadowtls" })
 
 o = s:option(Value, option_name("port"), translate("Port"))
 o.datatype = "port"
-o:depends({ [option_name("protocol")] = "vmess" })
-o:depends({ [option_name("protocol")] = "vless" })
-o:depends({ [option_name("protocol")] = "http" })
-o:depends({ [option_name("protocol")] = "socks" })
-o:depends({ [option_name("protocol")] = "shadowsocks" })
-o:depends({ [option_name("protocol")] = "shadowsocksr" })
-o:depends({ [option_name("protocol")] = "trojan" })
-o:depends({ [option_name("protocol")] = "wireguard" })
-o:depends({ [option_name("protocol")] = "shadowtls" })
+
+local protocols = s.fields[option_name("protocol")].keylist
+if #protocols > 0 then
+	for index, value in ipairs(protocols) do
+		if not value:find("_") then
+			s.fields[option_name("address")]:depends({ [option_name("protocol")] = value })
+			s.fields[option_name("port")]:depends({ [option_name("protocol")] = value })
+		end
+	end
+end
 
 o = s:option(ListValue, option_name("shadowtls_version"), translate("Version"))
 o.default = "1"

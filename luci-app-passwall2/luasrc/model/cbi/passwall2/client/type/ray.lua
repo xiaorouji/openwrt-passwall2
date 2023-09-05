@@ -258,35 +258,21 @@ o:depends({ [option_name("protocol")] = "_shunt" })
 -- [[ 分流模块 End ]]
 
 o = s:option(Value, option_name("address"), translate("Address (Support Domain Name)"))
-add_xray_depends(o, { [option_name("protocol")] = "vmess" })
-add_xray_depends(o, { [option_name("protocol")] = "vless" })
-add_xray_depends(o, { [option_name("protocol")] = "http" })
-add_xray_depends(o, { [option_name("protocol")] = "socks" })
-add_xray_depends(o, { [option_name("protocol")] = "shadowsocks" })
-add_xray_depends(o, { [option_name("protocol")] = "trojan" })
-add_xray_depends(o, { [option_name("protocol")] = "wireguard" })
-add_v2ray_depends(o, { [option_name("protocol")] = "vmess" })
-add_v2ray_depends(o, { [option_name("protocol")] = "vless" })
-add_v2ray_depends(o, { [option_name("protocol")] = "http" })
-add_v2ray_depends(o, { [option_name("protocol")] = "socks" })
-add_v2ray_depends(o, { [option_name("protocol")] = "shadowsocks" })
-add_v2ray_depends(o, { [option_name("protocol")] = "trojan" })
 
 o = s:option(Value, option_name("port"), translate("Port"))
 o.datatype = "port"
-add_xray_depends(o, { [option_name("protocol")] = "vmess" })
-add_xray_depends(o, { [option_name("protocol")] = "vless" })
-add_xray_depends(o, { [option_name("protocol")] = "http" })
-add_xray_depends(o, { [option_name("protocol")] = "socks" })
-add_xray_depends(o, { [option_name("protocol")] = "shadowsocks" })
-add_xray_depends(o, { [option_name("protocol")] = "trojan" })
-add_xray_depends(o, { [option_name("protocol")] = "wireguard" })
-add_v2ray_depends(o, { [option_name("protocol")] = "vmess" })
-add_v2ray_depends(o, { [option_name("protocol")] = "vless" })
-add_v2ray_depends(o, { [option_name("protocol")] = "http" })
-add_v2ray_depends(o, { [option_name("protocol")] = "socks" })
-add_v2ray_depends(o, { [option_name("protocol")] = "shadowsocks" })
-add_v2ray_depends(o, { [option_name("protocol")] = "trojan" })
+
+local protocols = s.fields[option_name("protocol")].keylist
+if #protocols > 0 then
+	for index, value in ipairs(protocols) do
+		if not value:find("_") then
+			add_xray_depends(s.fields[option_name("address")], { [option_name("protocol")] = value })
+			add_v2ray_depends(s.fields[option_name("address")], { [option_name("protocol")] = value })
+			add_xray_depends(s.fields[option_name("port")], { [option_name("protocol")] = value })
+			add_v2ray_depends(s.fields[option_name("port")], { [option_name("protocol")] = value })
+		end
+	end
+end
 
 o = s:option(Value, option_name("username"), translate("Username"))
 add_xray_depends(o, { [option_name("protocol")] = "http" })
@@ -410,21 +396,6 @@ o.default = "0"
 add_xray_depends(o, { [option_name("tls")] = true, [option_name("reality")] = false })
 add_v2ray_depends(o, { [option_name("tls")] = true })
 
-o = s:option(Value, option_name("fingerprint"), translate("Finger Print"), translate("Avoid using randomized, unless you have to."))
-o:value("", translate("Disable"))
-o:value("chrome")
-o:value("firefox")
-o:value("safari")
-o:value("ios")
--- o:value("android")
-o:value("edge")
--- o:value("360")
-o:value("qq")
-o:value("random")
-o:value("randomized")
-o.default = ""
-add_xray_depends(o, { [option_name("tls")] = true, [option_name("reality")] = false })
-
 -- [[ REALITY部分 ]] --
 o = s:option(Value, option_name("reality_publicKey"), translate("Public Key"))
 add_xray_depends(o, { [option_name("tls")] = true, [option_name("reality")] = true })
@@ -436,28 +407,24 @@ o = s:option(Value, option_name("reality_spiderX"), translate("Spider X"))
 o.placeholder = "/"
 add_xray_depends(o, { [option_name("tls")] = true, [option_name("reality")] = true })
 
-o = s:option(Value, option_name("reality_fingerprint"), translate("Finger Print"), translate("Avoid using randomized, unless you have to."))
-o.not_rewrite = true
+o = s:option(Flag, option_name("utls"), translate("uTLS"))
+o.default = "0"
+add_xray_depends(o, { [option_name("tls")] = true, [option_name("reality")] = false })
+
+o = s:option(ListValue, option_name("fingerprint"), translate("Finger Print"))
 o:value("chrome")
 o:value("firefox")
-o:value("safari")
-o:value("ios")
--- o:value("android")
 o:value("edge")
--- o:value("360")
+o:value("safari")
+o:value("360")
 o:value("qq")
+o:value("ios")
+o:value("android")
 o:value("random")
 o:value("randomized")
 o.default = "chrome"
+add_xray_depends(o, { [option_name("tls")] = true, [option_name("utls")] = true })
 add_xray_depends(o, { [option_name("tls")] = true, [option_name("reality")] = true })
-function o.cfgvalue(self, section)
-	return m:get(section, "fingerprint")
-end
-function o.write(self, section, value)
-	if s.fields["type"]:formvalue(arg[1]) == "Xray" or s.fields["type"]:formvalue(arg[1]) == "V2ray" then
-		m:set(section, "fingerprint", value)
-	end
-end
 
 o = s:option(ListValue, option_name("transport"), translate("Transport"))
 o:value("tcp", "TCP")
