@@ -420,20 +420,24 @@ o.default = "0"
 o:depends({ [option_name("tls")] = true })
 
 if singbox_tags:find("with_utls") then
-	o = s:option(Value, option_name("fingerprint"), translate("Finger Print"), translate("Avoid using randomized, unless you have to."))
-	o:value("", translate("Disable"))
+	o = s:option(Flag, option_name("utls"), translate("uTLS"))
+	o.default = "0"
+	o:depends({ [option_name("tls")] = true, [option_name("reality")] = false })
+
+	o = s:option(ListValue, option_name("fingerprint"), translate("Finger Print"))
 	o:value("chrome")
 	o:value("firefox")
-	o:value("safari")
-	o:value("ios")
-	-- o:value("android")
 	o:value("edge")
-	-- o:value("360")
+	o:value("safari")
+	o:value("360")
 	o:value("qq")
+	o:value("ios")
+	o:value("android")
 	o:value("random")
 	o:value("randomized")
-	o.default = ""
-	o:depends({ [option_name("tls")] = true, [option_name("reality")] = false })
+	o.default = "chrome"
+	o:depends({ [option_name("tls")] = true, [option_name("utls")] = true })
+	o:depends({ [option_name("tls")] = true, [option_name("reality")] = true })
 end
 
 o = s:option(ListValue, option_name("transport"), translate("Transport"))

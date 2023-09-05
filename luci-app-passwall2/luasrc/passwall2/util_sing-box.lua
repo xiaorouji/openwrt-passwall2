@@ -94,7 +94,7 @@ function gen_outbound(flag, node, tag, proxy_table)
 				--min_version = "1.2",
 				--max_version = "1.3",
 				utls = {
-					enabled = (node.fingerprint ~= "") and true or false,
+					enabled = (node.utls == "1" or node.reality == "1") and true or false,
 					fingerprint = node.fingerprint or "chrome"
 				},
 				reality = {
