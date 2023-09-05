@@ -808,8 +808,16 @@ run_global() {
 	node_http_port=$(config_t_get global node_http_port 0)
 	[ "$node_http_port" != "0" ] && V2RAY_ARGS="${V2RAY_ARGS} http_port=${node_http_port}"
 
-	[ "${TYPE}" = "xray" ] && run_xray $V2RAY_ARGS
-	[ "${TYPE}" = "sing-box" ] && run_singbox $V2RAY_ARGS
+	local run_func
+	[ -n "${XRAY_BIN}" ] && run_func="run_xray"
+	[ -n "${SINGBOX_BIN}" ] && run_func="run_singbox"
+	if [ "${TYPE}" = "xray" ] && [ -n "${XRAY_BIN}" ]; then
+		run_func="run_xray"
+	elif [ "${TYPE}" = "sing-box" ] && [ -n "${SINGBOX_BIN}" ]; then
+		run_func="run_singbox"
+	fi
+	
+	${run_func} $V2RAY_ARGS
 }
 
 start_socks() {
@@ -1061,8 +1069,13 @@ acl_app() {
 								dns_port=$(get_new_port $(expr $dns_port + 1))
 								local acl_socks_port=$(get_new_port $(expr $redir_port + $index))
 								local run_func
-								[ "${TYPE}" = "xray" ] && run_func="run_xray"
-								[ "${TYPE}" = "sing-box" ] && run_func="run_singbox"
+								[ -n "${XRAY_BIN}" ] && run_func="run_xray"
+								[ -n "${SINGBOX_BIN}" ] && run_func="run_singbox"
+								if [ "${type}" = "xray" ] && [ -n "${XRAY_BIN}" ]; then
+									run_func="run_xray"
+								elif [ "${type}" = "sing-box" ] && [ -n "${SINGBOX_BIN}" ]; then
+									run_func="run_singbox"
+								fi
 								${run_func} flag=acl_$sid node=$node redir_port=$redir_port socks_address=127.0.0.1 socks_port=$acl_socks_port dns_listen_port=${dns_port} direct_dns_protocol=${direct_dns_protocol} direct_dns_udp_server=${direct_dns} direct_dns_tcp_server=${direct_dns} direct_dns_doh="${direct_dns}" direct_dns_client_ip=${direct_dns_client_ip} direct_dns_query_strategy=${direct_dns_query_strategy} remote_dns_protocol=${remote_dns_protocol} remote_dns_tcp_server=${remote_dns} remote_dns_udp_server=${remote_dns} remote_dns_doh="${remote_dns}" remote_dns_client_ip=${remote_dns_client_ip} remote_fakedns=${remote_fakedns} remote_dns_query_strategy=${remote_dns_query_strategy} config_file=${config_file}
 							fi
 							dnsmasq_port=$(get_new_port $(expr $dnsmasq_port + 1))
@@ -1217,6 +1230,9 @@ DEFAULT_DNS=$(uci show dhcp | grep "@dnsmasq" | grep "\.server=" | awk -F '=' '{
 AUTO_DNS=${DEFAULT_DNS:-119.29.29.29}
 
 PROXY_IPV6=$(config_t_get global_forwarding ipv6_tproxy 0)
+
+XRAY_BIN=$(first_type $(config_t_get global_app xray_file) xray)
+SINGBOX_BIN=$(first_type $(config_t_get global_app singbox_file) sing-box)
 
 export V2RAY_LOCATION_ASSET=$(config_t_get global_rules v2ray_location_asset "/usr/share/v2ray/")
 export XRAY_LOCATION_ASSET=$V2RAY_LOCATION_ASSET
