@@ -1,8 +1,8 @@
 local api = require "luci.passwall2.api"
 local appname = api.appname
 local uci = api.uci
-local has_singbox = api.is_finded("sing-box")
-local has_xray = api.is_finded("xray")
+local has_singbox = api.finded_com("singbox")
+local has_xray = api.finded_com("xray")
 
 m = Map(appname)
 

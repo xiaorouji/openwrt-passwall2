@@ -2,11 +2,13 @@ local m, s = ...
 
 local api = require "luci.passwall2.api"
 
-if not api.is_finded("sing-box")then
+local singbox_bin = api.finded_com("singbox")
+
+if not singbox_bin then
 	return
 end
 
-local singbox_tags = luci.sys.exec(api.finded("sing-box") .. " version  | grep 'Tags:' | awk '{print $2}'")
+local singbox_tags = luci.sys.exec(singbox_bin .. " version  | grep 'Tags:' | awk '{print $2}'")
 
 local type_name = "sing-box"
 

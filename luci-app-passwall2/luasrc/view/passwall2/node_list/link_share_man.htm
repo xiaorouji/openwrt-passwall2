@@ -1,7 +1,7 @@
 <%+cbi/valueheader%>
 <%
 local api = require "luci.passwall2.api"
-local has_xray = api.is_finded("xray")
+local has_xray = api.finded_com("xray")
 -%>
 <script type="text/javascript">//<![CDATA[
 	function padright(str, cnt, pad) {

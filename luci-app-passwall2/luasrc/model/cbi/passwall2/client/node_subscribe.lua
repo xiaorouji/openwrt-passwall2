@@ -2,8 +2,8 @@ local api = require "luci.passwall2.api"
 local appname = api.appname
 local has_ss = api.is_finded("ss-redir")
 local has_ss_rust = api.is_finded("sslocal")
-local has_singbox = api.is_finded("sing-box")
-local has_xray = api.is_finded("xray")
+local has_singbox = api.finded_com("singbox")
+local has_xray = api.finded_com("xray")
 local ss_aead_type = {}
 if has_ss then
 	ss_aead_type[#ss_aead_type + 1] = "shadowsocks-libev"

@@ -23,8 +23,8 @@ uci:revert(appname)
 
 local has_ss = api.is_finded("ss-redir")
 local has_ss_rust = api.is_finded("sslocal")
-local has_singbox = api.is_finded("sing-box")
-local has_xray = api.is_finded("xray")
+local has_singbox = api.finded_com("singbox")
+local has_xray = api.finded_com("xray")
 local allowInsecure_default = true
 local ss_aead_type_default = uci:get(appname, "@global_subscribe[0]", "ss_aead_type") or "shadowsocks-libev"
 -- 判断是否过滤节点关键字

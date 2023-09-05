@@ -2,7 +2,7 @@ local m, s = ...
 
 local api = require "luci.passwall2.api"
 
-if not api.is_finded("xray") then
+if not api.finded_com("xray") then
 	return
 end
 
