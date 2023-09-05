@@ -284,7 +284,7 @@ lua_api() {
 	echo $(lua -e "local api = require 'luci.passwall2.api' print(api.${func})")
 }
 
-run_v2ray() {
+run_xray() {
 	local flag node redir_port socks_address socks_port socks_username socks_password http_address http_port http_username http_password
 	local dns_listen_port direct_dns_protocol direct_dns_udp_server direct_dns_tcp_server direct_dns_doh direct_dns_client_ip direct_dns_query_strategy remote_dns_protocol remote_dns_udp_server remote_dns_tcp_server remote_dns_doh remote_dns_client_ip remote_fakedns remote_dns_query_strategy dns_cache
 	local loglevel log_file config_file
@@ -808,7 +808,8 @@ run_global() {
 	node_http_port=$(config_t_get global node_http_port 0)
 	[ "$node_http_port" != "0" ] && V2RAY_ARGS="${V2RAY_ARGS} http_port=${node_http_port}"
 
-	run_singbox $V2RAY_ARGS
+	[ "${TYPE}" = "xray" ] && run_xray $V2RAY_ARGS
+	[ "${TYPE}" = "sing-box" ] && run_singbox $V2RAY_ARGS
 }
 
 start_socks() {
@@ -1059,7 +1060,10 @@ acl_app() {
 								config_file=$TMP_ACL_PATH/${node}_TCP_UDP_DNS_${redir_port}.json
 								dns_port=$(get_new_port $(expr $dns_port + 1))
 								local acl_socks_port=$(get_new_port $(expr $redir_port + $index))
-								run_singbox flag=acl_$sid node=$node redir_port=$redir_port socks_address=127.0.0.1 socks_port=$acl_socks_port dns_listen_port=${dns_port} direct_dns_protocol=${direct_dns_protocol} direct_dns_udp_server=${direct_dns} direct_dns_tcp_server=${direct_dns} direct_dns_doh="${direct_dns}" direct_dns_client_ip=${direct_dns_client_ip} direct_dns_query_strategy=${direct_dns_query_strategy} remote_dns_protocol=${remote_dns_protocol} remote_dns_tcp_server=${remote_dns} remote_dns_udp_server=${remote_dns} remote_dns_doh="${remote_dns}" remote_dns_client_ip=${remote_dns_client_ip} remote_fakedns=${remote_fakedns} remote_dns_query_strategy=${remote_dns_query_strategy} config_file=${config_file}
+								local run_func
+								[ "${TYPE}" = "xray" ] && run_func="run_xray"
+								[ "${TYPE}" = "sing-box" ] && run_func="run_singbox"
+								${run_func} flag=acl_$sid node=$node redir_port=$redir_port socks_address=127.0.0.1 socks_port=$acl_socks_port dns_listen_port=${dns_port} direct_dns_protocol=${direct_dns_protocol} direct_dns_udp_server=${direct_dns} direct_dns_tcp_server=${direct_dns} direct_dns_doh="${direct_dns}" direct_dns_client_ip=${direct_dns_client_ip} direct_dns_query_strategy=${direct_dns_query_strategy} remote_dns_protocol=${remote_dns_protocol} remote_dns_tcp_server=${remote_dns} remote_dns_udp_server=${remote_dns} remote_dns_doh="${remote_dns}" remote_dns_client_ip=${remote_dns_client_ip} remote_fakedns=${remote_fakedns} remote_dns_query_strategy=${remote_dns_query_strategy} config_file=${config_file}
 							fi
 							dnsmasq_port=$(get_new_port $(expr $dnsmasq_port + 1))
 							redirect_dns_port=$dnsmasq_port
