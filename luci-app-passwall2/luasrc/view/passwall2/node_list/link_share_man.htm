@@ -1,6 +1,7 @@
 <%+cbi/valueheader%>
 <%
 local api = require "luci.passwall2.api"
+local has_singbox = api.finded_com("singbox")
 local has_xray = api.finded_com("xray")
 -%>
 <script type="text/javascript">//<![CDATA[
@@ -142,6 +143,8 @@ local has_xray = api.finded_com("xray")
 			protocol = "hysteria"
 		} else if (v_type === "Xray") {
 			dom_prefix = "xray_"
+		} else if (v_type === "sing-box") {
+			dom_prefix = "singbox_"
 		}
 		var _address = ""
 		if (dom_prefix && dom_prefix != null) {
@@ -229,7 +232,7 @@ local has_xray = api.finded_com("xray")
 				"&protoparam=" + b64encsafe(v_protocol_param.value) +
 				"&remarks=" + b64encutf8safe(v_alias.value);
 			url = b64encsafe(ssr_str);
-		} else if (v_type === "Xray" && opt.get(dom_prefix + "protocol").value === "vmess") {
+		} else if ((v_type === "sing-box" || v_type === "Xray") && opt.get(dom_prefix + "protocol").value === "vmess") {
 			protocol = "vmess";
 			var info = {};
 			info.v = "2";
@@ -274,7 +277,7 @@ local has_xray = api.finded_com("xray")
 				info.sni = opt.get(dom_prefix + "tls_serverName").value;
 			}
 			url = b64EncodeUnicode(JSON.stringify(info));
-		} else if (v_type === "Xray" && opt.get(dom_prefix + "protocol").value === "vless") {
+		} else if ((v_type === "sing-box" || v_type === "Xray") && opt.get(dom_prefix + "protocol").value === "vless") {
 			protocol = "vless";
 			var v_password = opt.get(dom_prefix + "uuid");
 			var v_port = opt.get(dom_prefix + "port");
@@ -340,7 +343,7 @@ local has_xray = api.finded_com("xray")
 				params = params.substring(1);
 			}
 			url += params;
-		} else if ((v_type === "Xray" && opt.get(dom_prefix + "protocol").value === "trojan")) {
+		} else if ((v_type === "sing-box" || v_type === "Xray") && opt.get(dom_prefix + "protocol").value === "trojan") {
 			protocol = "trojan";
 			var v_password = opt.get(dom_prefix + "password");
 			var v_port = opt.get(dom_prefix + "port");
@@ -630,7 +633,6 @@ local has_xray = api.finded_com("xray")
 			}
 		}
 		if (ssu[0] === "trojan") {
-			dom_prefix = "xray_"
 			var m = parseNodeUrl(ssrurl);
 			var password = m.passwd;
 			if (password === "") {
@@ -648,8 +650,12 @@ local has_xray = api.finded_com("xray")
 					queryParam[decodeURIComponent(params[0]).toLowerCase()] = decodeURIComponent(params[1] || '');
 				}
 			}
-			<% if has_xray then %>
+			<% if has_singbox then %>
+			opt.set('type', "sing-box");
+			dom_prefix = "singbox_"
+			<% elseif has_xray then %>
 			opt.set('type', "Xray");
+			dom_prefix = "xray_"
 			<% end %>
 			opt.set(dom_prefix + 'protocol', "trojan");
 			opt.set(dom_prefix + 'address', m.hostname);
@@ -664,11 +670,14 @@ local has_xray = api.finded_com("xray")
 			}
 		}
 		if (ssu[0] === "vmess") {
-			dom_prefix = "xray_"
 			var sstr = b64DecodeUnicode(ssu[1]);
 			var ploc = sstr.indexOf("/?");
-			<% if has_xray then %>
+			<% if has_singbox then %>
+			opt.set('type', "sing-box");
+			dom_prefix = "singbox_"
+			<% elseif has_xray then %>
 			opt.set('type', "Xray");
+			dom_prefix = "xray_"
 			<% end %>
 			opt.set(dom_prefix + 'protocol', "vmess");
 			var url0, param = "";
@@ -715,9 +724,12 @@ local has_xray = api.finded_com("xray")
 			}
 		}
 		if (ssu[0] === "vless") {
-			dom_prefix = "xray_"
-			<% if has_xray then %>
+			<% if has_singbox then %>
+			opt.set('type', "sing-box");
+			dom_prefix = "singbox_"
+			<% elseif has_xray then %>
 			opt.set('type', "Xray");
+			dom_prefix = "xray_"
 			<% end %>
 			opt.set(dom_prefix + 'protocol', "vless");
 			var m = parseNodeUrl(ssrurl);
