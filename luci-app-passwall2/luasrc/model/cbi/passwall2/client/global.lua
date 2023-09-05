@@ -3,7 +3,6 @@ local appname = api.appname
 local uci = api.uci
 local datatypes = api.datatypes
 local has_singbox = api.is_finded("sing-box")
-local has_v2ray = api.is_finded("v2ray")
 local has_xray = api.is_finded("xray")
 
 m = Map(appname)
@@ -54,7 +53,7 @@ node = s:taboption("Main", ListValue, "node", "<a style='color: red'>" .. transl
 node:value("nil", translate("Close"))
 
 -- 分流
-if (has_singbox or has_v2ray or has_xray) and #nodes_table > 0 then
+if (has_singbox or has_xray) and #nodes_table > 0 then
 	local normal_list = {}
 	local balancing_list = {}
 	local shunt_list = {}
@@ -87,13 +86,10 @@ if (has_singbox or has_v2ray or has_xray) and #nodes_table > 0 then
 	if #normal_list > 0 then
 		for k, v in pairs(shunt_list) do
 			local vid = v.id
-			-- shunt node type, Sing-Box or V2ray or Xray
+			-- shunt node type, Sing-Box or Xray
 			local type = s:taboption("Main", ListValue, vid .. "-type", translate("Type"))
 			if has_singbox then
 				type:value("sing-box", translate("Sing-Box"))
-			end
-			if has_v2ray then
-				type:value("V2ray", translate("V2ray"))
 			end
 			if has_xray then
 				type:value("Xray", translate("Xray"))
@@ -125,7 +121,7 @@ if (has_singbox or has_v2ray or has_xray) and #nodes_table > 0 then
 			o.cfgvalue = get_cfgvalue(v.id, "main_node")
 			o.write = get_write(v.id, "main_node")
 
-			if (has_singbox and has_v2ray and has_xray) or (v.type == "sing-box" and not has_singbox) or (v.type == "V2ray" and not has_v2ray) or (v.type == "Xray" and not has_xray) then
+			if (has_singbox and has_xray) or (v.type == "sing-box" and not has_singbox) or (v.type == "Xray" and not has_xray) then
 				type:depends("node", v.id)
 			else
 				type:depends("node", "hide") --不存在的依赖，即始终隐藏
@@ -217,14 +213,6 @@ o.rmempty = false
 node_socks_port = s:taboption("Main", Value, "node_socks_port", translate("Node") .. " Socks " .. translate("Listen Port"))
 node_socks_port.default = 1070
 node_socks_port.datatype = "port"
-
---[[
-if has_v2ray or has_xray then
-	node_http_port = s:taboption("Main", Value, "node_http_port", translate("Node") .. " HTTP " .. translate("Listen Port") .. " " .. translate("0 is not use"))
-	node_http_port.default = 0
-	node_http_port.datatype = "port"
-end
-]]--
 
 s:tab("DNS", translate("DNS"))
 
@@ -361,7 +349,7 @@ o.default = n + 1080
 o.datatype = "port"
 o.rmempty = false
 
-if has_v2ray or has_xray then
+if has_singbox or has_xray then
 	o = s:option(Value, "http_port", "HTTP " .. translate("Listen Port") .. " " .. translate("0 is not use"))
 	o.default = 0
 	o.datatype = "port"
@@ -370,7 +358,7 @@ end
 for k, v in pairs(nodes_table) do
 	node:value(v.id, v["remark"])
 	if v.type == "Socks" then
-		if has_v2ray or has_xray then
+		if has_singbox or has_xray then
 			socks_node:value(v.id, v["remark"])
 		end
 	else

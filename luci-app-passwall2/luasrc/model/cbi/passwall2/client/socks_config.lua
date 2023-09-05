@@ -1,7 +1,7 @@
 local api = require "luci.passwall2.api"
 local appname = api.appname
 local uci = api.uci
-local has_v2ray = api.is_finded("v2ray")
+local has_singbox = api.is_finded("sing-box")
 local has_xray = api.is_finded("xray")
 
 m = Map(appname)
@@ -54,7 +54,7 @@ o.default = n + 1080
 o.datatype = "port"
 o.rmempty = false
 
-if has_v2ray or has_xray then
+if has_singbox or has_xray then
 	o = s:option(Value, "http_port", "HTTP " .. translate("Listen Port") .. " " .. translate("0 is not use"))
 	o.default = 0
 	o.datatype = "port"

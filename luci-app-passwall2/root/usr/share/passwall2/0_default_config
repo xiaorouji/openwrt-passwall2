@@ -48,7 +48,6 @@ config global_rules
 	option v2ray_location_asset '/usr/share/v2ray/'
 
 config global_app
-	option v2ray_file '/usr/bin/v2ray'
 	option xray_file '/usr/bin/xray'
 	option brook_file '/usr/bin/brook'
 	option hysteria_file '/usr/bin/hysteria'

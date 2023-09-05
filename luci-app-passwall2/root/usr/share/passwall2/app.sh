@@ -291,14 +291,9 @@ run_v2ray() {
 	local _extra_param=""
 	eval_set_val $@
 	local type=$(echo $(config_n_get $node type) | tr 'A-Z' 'a-z')
-	if [ "$type" != "v2ray" ] && [ "$type" != "xray" ]; then
+	if [ "$type" != "xray" ]; then
 		local bin=$(first_type $(config_t_get global_app xray_file) xray)
-		if [ -n "$bin" ]; then
-			type="xray"
-		else
-			bin=$(first_type $(config_t_get global_app v2ray_file) v2ray)
-			[ -n "$bin" ] && type="v2ray"
-		fi
+		[ -n "$bin" ] && type="xray"
 	fi
 	[ -z "$type" ] && return 1
 	[ -n "$log_file" ] || local log_file="/dev/null"
@@ -601,7 +596,7 @@ run_socks() {
 		error_msg="某种原因，此 Socks 服务的相关配置已失联，启动中止！"
 	fi
 
-	if [ "$type" == "sing-box" ] || [ "$type" == "v2ray" ] || [ "$type" == "xray" ]; then
+	if [ "$type" == "sing-box" ] || [ "$type" == "xray" ]; then
 		local protocol=$(config_n_get $node protocol)
 		if [ "$protocol" == "_balancing" ] || [ "$protocol" == "_shunt" ] || [ "$protocol" == "_iface" ]; then
 			unset error_msg
@@ -624,7 +619,6 @@ run_socks() {
 		lua $UTIL_SINGBOX gen_config -flag SOCKS_$flag -node $node -local_socks_port $socks_port ${_extra_param} > $config_file
 		ln_run "$(first_type $(config_t_get global_app singbox_file) sing-box)" "sing-box" $log_file run -c "$config_file"
 	;;
-	v2ray|\
 	xray)
 		[ "$http_port" != "0" ] && {
 			http_flag=1
@@ -632,7 +626,7 @@ run_socks() {
 			local _extra_param="-local_http_port $http_port"
 		}
 		lua $UTIL_XRAY gen_config -flag SOCKS_$flag -node $node -local_socks_port $socks_port ${_extra_param} > $config_file
-		ln_run "$(first_type $(config_t_get global_app ${type}_file) ${type})" ${type} $log_file run -c "$config_file"
+		ln_run "$(first_type $(config_t_get global_app xray_file) xray)" "xray" $log_file run -c "$config_file"
 	;;
 	naiveproxy)
 		lua $UTIL_NAIVE gen_config -node $node -run_type socks -local_addr $bind -local_port $socks_port -server_host $server_host -server_port $port > $config_file
@@ -686,20 +680,15 @@ run_socks() {
 	esac
 
 	# http to socks
-	[ -z "$http_flag" ] && [ "$http_port" != "0" ] && [ -n "$http_config_file" ] && [ "$type" != "sing-box" ] && [ "$type" != "v2ray" ] && [ "$type" != "xray" ] && [ "$type" != "socks" ] && {
+	[ -z "$http_flag" ] && [ "$http_port" != "0" ] && [ -n "$http_config_file" ] && [ "$type" != "sing-box" ] && [ "$type" != "xray" ] && [ "$type" != "socks" ] && {
 		local bin=$(first_type $(config_t_get global_app singbox_file) sing-box)
 		if [ -n "$bin" ]; then
 			type="sing-box"
 			lua $UTIL_SINGBOX gen_proto_config -local_http_port $http_port -server_proto socks -server_address "127.0.0.1" -server_port $socks_port -server_username $_username -server_password $_password > $http_config_file
 			ln_run "$bin" ${type} /dev/null run -c "$http_config_file"
 		else
-			bin=$(first_type $(config_t_get global_app v2ray_file) v2ray)
-			if [ -n "$bin" ]; then
-				type="v2ray"
-			else
-				bin=$(first_type $(config_t_get global_app xray_file) xray)
-				[ -n "$bin" ] && type="xray"
-			fi
+			bin=$(first_type $(config_t_get global_app xray_file) xray)
+			[ -n "$bin" ] && type="xray"
 			[ -z "$type" ] && return 1
 			lua $UTIL_XRAY gen_proto_config -local_http_port $http_port -server_proto socks -server_address "127.0.0.1" -server_port $socks_port -server_username $_username -server_password $_password > $http_config_file
 			ln_run "$bin" ${type} /dev/null run -c "$http_config_file"

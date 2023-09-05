@@ -47,8 +47,8 @@ function gen_outbound(flag, node, tag, proxy_table)
 			proxy_tag = proxy_table.tag or "nil"
 		end
 
-		if node.type == "V2ray" or node.type == "Xray" then
-			if node.type == "Xray" and node.flow == "xtls-rprx-vision" then
+		if node.type == "Xray" then
+			if node.flow == "xtls-rprx-vision" then
 			else
 				proxy = 0
 				if proxy_tag ~= "nil" then
@@ -60,7 +60,7 @@ function gen_outbound(flag, node, tag, proxy_table)
 			end
 		end
 
-		if node.type ~= "V2ray" and node.type ~= "Xray" then
+		if node.type ~= "Xray" then
 			local relay_port = node.port
 			new_port = get_new_port()
 			local config_file = string.format("%s_%s_%s.json", flag, tag, new_port)
@@ -87,10 +87,10 @@ function gen_outbound(flag, node, tag, proxy_table)
 			node.stream_security = "none"
 		end
 		
-		if node.type == "V2ray" or node.type == "Xray" then
+		if node.type == "Xray" then
 			if node.tls and node.tls == "1" then
 				node.stream_security = "tls"
-				if node.type == "Xray" and node.reality and node.reality == "1" then
+				if node.reality and node.reality == "1" then
 					node.stream_security = "reality"
 				end
 			end
@@ -760,7 +760,7 @@ function gen_config(var)
 						else
 							if proxy then
 								local pre_proxy = nil
-								if _node.type ~= "V2ray" and _node.type ~= "Xray" then
+								if _node.type ~= "Xray" then
 									pre_proxy = true
 								end
 								if _node.type == "Xray" and _node.flow == "xtls-rprx-vision" then

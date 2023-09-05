@@ -12,7 +12,7 @@ local arg1 = arg[1]
 local reboot = 0
 local geoip_update = 0
 local geosite_update = 0
-local v2ray_asset_location = ucic:get_first(name, 'global_rules', "v2ray_location_asset", "/usr/share/v2ray/")
+local asset_location = ucic:get_first(name, 'global_rules', "v2ray_location_asset", "/usr/share/v2ray/")
 
 -- Custom geo file
 local geoip_api = ucic:get_first(name, 'global_rules', "geoip_url", "https://api.github.com/repos/Loyalsoldier/v2ray-rules-dat/releases/latest")
@@ -61,8 +61,8 @@ local function fetch_geoip()
 						f:write(content:gsub("geoip.dat", "/tmp/geoip.dat"), "")
 						f:close()
 
-						if nixio.fs.access(v2ray_asset_location .. "geoip.dat") then
-							luci.sys.call(string.format("cp -f %s %s", v2ray_asset_location .. "geoip.dat", "/tmp/geoip.dat"))
+						if nixio.fs.access(asset_location .. "geoip.dat") then
+							luci.sys.call(string.format("cp -f %s %s", asset_location .. "geoip.dat", "/tmp/geoip.dat"))
 							if luci.sys.call('sha256sum -c /tmp/geoip.dat.sha256sum > /dev/null 2>&1') == 0 then
 								log("geoip 版本一致，无需更新。")
 								return 1
@@ -72,7 +72,7 @@ local function fetch_geoip()
 							if v2.name and v2.name == "geoip.dat" then
 								sret = curl(v2.browser_download_url, "/tmp/geoip.dat")
 								if luci.sys.call('sha256sum -c /tmp/geoip.dat.sha256sum > /dev/null 2>&1') == 0 then
-									luci.sys.call(string.format("mkdir -p %s && cp -f %s %s", v2ray_asset_location, "/tmp/geoip.dat", v2ray_asset_location .. "geoip.dat"))
+									luci.sys.call(string.format("mkdir -p %s && cp -f %s %s", asset_location, "/tmp/geoip.dat", asset_location .. "geoip.dat"))
 									reboot = 1
 									log("geoip 更新成功。")
 									return 1
@@ -112,8 +112,8 @@ local function fetch_geosite()
 						f:write(content:gsub("geosite.dat", "/tmp/geosite.dat"), "")
 						f:close()
 
-						if nixio.fs.access(v2ray_asset_location .. "geosite.dat") then
-							luci.sys.call(string.format("cp -f %s %s", v2ray_asset_location .. "geosite.dat", "/tmp/geosite.dat"))
+						if nixio.fs.access(asset_location .. "geosite.dat") then
+							luci.sys.call(string.format("cp -f %s %s", asset_location .. "geosite.dat", "/tmp/geosite.dat"))
 							if luci.sys.call('sha256sum -c /tmp/geosite.dat.sha256sum > /dev/null 2>&1') == 0 then
 								log("geosite 版本一致，无需更新。")
 								return 1
@@ -123,7 +123,7 @@ local function fetch_geosite()
 							if v2.name and v2.name == "geosite.dat" then
 								sret = curl(v2.browser_download_url, "/tmp/geosite.dat")
 								if luci.sys.call('sha256sum -c /tmp/geosite.dat.sha256sum > /dev/null 2>&1') == 0 then
-									luci.sys.call(string.format("mkdir -p %s && cp -f %s %s", v2ray_asset_location, "/tmp/geosite.dat", v2ray_asset_location .. "geosite.dat"))
+									luci.sys.call(string.format("mkdir -p %s && cp -f %s %s", asset_location, "/tmp/geosite.dat", asset_location .. "geosite.dat"))
 									reboot = 1
 									log("geosite 更新成功。")
 									return 1

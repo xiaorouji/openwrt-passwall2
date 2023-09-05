@@ -1,7 +1,6 @@
 <%+cbi/valueheader%>
 <%
 local api = require "luci.passwall2.api"
-local has_v2ray = api.is_finded("v2ray")
 local has_xray = api.is_finded("xray")
 -%>
 <script type="text/javascript">//<![CDATA[
@@ -141,7 +140,7 @@ local has_xray = api.is_finded("xray")
 		} else if (v_type === "Hysteria") {
 			dom_prefix = "hysteria_"
 			protocol = "hysteria"
-		} else if (v_type === "V2ray" || v_type === "Xray") {
+		} else if (v_type === "Xray") {
 			dom_prefix = "xray_"
 		}
 		var _address = ""
@@ -230,7 +229,7 @@ local has_xray = api.is_finded("xray")
 				"&protoparam=" + b64encsafe(v_protocol_param.value) +
 				"&remarks=" + b64encutf8safe(v_alias.value);
 			url = b64encsafe(ssr_str);
-		} else if ((v_type === "V2ray" || v_type === "Xray") && opt.get(dom_prefix + "protocol").value === "vmess") {
+		} else if (v_type === "Xray" && opt.get(dom_prefix + "protocol").value === "vmess") {
 			protocol = "vmess";
 			var info = {};
 			info.v = "2";
@@ -275,7 +274,7 @@ local has_xray = api.is_finded("xray")
 				info.sni = opt.get(dom_prefix + "tls_serverName").value;
 			}
 			url = b64EncodeUnicode(JSON.stringify(info));
-		} else if ((v_type === "V2ray" || v_type === "Xray") && opt.get(dom_prefix + "protocol").value === "vless") {
+		} else if (v_type === "Xray" && opt.get(dom_prefix + "protocol").value === "vless") {
 			protocol = "vless";
 			var v_password = opt.get(dom_prefix + "uuid");
 			var v_port = opt.get(dom_prefix + "port");
@@ -341,7 +340,7 @@ local has_xray = api.is_finded("xray")
 				params = params.substring(1);
 			}
 			url += params;
-		} else if (((v_type === "V2ray" || v_type === "Xray") && opt.get(dom_prefix + "protocol").value === "trojan")) {
+		} else if ((v_type === "Xray" && opt.get(dom_prefix + "protocol").value === "trojan")) {
 			protocol = "trojan";
 			var v_password = opt.get(dom_prefix + "password");
 			var v_port = opt.get(dom_prefix + "port");
@@ -649,9 +648,7 @@ local has_xray = api.is_finded("xray")
 					queryParam[decodeURIComponent(params[0]).toLowerCase()] = decodeURIComponent(params[1] || '');
 				}
 			}
-			<% if has_v2ray then %>
-			opt.set('type', "V2ray");
-			<% elseif has_xray then %>
+			<% if has_xray then %>
 			opt.set('type', "Xray");
 			<% end %>
 			opt.set(dom_prefix + 'protocol', "trojan");
@@ -670,9 +667,7 @@ local has_xray = api.is_finded("xray")
 			dom_prefix = "xray_"
 			var sstr = b64DecodeUnicode(ssu[1]);
 			var ploc = sstr.indexOf("/?");
-			<% if has_v2ray then %>
-			opt.set('type', "V2ray");
-			<% elseif has_xray then %>
+			<% if has_xray then %>
 			opt.set('type', "Xray");
 			<% end %>
 			opt.set(dom_prefix + 'protocol', "vmess");
@@ -723,8 +718,6 @@ local has_xray = api.is_finded("xray")
 			dom_prefix = "xray_"
 			<% if has_xray then %>
 			opt.set('type', "Xray");
-			<% elseif has_v2ray then %>
-			opt.set('type', "V2ray");
 			<% end %>
 			opt.set(dom_prefix + 'protocol', "vless");
 			var m = parseNodeUrl(ssrurl);

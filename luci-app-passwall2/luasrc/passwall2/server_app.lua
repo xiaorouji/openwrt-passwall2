@@ -144,9 +144,6 @@ local function start()
 			elseif type == "SS-Rust" then
 				config = require(require_dir .. "util_shadowsocks").gen_config_server(user)
 				bin = ln_run("/usr/bin/ssserver", "ssserver", "-c " .. config_file, log_path)
-			elseif type == "V2ray" then
-				config = require(require_dir .. "util_xray").gen_config_server(user)
-				bin = ln_run(api.get_app_path("v2ray"), "v2ray", "run -c " .. config_file, log_path)
 			elseif type == "Xray" then
 				config = require(require_dir .. "util_xray").gen_config_server(user)
 				bin = ln_run(api.get_app_path("xray"), "xray", "run -c " .. config_file, log_path)

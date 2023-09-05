@@ -8,7 +8,7 @@ local node = api.uci_get_type("global", "node", "nil")
 if node ~= "nil" then
 	local node_type = api.uci_get_type_id(node, "type")
 	local node_protocol = api.uci_get_type_id(node, "protocol")
-	if (node_type == "V2ray" or node_type == "Xray") and node_protocol == "_shunt" then
+	if node_type == "Xray" and node_protocol == "_shunt" then
 		default_node_type = node_protocol
 		uci:foreach("passwall2", "shunt_rules", function(e)
 			if e[".name"] and e.remarks then
