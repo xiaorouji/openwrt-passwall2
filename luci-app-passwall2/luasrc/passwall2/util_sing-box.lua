@@ -662,12 +662,12 @@ function gen_config(var)
 	local route = {
 		rules = {},
 		geoip = {
-			path = singbox_settings.geoip_path or "/tmp/singbox/geoip.db",
+			path = singbox_settings.geoip_path or "/usr/share/singbox/geoip.db",
 			download_url = singbox_settings.geoip_url or nil,
 			download_detour = nil,
 		},
 		geosite = {
-			path = singbox_settings.geosite_path or "/tmp/singbox/geosite.db",
+			path = singbox_settings.geosite_path or "/usr/share/singbox/geosite.db",
 			download_url = singbox_settings.geosite_url or nil,
 			download_detour = nil,
 		},
@@ -1134,7 +1134,7 @@ function gen_config(var)
 					end
 					experimental.clash_api = {
 						store_fakeip = true,
-						cache_file = "/tmp/singbox/passwall2_" .. flag .. ".db"
+						cache_file = "/tmp/singbox_passwall2_" .. flag .. ".db"
 					}
 				end
 			end

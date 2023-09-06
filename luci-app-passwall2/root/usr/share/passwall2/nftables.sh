@@ -876,11 +876,10 @@ del_firewall_rule() {
 
 flush_nftset() {
 	del_firewall_rule
-	destroy_nftset $NFTSET_VPSLIST $NFTSET_LANLIST
-	destroy_nftset $NFTSET_VPSLIST6 $NFTSET_LANLIST6
 	for _name in $(nft -a list sets | grep -E "passwall2" | awk -F 'set ' '{print $2}' | awk '{print $1}'); do
 		destroy_nftset ${_name}
 	done
+	rm -rf /tmp/singbox_passwall2_*
 	/etc/init.d/passwall2 reload
 }
 

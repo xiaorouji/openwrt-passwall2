@@ -62,9 +62,9 @@ config global_subscribe
 	
 config global_singbox
 	option sniff_override_destination '1'
-	option geoip_path '/tmp/singbox/geoip.db'
+	option geoip_path '/usr/share/singbox/geoip.db'
 	option geoip_url 'https://github.com/SagerNet/sing-geoip/releases/latest/download/geoip.db'
-	option geosite_path '/tmp/singbox/geosite.db'
+	option geosite_path '/usr/share/singbox/geosite.db'
 	option geosite_url 'https://github.com/SagerNet/sing-geosite/releases/latest/download/geosite.db'
 
 config nodes 'myshunt'

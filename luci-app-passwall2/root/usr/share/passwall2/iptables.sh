@@ -859,6 +859,7 @@ flush_ipset() {
 	for _name in $(ipset list | grep "Name: " | grep "passwall2_" | awk '{print $2}'); do
 		destroy_ipset ${_name}
 	done
+	rm -rf /tmp/singbox_passwall2_*
 	/etc/init.d/passwall2 reload
 }
 
