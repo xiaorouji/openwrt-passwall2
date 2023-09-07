@@ -398,9 +398,8 @@ for key, value in pairs(s.fields) do
 			s.fields[key].write = rm_prefix_write
 			s.fields[key].remove = rm_prefix_remove
 		end
-	end
 
-	local deps = s.fields[key].deps
+		local deps = s.fields[key].deps
 		if #deps > 0 then
 			for index, value in ipairs(deps) do
 				deps[index]["type"] = type_name
@@ -408,4 +407,5 @@ for key, value in pairs(s.fields) do
 		else
 			s.fields[key]:depends({ type = type_name })
 		end
+	end
 end
