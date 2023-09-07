@@ -245,6 +245,9 @@ o:depends({ [option_name("protocol")] = "trojan" })
 o = s:option(FileUpload, option_name("tls_certificateFile"), translate("Public key absolute path"), translate("as:") .. "/etc/ssl/fullchain.pem")
 o.default = m:get(s.section, "tls_certificateFile") or "/etc/config/ssl/" .. arg[1] .. ".pem"
 o:depends({ [option_name("tls")] = true })
+o:depends({ [option_name("protocol")] = "hysteria" })
+o:depends({ [option_name("protocol")] = "tuic" })
+o:depends({ [option_name("protocol")] = "hysteria2" })
 o.validate = function(self, value, t)
 	if value and value ~= "" then
 		if not nixio.fs.access(value) then
@@ -259,6 +262,9 @@ end
 o = s:option(FileUpload, option_name("tls_keyFile"), translate("Private key absolute path"), translate("as:") .. "/etc/ssl/private.key")
 o.default = m:get(s.section, "tls_keyFile") or "/etc/config/ssl/" .. arg[1] .. ".key"
 o:depends({ [option_name("tls")] = true })
+o:depends({ [option_name("protocol")] = "hysteria" })
+o:depends({ [option_name("protocol")] = "tuic" })
+o:depends({ [option_name("protocol")] = "hysteria2" })
 o.validate = function(self, value, t)
 	if value and value ~= "" then
 		if not nixio.fs.access(value) then
