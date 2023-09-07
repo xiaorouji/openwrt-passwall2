@@ -264,8 +264,8 @@ function gen_outbound(flag, node, tag, proxy_table)
 
 		if node.protocol == "hysteria" then
 			protocol_table = {
-				up = node.hysteria_up_mbps .. "  Mbps",
-				down = node.hysteria_down_mbps .. "  Mbps",
+				up = node.hysteria_up_mbps .. " Mbps",
+				down = node.hysteria_down_mbps .. " Mbps",
 				up_mbps = tonumber(node.hysteria_up_mbps),
 				down_mbps = tonumber(node.hysteria_down_mbps),
 				obfs = node.hysteria_obfs,
@@ -274,7 +274,14 @@ function gen_outbound(flag, node, tag, proxy_table)
 				recv_window_conn = tonumber(node.hysteria_recv_window_conn),
 				recv_window = tonumber(node.hysteria_recv_window),
 				disable_mtu_discovery = (node.hysteria_disable_mtu_discovery == "1") and true or false,
-				tls = tls,
+				tls = {
+					enabled = true,
+					server_name = node.tls_serverName,
+					insecure = (node.tls_allowInsecure == "1") and true or false,
+					alpn = (node.hysteria_alpn and node.hysteria_alpn ~= "") and {
+						node.hysteria_alpn
+					} or nil
+				}
 			}
 		end
 
@@ -490,8 +497,8 @@ function gen_config_server(node)
 
 	if node.protocol == "hysteria" then
 		protocol_table = {
-			up = node.hysteria_up_mbps .. "  Mbps",
-			down = node.hysteria_down_mbps .. "  Mbps",
+			up = node.hysteria_up_mbps .. " Mbps",
+			down = node.hysteria_down_mbps .. " Mbps",
 			up_mbps = tonumber(node.hysteria_up_mbps),
 			down_mbps = tonumber(node.hysteria_down_mbps),
 			obfs = node.hysteria_obfs,
@@ -506,7 +513,14 @@ function gen_config_server(node)
 			recv_window_client = node.hysteria_recv_window_client and tonumber(node.hysteria_recv_window_client) or nil,
 			max_conn_client = node.hysteria_max_conn_client and tonumber(node.hysteria_max_conn_client) or nil,
 			disable_mtu_discovery = (node.hysteria_disable_mtu_discovery == "1") and true or false,
-			tls = tls,
+			tls = {
+				enabled = true,
+				certificate_path = node.tls_certificateFile,
+				key_path = node.tls_keyFile,
+				alpn = (node.hysteria_alpn and node.hysteria_alpn ~= "") and {
+					node.hysteria_alpn
+				} or nil
+			}
 		}
 	end
 

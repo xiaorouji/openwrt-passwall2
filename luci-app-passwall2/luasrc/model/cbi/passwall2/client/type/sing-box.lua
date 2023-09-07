@@ -325,6 +325,9 @@ if singbox_tags:find("with_quic") then
 
 	o = s:option(Flag, option_name("hysteria_disable_mtu_discovery"), translate("Disable MTU detection"))
 	o:depends({ [option_name("protocol")] = "hysteria" })
+
+	o = s:option(Value, option_name("hysteria_alpn"), translate("QUIC TLS ALPN"))
+	o:depends({ [option_name("protocol")] = "hysteria" })
 end
 
 if singbox_tags:find("with_quic") then
