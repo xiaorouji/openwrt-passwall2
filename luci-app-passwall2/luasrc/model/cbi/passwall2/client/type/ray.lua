@@ -17,26 +17,6 @@ local function option_name(name)
 	return option_prefix .. name
 end
 
-local function rm_prefix_cfgvalue(self, section)
-	if self.option:find(option_prefix) == 1 then
-		return m:get(section, self.option:sub(1 + #option_prefix))
-	end
-end
-local function rm_prefix_write(self, section, value)
-	if s.fields["type"]:formvalue(arg[1]) == type_name then
-		if self.option:find(option_prefix) == 1 then
-			m:set(section, self.option:sub(1 + #option_prefix), value)
-		end
-	end
-end
-local function rm_prefix_remove(self, section, value)
-	if s.fields["type"]:formvalue(arg[1]) == type_name then
-		if self.option:find(option_prefix) == 1 then
-			m:del(section, self.option:sub(1 + #option_prefix))
-		end
-	end
-end
-
 local x_ss_encrypt_method_list = {
 	"aes-128-gcm", "aes-256-gcm", "chacha20-poly1305", "xchacha20-poly1305", "2022-blake3-aes-128-gcm", "2022-blake3-aes-256-gcm", "2022-blake3-chacha20-poly1305"
 }
@@ -247,17 +227,9 @@ o:value("none")
 o:depends({ [option_name("protocol")] = "vless" })
 
 o = s:option(ListValue, option_name("x_ss_encrypt_method"), translate("Encrypt Method"))
-o.not_rewrite = true
+o.rewrite_option = "method"
 for a, t in ipairs(x_ss_encrypt_method_list) do o:value(t) end
 o:depends({ [option_name("protocol")] = "shadowsocks" })
-function o.cfgvalue(self, section)
-	return m:get(section, "method")
-end
-function o.write(self, section, value)
-	if s.fields["type"]:formvalue(arg[1]) == type_name then
-		m:set(section, "method", value)
-	end
-end
 
 o = s:option(Flag, option_name("iv_check"), translate("IV Check"))
 o:depends({ [option_name("protocol")] = "shadowsocks", [option_name("x_ss_encrypt_method")] = "aes-128-gcm" })
@@ -545,21 +517,4 @@ o = s:option(Value, option_name("xudp_concurrency"), translate("XUDP Mux concurr
 o.default = 8
 o:depends({ [option_name("xmux")] = true })
 
-for key, value in pairs(s.fields) do
-	if key:find(option_prefix) == 1 then
-		if not s.fields[key].not_rewrite then
-			s.fields[key].cfgvalue = rm_prefix_cfgvalue
-			s.fields[key].write = rm_prefix_write
-			s.fields[key].remove = rm_prefix_remove
-		end
-
-		local deps = s.fields[key].deps
-		if #deps > 0 then
-			for index, value in ipairs(deps) do
-				deps[index]["type"] = type_name
-			end
-		else
-			s.fields[key]:depends({ type = type_name })
-		end
-	end
-end
+api.luci_types(arg[1], m, s, type_name, option_prefix)
