@@ -67,6 +67,8 @@ global_singbox=$(uci -q get passwall2.@global_singbox[0])
 	uci -q commit passwall2
 }
 
+chmod +x /usr/share/passwall2/*.sh
+
 rm -f /tmp/luci-indexcache
 rm -rf /tmp/luci-modulecache/
 killall -HUP rpcd 2>/dev/null
