@@ -270,9 +270,11 @@ o.rows = 5
 o.wrap = "off"
 o.remove = function(self, section)
 	local node_value = node:formvalue(global_cfgid)
-	local node_t = m:get(node_value)
-	if node_t.type == "Xray" then
-		AbstractValue.remove(self, section)
+	if node_value ~= "nil" then
+		local node_t = m:get(node_value) or {}
+		if node_t.type == "Xray" then
+			AbstractValue.remove(self, section)
+		end
 	end
 end
 
