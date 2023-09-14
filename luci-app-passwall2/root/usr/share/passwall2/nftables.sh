@@ -271,8 +271,8 @@ load_acl() {
 							msg2="${msg2}(REDIRECT:${redir_port})代理"
 						fi
 
-						nft "add rule inet fw4 PSW2_NAT ip protocol tcp ${_ipt_source} ip daddr @$nftset_whitelist counter return comment \"$remarks\""
-						nft "add rule inet fw4 PSW2_MANGLE ip protocol tcp ${_ipt_source} ip daddr @$nftset_whitelist counter return comment \"$remarks\""
+						[ -z "${is_tproxy}" ] && nft "add rule inet fw4 PSW2_NAT ip protocol tcp ${_ipt_source} ip daddr @$nftset_whitelist counter return comment \"$remarks\""
+						[ -n "${is_tproxy}" ] && nft "add rule inet fw4 PSW2_MANGLE ip protocol tcp ${_ipt_source} ip daddr @$nftset_whitelist counter return comment \"$remarks\""
 
 						[ "$accept_icmp" = "1" ] && {
 							nft "add rule inet fw4 PSW2_ICMP_REDIRECT ip protocol icmp ${_ipt_source} ip daddr $FAKE_IP $(REDIRECT) comment \"$remarks\""
@@ -371,8 +371,8 @@ load_acl() {
 				[ "$TCP_NO_REDIR_PORTS" != "disable" ] && msg="${msg}除${TCP_NO_REDIR_PORTS}外的"
 				msg="${msg}所有端口"
 
-				nft "add rule inet fw4 PSW2_NAT ip protocol tcp ip daddr @$nftset_global_whitelist counter return comment \"$remarks\""
-				nft "add rule inet fw4 PSW2_MANGLE ip protocol tcp ip daddr @$nftset_global_whitelist counter return comment \"$remarks\""
+				[ -z "${is_tproxy}" ] && nft "add rule inet fw4 PSW2_NAT ip protocol tcp ip daddr @$nftset_global_whitelist counter return comment \"$remarks\""
+				[ -n "${is_tproxy}" ] && nft "add rule inet fw4 PSW2_MANGLE ip protocol tcp ip daddr @$nftset_global_whitelist counter return comment \"$remarks\""
 
 				[ "$accept_icmp" = "1" ] && {
 					nft "add rule inet fw4 PSW2_ICMP_REDIRECT ip protocol icmp ip daddr $FAKE_IP $(REDIRECT) comment \"默认\""

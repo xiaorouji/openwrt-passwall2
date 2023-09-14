@@ -332,7 +332,7 @@ run_xray() {
 				local _dns=$(get_first_dns direct_dns_udp_server 53 | sed 's/#/:/g')
 				local _dns_address=$(echo ${_dns} | awk -F ':' '{print $1}')
 				local _dns_port=$(echo ${_dns} | awk -F ':' '{print $2}')
-				V2RAY_DNS_DIRECT_ARGS="${V2RAY_DNS_DIRECT_ARGS} -direct_dns_server ${_dns_address} -direct_dns_port ${_dns_port} -direct_dns_udp_server ${_dns_address}"
+				V2RAY_DNS_DIRECT_ARGS="${V2RAY_DNS_DIRECT_ARGS} -direct_dns_udp_port ${_dns_port} -direct_dns_udp_server ${_dns_address}"
 			;;
 		esac
 		[ -n "$direct_dns_query_strategy" ] && V2RAY_DNS_DIRECT_ARGS="${V2RAY_DNS_DIRECT_ARGS} -dns_query_strategy ${direct_dns_query_strategy}"
@@ -366,13 +366,13 @@ run_xray() {
 				local _dns=$(get_first_dns remote_dns_udp_server 53 | sed 's/#/:/g')
 				local _dns_address=$(echo ${_dns} | awk -F ':' '{print $1}')
 				local _dns_port=$(echo ${_dns} | awk -F ':' '{print $2}')
-				V2RAY_DNS_REMOTE_ARGS="${V2RAY_DNS_REMOTE_ARGS} -remote_dns_server ${_dns_address} -remote_dns_port ${_dns_port} -remote_dns_udp_server ${_dns_address}"
+				V2RAY_DNS_REMOTE_ARGS="${V2RAY_DNS_REMOTE_ARGS} -remote_dns_udp_port ${_dns_port} -remote_dns_udp_server ${_dns_address}"
 			;;
 			tcp)
 				local _dns=$(get_first_dns remote_dns_tcp_server 53 | sed 's/#/:/g')
 				local _dns_address=$(echo ${_dns} | awk -F ':' '{print $1}')
 				local _dns_port=$(echo ${_dns} | awk -F ':' '{print $2}')
-				V2RAY_DNS_REMOTE_ARGS="${V2RAY_DNS_REMOTE_ARGS} -remote_dns_server ${_dns_address} -remote_dns_port ${_dns_port} -remote_dns_tcp_server tcp://${_dns}"
+				V2RAY_DNS_REMOTE_ARGS="${V2RAY_DNS_REMOTE_ARGS} -remote_dns_tcp_port ${_dns_port} -remote_dns_tcp_server ${_dns_address}"
 			;;
 			doh)
 				local _doh_url=$(echo $remote_dns_doh | awk -F ',' '{print $1}')
@@ -384,8 +384,8 @@ run_xray() {
 				[ -z "${_doh_port}" ] && _doh_port=443
 				local _doh_bootstrap=$(echo $remote_dns_doh | cut -d ',' -sf 2-)
 				[ "${is_ip}" = "true" ] && _doh_bootstrap=${_doh_host}
-				[ -n "$_doh_bootstrap" ] && V2RAY_DNS_REMOTE_ARGS="${V2RAY_DNS_REMOTE_ARGS} -remote_dns_server ${_doh_bootstrap}"
-				V2RAY_DNS_REMOTE_ARGS="${V2RAY_DNS_REMOTE_ARGS} -remote_dns_port ${_doh_port} -remote_dns_doh_url ${_doh_url} -remote_dns_doh_host ${_doh_host}"
+				[ -n "$_doh_bootstrap" ] && V2RAY_DNS_REMOTE_ARGS="${V2RAY_DNS_REMOTE_ARGS} -remote_dns_doh_ip ${_doh_bootstrap}"
+				V2RAY_DNS_REMOTE_ARGS="${V2RAY_DNS_REMOTE_ARGS} -remote_dns_doh_port ${_doh_port} -remote_dns_doh_url ${_doh_url} -remote_dns_doh_host ${_doh_host}"
 			;;
 		esac
 
@@ -399,8 +399,8 @@ run_xray() {
 		[ -n "$dns_listen_port" ] && _extra_param="${_extra_param} -dns_listen_port ${dns_listen_port}"
 		[ -n "$dns_cache" ] && _extra_param="${_extra_param} -dns_cache ${dns_cache}"
 		_extra_param="${_extra_param} -dns_query_strategy UseIP"
-		_extra_param="${_extra_param} -direct_dns_port ${direct_dnsmasq_listen_port} -direct_dns_udp_server 127.0.0.1"
-		_extra_param="${_extra_param} -remote_dns_port ${dns_remote_listen_port} -remote_dns_udp_server 127.0.0.1"
+		_extra_param="${_extra_param} -direct_dns_udp_port ${direct_dnsmasq_listen_port} -direct_dns_udp_server 127.0.0.1"
+		_extra_param="${_extra_param} -remote_dns_udp_port ${dns_remote_listen_port} -remote_dns_udp_server 127.0.0.1"
 		[ "$remote_fakedns" = "1" ] && _extra_param="${_extra_param} -remote_dns_fake 1 -remote_dns_fake_strategy ${remote_dns_query_strategy}"
 	}
 
@@ -455,7 +455,7 @@ run_singbox() {
 				local _dns=$(get_first_dns direct_dns_udp_server 53 | sed 's/#/:/g')
 				local _dns_address=$(echo ${_dns} | awk -F ':' '{print $1}')
 				local _dns_port=$(echo ${_dns} | awk -F ':' '{print $2}')
-				V2RAY_DNS_DIRECT_ARGS="${V2RAY_DNS_DIRECT_ARGS} -direct_dns_server ${_dns_address} -direct_dns_port ${_dns_port} -direct_dns_udp_server ${_dns_address}"
+				V2RAY_DNS_DIRECT_ARGS="${V2RAY_DNS_DIRECT_ARGS} -direct_dns_udp_port ${_dns_port} -direct_dns_udp_server ${_dns_address}"
 			;;
 		esac
 		[ -n "$direct_dns_query_strategy" ] && V2RAY_DNS_DIRECT_ARGS="${V2RAY_DNS_DIRECT_ARGS} -dns_query_strategy ${direct_dns_query_strategy}"
@@ -478,7 +478,7 @@ run_singbox() {
 		fi
 		run_ipset_dnsmasq listen_port=${direct_dnsmasq_listen_port} server_dns=127.0.0.1#${dns_direct_listen_port} ipset="${direct_ipset}" nftset="${direct_nftset}" config_file=${direct_ipset_conf}
 		
-		_extra_param="${_extra_param} -direct_dns_port ${direct_dnsmasq_listen_port} -direct_dns_udp_server 127.0.0.1 -direct_dns_query_strategy ${direct_dns_query_strategy}"
+		_extra_param="${_extra_param} -direct_dns_udp_port ${direct_dnsmasq_listen_port} -direct_dns_udp_server 127.0.0.1 -direct_dns_query_strategy ${direct_dns_query_strategy}"
 
 :<<eof 
 		V2RAY_DNS_REMOTE_ARGS="-dns_out_tag remote"
@@ -492,13 +492,13 @@ run_singbox() {
 				local _dns=$(get_first_dns remote_dns_udp_server 53 | sed 's/#/:/g')
 				local _dns_address=$(echo ${_dns} | awk -F ':' '{print $1}')
 				local _dns_port=$(echo ${_dns} | awk -F ':' '{print $2}')
-				V2RAY_DNS_REMOTE_ARGS="${V2RAY_DNS_REMOTE_ARGS} -remote_dns_server ${_dns_address} -remote_dns_port ${_dns_port} -remote_dns_udp_server ${_dns_address}"
+				V2RAY_DNS_REMOTE_ARGS="${V2RAY_DNS_REMOTE_ARGS} -remote_dns_udp_port ${_dns_port} -remote_dns_udp_server ${_dns_address}"
 			;;
 			tcp)
 				local _dns=$(get_first_dns remote_dns_tcp_server 53 | sed 's/#/:/g')
 				local _dns_address=$(echo ${_dns} | awk -F ':' '{print $1}')
 				local _dns_port=$(echo ${_dns} | awk -F ':' '{print $2}')
-				V2RAY_DNS_REMOTE_ARGS="${V2RAY_DNS_REMOTE_ARGS} -remote_dns_server ${_dns_address} -remote_dns_port ${_dns_port} -remote_dns_tcp_server tcp://${_dns}"
+				V2RAY_DNS_REMOTE_ARGS="${V2RAY_DNS_REMOTE_ARGS} -remote_dns_tcp_port ${_dns_port} -remote_dns_tcp_server ${_dns_address}"
 			;;
 			doh)
 				local _doh_url=$(echo $remote_dns_doh | awk -F ',' '{print $1}')
@@ -510,8 +510,8 @@ run_singbox() {
 				[ -z "${_doh_port}" ] && _doh_port=443
 				local _doh_bootstrap=$(echo $remote_dns_doh | cut -d ',' -sf 2-)
 				[ "${is_ip}" = "true" ] && _doh_bootstrap=${_doh_host}
-				[ -n "$_doh_bootstrap" ] && V2RAY_DNS_REMOTE_ARGS="${V2RAY_DNS_REMOTE_ARGS} -remote_dns_server ${_doh_bootstrap}"
-				V2RAY_DNS_REMOTE_ARGS="${V2RAY_DNS_REMOTE_ARGS} -remote_dns_port ${_doh_port} -remote_dns_doh_url ${_doh_url} -remote_dns_doh_host ${_doh_host}"
+				[ -n "$_doh_bootstrap" ] && V2RAY_DNS_REMOTE_ARGS="${V2RAY_DNS_REMOTE_ARGS} -remote_dns_doh_ip ${_doh_bootstrap}"
+				V2RAY_DNS_REMOTE_ARGS="${V2RAY_DNS_REMOTE_ARGS} -remote_dns_doh_port ${_doh_port} -remote_dns_doh_url ${_doh_url} -remote_dns_doh_host ${_doh_host}"
 			;;
 		esac
 
@@ -522,7 +522,7 @@ run_singbox() {
 		lua $UTIL_SINGBOX gen_dns_config ${V2RAY_DNS_REMOTE_ARGS} > $V2RAY_DNS_REMOTE_CONFIG
 		ln_run "$(first_type $(config_t_get global_app singbox_file) sing-box)" "sing-box" "/dev/null" run -c "$V2RAY_DNS_REMOTE_CONFIG"
 		
-		_extra_param="${_extra_param} -remote_dns_port ${dns_remote_listen_port} -remote_dns_udp_server 127.0.0.1"
+		_extra_param="${_extra_param} -remote_dns_udp_port ${dns_remote_listen_port} -remote_dns_udp_server 127.0.0.1"
 eof
 
 		case "$remote_dns_protocol" in
@@ -530,13 +530,13 @@ eof
 				local _dns=$(get_first_dns remote_dns_udp_server 53 | sed 's/#/:/g')
 				local _dns_address=$(echo ${_dns} | awk -F ':' '{print $1}')
 				local _dns_port=$(echo ${_dns} | awk -F ':' '{print $2}')
-				_extra_param="${_extra_param} -remote_dns_port ${_dns_port} -remote_dns_udp_server ${_dns_address}"
+				_extra_param="${_extra_param} -remote_dns_udp_port ${_dns_port} -remote_dns_udp_server ${_dns_address}"
 			;;
 			tcp)
 				local _dns=$(get_first_dns remote_dns_tcp_server 53 | sed 's/#/:/g')
 				local _dns_address=$(echo ${_dns} | awk -F ':' '{print $1}')
 				local _dns_port=$(echo ${_dns} | awk -F ':' '{print $2}')
-				_extra_param="${_extra_param} -remote_dns_server ${_dns_address} -remote_dns_port ${_dns_port} -remote_dns_tcp_server tcp://${_dns}"
+				_extra_param="${_extra_param} -remote_dns_tcp_port ${_dns_port} -remote_dns_tcp_server ${_dns_address}"
 			;;
 			doh)
 				local _doh_url=$(echo $remote_dns_doh | awk -F ',' '{print $1}')
@@ -548,8 +548,8 @@ eof
 				[ -z "${_doh_port}" ] && _doh_port=443
 				local _doh_bootstrap=$(echo $remote_dns_doh | cut -d ',' -sf 2-)
 				[ "${is_ip}" = "true" ] && _doh_bootstrap=${_doh_host}
-				[ -n "$_doh_bootstrap" ] && _extra_param="${_extra_param} -remote_dns_server ${_doh_bootstrap}"
-				_extra_param="${_extra_param} -remote_dns_port ${_doh_port} -remote_dns_doh_url ${_doh_url} -remote_dns_doh_host ${_doh_host}"
+				[ -n "$_doh_bootstrap" ] && _extra_param="${_extra_param} -remote_dns_doh_ip ${_doh_bootstrap}"
+				_extra_param="${_extra_param} -remote_dns_doh_port ${_doh_port} -remote_dns_doh_url ${_doh_url} -remote_dns_doh_host ${_doh_host}"
 			;;
 		esac
 

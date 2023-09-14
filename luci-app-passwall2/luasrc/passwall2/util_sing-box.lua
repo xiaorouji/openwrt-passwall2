@@ -676,14 +676,17 @@ function gen_config(var)
 	local local_http_username = var["-local_http_username"]
 	local local_http_password = var["-local_http_password"]
 	local dns_listen_port = var["-dns_listen_port"]
-	local direct_dns_port = var["-direct_dns_port"]
 	local direct_dns_udp_server = var["-direct_dns_udp_server"]
+	local direct_dns_udp_port = var["-direct_dns_udp_port"]
 	local direct_dns_query_strategy = var["-direct_dns_query_strategy"]
-	local remote_dns_port = var["-remote_dns_port"]
 	local remote_dns_udp_server = var["-remote_dns_udp_server"]
+	local remote_dns_udp_port = var["-remote_dns_udp_port"]
 	local remote_dns_tcp_server = var["-remote_dns_tcp_server"]
+	local remote_dns_tcp_port = var["-remote_dns_tcp_port"]
 	local remote_dns_doh_url = var["-remote_dns_doh_url"]
 	local remote_dns_doh_host = var["-remote_dns_doh_host"]
+	local remote_dns_doh_ip = var["-remote_dns_doh_ip"]
+	local remote_dns_doh_port = var["-remote_dns_doh_port"]
 	local remote_dns_query_strategy = var["-remote_dns_query_strategy"]
 	local remote_dns_fake = var["-remote_dns_fake"]
 	local dns_cache = var["-dns_cache"]
@@ -1088,109 +1091,108 @@ function gen_config(var)
 			reverse_mapping = true, --在响应 DNS 查询后存储 IP 地址的反向映射以为路由目的提供域名。
 			fakeip = nil,
 		}
-	
-		if true then
-			local dns_tag = "remote"
-	
-			local domain = {}
-			local domain_suffix = {}
-			local domain_keyword = {}
-			local domain_regex = {}
-			local geosite = {}
-			for index, value in ipairs(dns_remote_domains) do
-				if value:find("geosite:") == 1 then
-					table.insert(geosite, value:sub(1 + #"geosite:"))
-				elseif value:find("regexp:") == 1 then
-					table.insert(domain_regex, value:sub(1 + #"regexp:"))
-				elseif value:find("full:") == 1 then
-					table.insert(domain, value:sub(1 + #"full:"))
-				elseif value:find("domain:") == 1 then
-					table.insert(domain_keyword, value:sub(1 + #"domain:"))
-				else
-					table.insert(domain, value)
-				end
+
+		local dns_tag = "remote"
+
+		local domain = {}
+		local domain_suffix = {}
+		local domain_keyword = {}
+		local domain_regex = {}
+		local geosite = {}
+		for index, value in ipairs(dns_remote_domains) do
+			if value:find("geosite:") == 1 then
+				table.insert(geosite, value:sub(1 + #"geosite:"))
+			elseif value:find("regexp:") == 1 then
+				table.insert(domain_regex, value:sub(1 + #"regexp:"))
+			elseif value:find("full:") == 1 then
+				table.insert(domain, value:sub(1 + #"full:"))
+			elseif value:find("domain:") == 1 then
+				table.insert(domain_keyword, value:sub(1 + #"domain:"))
+			else
+				table.insert(domain, value)
 			end
-			local remote_rule = {
-				server = dns_tag,
-				domain = #domain > 0 and domain or nil,
-				domain_suffix = #domain_suffix > 0 and domain_suffix or nil,
-				domain_keyword = #domain_keyword > 0 and domain_keyword or nil,
-				domain_regex = #domain_regex > 0 and domain_regex or nil,
-				geosite = #geosite > 0 and geosite or nil,
-				disable_cache = true,
+		end
+		local remote_rule = {
+			server = dns_tag,
+			domain = #domain > 0 and domain or nil,
+			domain_suffix = #domain_suffix > 0 and domain_suffix or nil,
+			domain_keyword = #domain_keyword > 0 and domain_keyword or nil,
+			domain_regex = #domain_regex > 0 and domain_regex or nil,
+			geosite = #geosite > 0 and geosite or nil,
+			disable_cache = true,
+		}
+
+		local remote_strategy = "prefer_ipv6"
+		if remote_dns_query_strategy == "UseIPv4" then
+			remote_strategy = "ipv4_only"
+		elseif remote_dns_query_strategy == "UseIPv6" then
+			remote_strategy = "ipv6_only"
+		end
+
+		local server = {
+			tag = dns_tag,
+			address_strategy = "prefer_ipv4",
+			strategy = remote_strategy,
+			address_resolver = "direct",
+			detour = dns_outTag,
+		}
+
+		local rule_server = dns_tag
+
+		if remote_dns_udp_server then
+			local server_port = tonumber(remote_dns_udp_port) or 53
+			server.address = "udp://" .. remote_dns_udp_server .. ":" .. server_port
+		end
+
+		if remote_dns_tcp_server then
+			local server_port = tonumber(remote_dns_tcp_port) or 53
+			server.address = "tcp://" .. remote_dns_tcp_server .. ":" .. server_port
+		end
+
+		if remote_dns_doh_url then
+			server.address = remote_dns_doh_url
+		end
+
+		if server.address then
+			table.insert(dns.servers, server)
+		end
+
+		if remote_dns_fake then
+			dns.fakeip = {
+				enabled = true,
+				inet4_range = "198.18.0.0/16",
+				inet6_range = "fc00::/18",
 			}
-	
-			local remote_strategy = "prefer_ipv6"
-			if remote_dns_query_strategy == "UseIPv4" then
-				remote_strategy = "ipv4_only"
-			elseif remote_dns_query_strategy == "UseIPv6" then
-				remote_strategy = "ipv6_only"
+
+			local fakedns_tag = dns_tag .. "_fakeip"
+
+			if not server.address then
+				fakedns_tag = dns_tag
 			end
-	
-			local server = {
-				tag = dns_tag,
-				address_strategy = "prefer_ipv4",
+
+			table.insert(dns.servers, {
+				tag = fakedns_tag,
+				address = "fakeip",
 				strategy = remote_strategy,
-				address_resolver = "direct",
-				detour = dns_outTag,
-			}
-	
-			local rule_server = dns_tag
-	
-			if remote_dns_udp_server then
-				local server_port = tonumber(remote_dns_port) or 53
-				server.address = "udp://" .. remote_dns_udp_server .. ":" .. server_port
-			end
-	
-			if remote_dns_tcp_server then
-				server.address = remote_dns_tcp_server
-			end
-	
-			if remote_dns_doh_url and remote_dns_doh_host then
-				server.address = remote_dns_doh_url
-			end
-	
-			if server.address then
-				table.insert(dns.servers, server)
-			end
-	
-			if remote_dns_fake then
-				dns.fakeip = {
-					enabled = true,
-					inet4_range = "198.18.0.0/16",
-					inet6_range = "fc00::/18",
+			})
+
+			rule_server = fakedns_tag
+
+			if tags and tags:find("with_clash_api") then
+				if not experimental then
+					experimental = {}
+				end
+				experimental.clash_api = {
+					store_fakeip = true,
+					cache_file = "/tmp/singbox_passwall2_" .. flag .. ".db"
 				}
-
-				local fakedns_tag = dns_tag .. "_fakeip"
-
-				if not server.address then
-					fakedns_tag = dns_tag
-				end
-
-				table.insert(dns.servers, {
-					tag = fakedns_tag,
-					address = "fakeip",
-					strategy = remote_strategy,
-				})
-	
-				rule_server = fakedns_tag
-
-				if tags and tags:find("with_clash_api") then
-					if not experimental then
-						experimental = {}
-					end
-					experimental.clash_api = {
-						store_fakeip = true,
-						cache_file = "/tmp/singbox_passwall2_" .. flag .. ".db"
-					}
-				end
 			end
-	
-			if remote_rule.domain or remote_rule.domain_suffix or remote_rule.domain_keyword or remote_rule.domain_regex or remote_rule.geosite then
-				local rule = api.clone(remote_rule)
-				rule.server = rule_server
-				table.insert(dns.rules, rule)
-			end
+		end
+
+		if remote_rule.domain or remote_rule.domain_suffix or remote_rule.domain_keyword or remote_rule.domain_regex or remote_rule.geosite then
+			local rule = api.clone(remote_rule)
+			rule.server = rule_server
+			table.insert(dns.rules, rule)
 		end
 	
 		if direct_dns_udp_server then
@@ -1239,7 +1241,7 @@ function gen_config(var)
 				direct_strategy = "ipv6_only"
 			end
 	
-			local port = tonumber(direct_dns_port) or 53
+			local port = tonumber(direct_dns_udp_port) or 53
 	
 			table.insert(dns.servers, {
 				tag = dns_tag,
@@ -1410,22 +1412,24 @@ function gen_dns_config(var)
 	local dns_listen_port = var["-dns_listen_port"]
 	local dns_query_strategy = var["-dns_query_strategy"]
 	local dns_out_tag = var["-dns_out_tag"]
-	local dns_client_ip = var["-dns_client_ip"]
-	local direct_dns_server = var["-direct_dns_server"]
-	local direct_dns_port = var["-direct_dns_port"]
 	local direct_dns_udp_server = var["-direct_dns_udp_server"]
+	local direct_dns_udp_port = var["-direct_dns_udp_port"]
 	local direct_dns_tcp_server = var["-direct_dns_tcp_server"]
+	local direct_dns_tcp_port = var["-direct_dns_tcp_port"]
 	local direct_dns_doh_url = var["-direct_dns_doh_url"]
 	local direct_dns_doh_host = var["-direct_dns_doh_host"]
-	local remote_dns_server = var["-remote_dns_server"]
-	local remote_dns_port = var["-remote_dns_port"]
+	local direct_dns_doh_ip = var["-direct_dns_doh_ip"]
+	local direct_dns_doh_port = var["-direct_dns_doh_port"]
 	local remote_dns_udp_server = var["-remote_dns_udp_server"]
+	local remote_dns_udp_port = var["-remote_dns_udp_port"]
 	local remote_dns_tcp_server = var["-remote_dns_tcp_server"]
+	local remote_dns_tcp_port = var["-remote_dns_tcp_port"]
 	local remote_dns_doh_url = var["-remote_dns_doh_url"]
 	local remote_dns_doh_host = var["-remote_dns_doh_host"]
+	local remote_dns_doh_ip = var["-remote_dns_doh_ip"]
+	local remote_dns_doh_port = var["-remote_dns_doh_port"]
 	local remote_dns_outbound_socks_address = var["-remote_dns_outbound_socks_address"]
 	local remote_dns_outbound_socks_port = var["-remote_dns_outbound_socks_port"]
-	local remote_dns_fake = var["-remote_dns_fake"]
 	local dns_cache = var["-dns_cache"]
 	local log = var["-log"] or "0"
 	local loglevel = var["-loglevel"] or "warn"
@@ -1448,7 +1452,6 @@ function gen_dns_config(var)
 			disable_expire = false, --禁用 DNS 缓存过期。
 			independent_cache = false, --使每个 DNS 服务器的缓存独立，以满足特殊目的。如果启用，将轻微降低性能。
 			reverse_mapping = true, --在响应 DNS 查询后存储 IP 地址的反向映射以为路由目的提供域名。
-			fakeip = nil,
 		}
 	
 		if dns_out_tag == "remote" then
@@ -1458,26 +1461,18 @@ function gen_dns_config(var)
 				strategy = (dns_query_strategy and dns_query_strategy ~= "UseIP") and "ipv4_only" or "prefer_ipv6",
 				detour = "remote-out",
 			}
-
-			if remote_dns_fake then
-				server.address = "fakeip"
-				dns.fakeip = {
-					enabled = true,
-					inet4_range = "198.18.0.0/16",
-					inet6_range = "fc00::/18",
-				}
-			end
 	
 			if remote_dns_udp_server then
-				local server_port = tonumber(remote_dns_port) or 53
+				local server_port = tonumber(remote_dns_udp_port) or 53
 				server.address = "udp://" .. remote_dns_udp_server .. ":" .. server_port
 			end
 	
 			if remote_dns_tcp_server then
-				server.address = remote_dns_tcp_server
+				local server_port = tonumber(remote_dns_tcp_port) or 53
+				server.address = "tcp://" .. remote_dns_tcp_server .. ":" .. server_port
 			end
 	
-			if remote_dns_doh_url and remote_dns_doh_host then
+			if remote_dns_doh_url then
 				server.address = remote_dns_doh_url
 			end
 	
@@ -1490,10 +1485,8 @@ function gen_dns_config(var)
 				server_port = tonumber(remote_dns_outbound_socks_port),
 			})
 
-			table.insert(route.rules, {
-				network = {"tcp", "udp"},
-				outbound = "remote-out"
-			})
+			route.final = "remote-out"
+
 		elseif dns_out_tag == "direct" then
 			local server = {
 				tag = dns_out_tag,
@@ -1503,17 +1496,16 @@ function gen_dns_config(var)
 			}
 	
 			if direct_dns_udp_server then
-				local server_port = tonumber(direct_dns_port) or 53
+				local server_port = tonumber(direct_dns_udp_port) or 53
 				server.address = "udp://" .. direct_dns_udp_server .. ":" .. server_port
 			end
 	
 			if direct_dns_tcp_server then
-				local server_port = tonumber(direct_dns_port) or 53
-				server.address = direct_dns_tcp_server .. ":" .. server_port
+				local server_port = tonumber(direct_dns_tcp_port) or 53
+				server.address = "tcp://" .. direct_dns_tcp_server .. ":" .. server_port
 			end
 	
-			if direct_dns_doh_url and direct_dns_doh_host then
-				local server_port = tonumber(direct_dns_port) or 443
+			if direct_dns_doh_url then
 				server.address = direct_dns_doh_url
 			end
 	
