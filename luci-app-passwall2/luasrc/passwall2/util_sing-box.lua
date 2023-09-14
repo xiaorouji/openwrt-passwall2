@@ -1137,8 +1137,6 @@ function gen_config(var)
 			detour = dns_outTag,
 		}
 
-		local rule_server = dns_tag
-
 		if remote_dns_udp_server then
 			local server_port = tonumber(remote_dns_udp_port) or 53
 			server.address = "udp://" .. remote_dns_udp_server .. ":" .. server_port
@@ -1157,6 +1155,7 @@ function gen_config(var)
 			table.insert(dns.servers, server)
 		end
 
+		local fakedns_tag = dns_tag .. "_fakeip"
 		if remote_dns_fake then
 			dns.fakeip = {
 				enabled = true,
@@ -1164,19 +1163,11 @@ function gen_config(var)
 				inet6_range = "fc00::/18",
 			}
 
-			local fakedns_tag = dns_tag .. "_fakeip"
-
-			if not server.address then
-				fakedns_tag = dns_tag
-			end
-
 			table.insert(dns.servers, {
 				tag = fakedns_tag,
 				address = "fakeip",
 				strategy = remote_strategy,
 			})
-
-			rule_server = fakedns_tag
 
 			if tags and tags:find("with_clash_api") then
 				if not experimental then
@@ -1191,7 +1182,13 @@ function gen_config(var)
 
 		if remote_rule.domain or remote_rule.domain_suffix or remote_rule.domain_keyword or remote_rule.domain_regex or remote_rule.geosite then
 			local rule = api.clone(remote_rule)
-			rule.server = rule_server
+			rule.server = dns_tag
+			if remote_dns_fake then
+				rule.query_type = {
+					"A", "AAAA"
+				}
+				rule.server = fakedns_tag
+			end
 			table.insert(dns.rules, rule)
 		end
 	
@@ -1256,6 +1253,18 @@ function gen_config(var)
 			tag = "block",
 			address = "rcode://refused",
 		})
+
+		local default_dns_flag = "remote"
+		if node_id and redir_port then
+			local node = uci:get_all(appname, node_id)
+			if node.protocol == "_shunt" then
+				if node.default_node == "_direct" then
+					default_dns_flag = "direct"
+				end
+			end
+		else default_dns_flag = "direct"
+		end
+		dns.final = default_dns_flag
 	
 		table.insert(inbounds, {
 			type = "direct",
@@ -1275,18 +1284,6 @@ function gen_config(var)
 			},
 			outbound = "dns-out"
 		})
-	
-		local default_dns_flag = "remote"
-		if node_id and redir_port then
-			local node = uci:get_all(appname, node_id)
-			if node.protocol == "_shunt" then
-				if node.default_node == "_direct" then
-					default_dns_flag = "direct"
-				end
-			end
-		else default_dns_flag = "direct"
-		end
-		dns.final = default_dns_flag
 	end
 	
 	if inbounds or outbounds then
