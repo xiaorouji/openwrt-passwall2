@@ -715,12 +715,9 @@ function gen_config(var)
 
 	local experimental = nil
 
-	local nodes = {}
+	local node = nil
 	if node_id then
-		local node = uci:get_all(appname, node_id)
-		if node then
-			nodes[node_id] = node
-		end
+		node = uci:get_all(appname, node_id)
 	end
 
 	if local_socks_port then
@@ -787,10 +784,9 @@ function gen_config(var)
 		table.insert(inbounds, inbound_tproxy)
 	end
 	
-	local dns_outTag = nil
+	local default_outTag = nil
 
-	for k, v in pairs(nodes) do
-		local node = v
+	if node then
 		if node.protocol == "_shunt" then
 			local rules = {}
 
@@ -1049,7 +1045,7 @@ function gen_config(var)
 
 			if default_outboundTag then
 				route.final = default_outboundTag
-				dns_outTag = default_outboundTag
+				default_outTag = default_outboundTag
 			end
 
 			for index, value in ipairs(rules) do
@@ -1071,7 +1067,7 @@ function gen_config(var)
 				outbound = gen_outbound(flag, node)
 			end
 			if outbound then
-				dns_outTag = outbound.tag
+				default_outTag = outbound.tag
 				table.insert(outbounds, outbound)
 			end
 
@@ -1107,7 +1103,7 @@ function gen_config(var)
 			address_strategy = "prefer_ipv4",
 			strategy = remote_strategy,
 			address_resolver = "direct",
-			detour = dns_outTag,
+			detour = default_outTag,
 		}
 
 		if remote_dns_udp_server then
@@ -1211,7 +1207,7 @@ function gen_config(var)
 					}
 					if value.outboundTag ~= "block" and value.outboundTag ~= "direct" then
 						dns_rule.server = "remote"
-						if remote_server.address then
+						if value.outboundTag ~= "default" and remote_server.address then
 							local remote_dns_server = api.clone(remote_server)
 							remote_dns_server.tag = value.outboundTag
 							remote_dns_server.detour = value.outboundTag
