@@ -922,9 +922,18 @@ function to_move(app_name,file)
 end
 
 function luci_types(id, m, s, type_name, option_prefix)
+	local rewrite_option_table = {}
 	for key, value in pairs(s.fields) do
 		if key:find(option_prefix) == 1 then
 			if not s.fields[key].not_rewrite then
+				if s.fields[key].rewrite_option then
+					if not rewrite_option_table[s.fields[key].rewrite_option] then
+						rewrite_option_table[s.fields[key].rewrite_option] = 1
+					else
+						rewrite_option_table[s.fields[key].rewrite_option] = rewrite_option_table[s.fields[key].rewrite_option] + 1
+					end
+				end
+
 				s.fields[key].cfgvalue = function(self, section)
 					if self.rewrite_option then
 						return m:get(section, self.rewrite_option)
@@ -947,7 +956,7 @@ function luci_types(id, m, s, type_name, option_prefix)
 				end
 				s.fields[key].remove = function(self, section)
 					if s.fields["type"]:formvalue(id) == type_name then
-						if self.rewrite_option then
+						if self.rewrite_option and rewrite_option_table[self.rewrite_option] == 1 then
 							m:del(section, self.rewrite_option)
 						else
 							if self.option:find(option_prefix) == 1 then
