@@ -2,6 +2,8 @@ local api = require "luci.passwall2.api"
 local appname = api.appname
 
 m = Map(appname)
+api.set_apply_on_parse(m)
+
 -- [[ Rule Settings ]]--
 s = m:section(TypedSection, "global_rules", translate("Rule status"))
 s.anonymous = true

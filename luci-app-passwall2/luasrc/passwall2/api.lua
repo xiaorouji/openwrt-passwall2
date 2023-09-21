@@ -921,6 +921,22 @@ function to_move(app_name,file)
 	return {code = 0}
 end
 
+function is_js_luci()
+	return sys.call('[ -f "/www/luci-static/resources/uci.js" ]') == 0
+end
+
+function set_apply_on_parse(map)
+	if is_js_luci() == true then
+		map.apply_on_parse = false
+		map.on_after_apply = function(self)
+			if self.redirect then
+				os.execute("sleep 1")
+				luci.http.redirect(self.redirect)
+			end
+		end
+	end
+end
+
 function luci_types(id, m, s, type_name, option_prefix)
 	local rewrite_option_table = {}
 	for key, value in pairs(s.fields) do

@@ -3,6 +3,7 @@ local appname = api.appname
 local sys = api.sys
 
 m = Map(appname)
+api.set_apply_on_parse(m)
 
 local nodes_table = {}
 for k, e in ipairs(api.get_valid_nodes()) do
