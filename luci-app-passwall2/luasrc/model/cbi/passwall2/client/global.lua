@@ -254,6 +254,7 @@ o = s:taboption("DNS", Value, "remote_dns_client_ip", translate("Remote DNS EDNS
 o.description = translate("Notify the DNS server when the DNS query is notified, the location of the client (cannot be a private IP address).") .. "<br />" ..
 				translate("This feature requires the DNS server to support the Edns Client Subnet (RFC7871).")
 o.datatype = "ipaddr"
+o:depends({ __hide = true })
 
 o = s:taboption("DNS", Flag, "remote_fakedns", "FakeDNS", translate("Use FakeDNS work in the shunt domain that proxy."))
 o.default = "0"
@@ -268,6 +269,7 @@ o:value("UseIPv6")
 o = s:taboption("DNS", TextValue, "dns_hosts", translate("Domain Override"))
 o.rows = 5
 o.wrap = "off"
+o:depends({ __hide = true })
 o.remove = function(self, section)
 	local node_value = node:formvalue(global_cfgid)
 	if node_value ~= "nil" then
