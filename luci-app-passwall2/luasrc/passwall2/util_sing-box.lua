@@ -1220,7 +1220,7 @@ function gen_config(var)
 				table.insert(domain, w)
 			end)
 			if #domain > 0 then
-				table.insert(dns_domain_rules, {
+				table.insert(dns_domain_rules, 1, {
 					outboundTag = "direct",
 					domain = domain
 				})
