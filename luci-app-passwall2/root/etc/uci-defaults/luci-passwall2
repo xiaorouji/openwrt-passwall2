@@ -59,7 +59,7 @@ global_xray=$(uci -q get passwall2.@global_xray[0])
 global_singbox=$(uci -q get passwall2.@global_singbox[0])
 [ -z "${global_singbox}" ] && {
 	cfgid=$(uci add passwall2 global_singbox)
-	uci -q set passwall2.${cfgid}.sniff_override_destination=1
+	uci -q set passwall2.${cfgid}.sniff_override_destination=0
 	uci -q set passwall2.${cfgid}.geoip_path="/tmp/singbox/geoip.db"
 	uci -q set passwall2.${cfgid}.geoip_url="https://github.com/SagerNet/sing-geoip/releases/latest/download/geoip.db"
 	uci -q set passwall2.${cfgid}.geosite_path="/tmp/singbox/geosite.db"
