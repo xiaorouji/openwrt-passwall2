@@ -258,8 +258,8 @@ load_acl() {
 				
 				local nftset_whitelist="passwall2_${sid}_whitelist"
 				local nftset_whitelist6="passwall2_${sid}_whitelist6"
-				gen_nftset $nftset_whitelist 0 0 ipv4_addr
-				gen_nftset $nftset_whitelist6 0 0 ipv6_addr
+				gen_nftset $nftset_whitelist ipv4_addr 0 0
+				gen_nftset $nftset_whitelist6 ipv6_addr 0 0
 
 				[ -n "$redir_port" ] && {
 					if [ "$tcp_proxy_mode" != "disable" ]; then
@@ -607,8 +607,8 @@ add_firewall_rule() {
 	
 	local nftset_global_whitelist="passwall2_global_whitelist"
 	local nftset_global_whitelist6="passwall2_global_whitelist6"
-	gen_nftset $nftset_global_whitelist 0 0 ipv4_addr
-	gen_nftset $nftset_global_whitelist6 0 0 ipv6_addr
+	gen_nftset $nftset_global_whitelist ipv4_addr 0 0
+	gen_nftset $nftset_global_whitelist6 ipv6_addr 0 0
 
 	#  过滤所有节点IP
 	filter_vpsip > /dev/null 2>&1 &
