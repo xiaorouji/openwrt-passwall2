@@ -232,10 +232,13 @@ o.datatype = "ipaddr"
 o:depends("remote_dns_protocol", "tcp")
 o:depends("remote_dns_protocol", "doh")
 
-o = s:taboption("DNS", ListValue, "remote_dns_detour", translate("Remote DNS Outbound"))
+o = s:option(ListValue, "remote_dns_detour", translate("Remote DNS Outbound"))
 o.default = "remote"
 o:value("remote", translate("Remote"))
 o:value("direct", translate("Direct"))
+o:depends("remote_dns_protocol", "tcp")
+o:depends("remote_dns_protocol", "doh")
+o:depends("remote_dns_protocol", "udp")
 
 o = s:option(Flag, "remote_fakedns", "FakeDNS", translate("Use FakeDNS work in the shunt domain that proxy."))
 o.default = "0"
