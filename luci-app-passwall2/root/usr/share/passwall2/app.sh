@@ -306,14 +306,6 @@ run_xray() {
 	[ -n "$http_address" ] && _extra_param="${_extra_param} -local_http_address $http_address"
 	[ -n "$http_port" ] && _extra_param="${_extra_param} -local_http_port $http_port"
 	[ -n "$http_username" ] && [ -n "$http_password" ] && _extra_param="${_extra_param} -local_http_username $http_username -local_http_password $http_password"
-	local sniffing=$(config_t_get global_forwarding sniffing 1)
-	[ "${sniffing}" = "1" ] && {
-		_extra_param="${_extra_param} -sniffing 1"
-		local route_only=$(config_t_get global_forwarding route_only 0)
-		[ "${route_only}" = "1" ] && _extra_param="${_extra_param} -route_only 1"
-	}
-	local buffer_size=$(config_t_get global_forwarding buffer_size)
-	[ -n "${buffer_size}" ] && _extra_param="${_extra_param} -buffer_size ${buffer_size}"
 
 	[ -n "$dns_listen_port" ] && {
 		V2RAY_DNS_DIRECT_CONFIG="${TMP_PATH}/${flag}_dns_direct.json"
