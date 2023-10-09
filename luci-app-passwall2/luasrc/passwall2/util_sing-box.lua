@@ -1412,7 +1412,7 @@ function gen_config(var)
 			outbound = "dns-out"
 		})
 
-		local content = flag .. node_id .. jsonc.stringify(dns)
+		local content = flag .. node_id .. jsonc.stringify(route.rules)
 		if api.cacheFileCompareToLogic(CACHE_TEXT_FILE, content) == false then
 			--clear ipset/nftset
 			if direct_ipset then
