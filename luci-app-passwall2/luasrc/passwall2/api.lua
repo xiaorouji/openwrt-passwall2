@@ -16,6 +16,7 @@ OPENWRT_ARCH = nil
 DISTRIB_ARCH = nil
 
 LOG_FILE = "/tmp/log/passwall2.log"
+CACHE_PATH = "/tmp/etc/passwall2_tmp"
 
 function log(...)
 	local result = os.date("%Y-%m-%d %H:%M:%S: ") .. table.concat({...}, " ")
@@ -919,6 +920,30 @@ function to_move(app_name,file)
 	end
 
 	return {code = 0}
+end
+
+function cacheFileCompareToLogic(file, str)
+	local result = nil
+	if file and str then
+		local file_str = ""
+		if fs.access(file) then
+			file_str = sys.exec("cat " .. file)
+		end
+
+		if file_str ~= str then
+			sys.call("rm -f " .. file)
+			result = false
+		else
+			result = true
+		end
+
+		local f_out = io.open(file, "w")
+		if f_out then
+			f_out:write(str)
+			f_out:close()
+		end
+	end
+	return result
 end
 
 function is_js_luci()

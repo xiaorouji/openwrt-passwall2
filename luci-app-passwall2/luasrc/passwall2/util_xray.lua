@@ -5,6 +5,7 @@ local sys = api.sys
 local jsonc = api.jsonc
 local appname = api.appname
 local fs = api.fs
+local CACHE_PATH = api.CACHE_PATH
 
 local new_port
 
@@ -520,6 +521,8 @@ function gen_config(var)
 	local dns_query_strategy = var["-dns_query_strategy"]
 	local direct_dns_udp_server = var["-direct_dns_udp_server"]
 	local direct_dns_udp_port = var["-direct_dns_udp_port"]
+	local direct_ipset = var["-direct_ipset"]
+	local direct_nftset = var["-direct_nftset"]
 	local remote_dns_udp_server = var["-remote_dns_udp_server"]
 	local remote_dns_udp_port = var["-remote_dns_udp_port"]
 	local remote_dns_fake = var["-remote_dns_fake"]
@@ -536,6 +539,8 @@ function gen_config(var)
 	local outbounds = {}
 	local routing = nil
 	local observatory = nil
+
+	local CACHE_TEXT_FILE = CACHE_PATH .. "/cache_" .. flag .. ".txt"
 
 	local xray_settings = uci:get_all(appname, "@global_xray[0]") or {}
 
@@ -1227,6 +1232,25 @@ function gen_config(var)
 	
 		if dns_hosts_len == 0 then
 			dns.hosts = nil
+		end
+
+		local content = flag .. node_id .. jsonc.stringify(dns)
+		if api.cacheFileCompareToLogic(CACHE_TEXT_FILE, content) == false then
+			--clear ipset/nftset
+			if direct_ipset then
+				string.gsub(direct_ipset, '[^' .. "," .. ']+', function(w)
+					sys.call("ipset -q -F " .. w)
+				end)
+			end
+			if direct_nftset then
+				string.gsub(direct_nftset, '[^' .. "," .. ']+', function(w)
+					local s = string.reverse(w)
+					local _, i = string.find(s, "#")
+					local m = string.len(s) - i + 1
+					local n = w:sub(m + 1)
+					sys.call("nft flush set inet fw4 " .. n .. "2>/dev/null")
+				end)
+			end
 		end
 	end
 	
