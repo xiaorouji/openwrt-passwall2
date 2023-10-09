@@ -74,11 +74,9 @@ config nodes 'myshunt'
 	option DirectGame '_direct'
 	option ProxyGame '_default'
 	option Direct '_direct'
-	option AD 'nil'
-	option BT '_direct'
+	option GooglePlay '_default'
 	option Netflix 'nil'
 	option OpenAI 'nil'
-	option TVB 'nil'
 	option Proxy '_default'
 	option China '_direct'
 	option QUIC '_blackhole'
@@ -175,15 +173,12 @@ cdn-qc.content.steamchina.com
 cdn-ali.content.steamchina.com
 epicgames-download1-1251447533.file.myqcloud.com'
 
-config shunt_rules 'AD'
-	option remarks 'AD'
-	option domain_list 'geosite:category-ads-all'
+config shunt_rules 'GooglePlay'
+	option remarks 'GooglePlay'
 	option network 'tcp,udp'
-
-config shunt_rules 'BT'
-	option remarks 'BT'
-	option protocol 'bittorrent'
-	option network 'tcp,udp'
+	option domain_list 'domain:googleapis.cn
+domain:googleapis.com
+domain:xn--ngstr-lra8j.com'
 
 config shunt_rules 'Netflix'
 	option remarks 'Netflix'
@@ -192,14 +187,8 @@ config shunt_rules 'Netflix'
 	
 config shunt_rules 'OpenAI'
 	option remarks 'OpenAI'
-	option domain_list 'geosite:openai'
-
-config shunt_rules 'TVB'
-	option remarks 'TVB'
 	option network 'tcp,udp'
-	option domain_list 'geosite:tvb
-geosite:mytvsuper
-'
+	option domain_list 'geosite:openai'
 
 config shunt_rules 'Proxy'
 	option network 'tcp,udp'
