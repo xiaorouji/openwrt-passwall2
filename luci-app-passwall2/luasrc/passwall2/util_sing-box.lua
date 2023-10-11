@@ -1369,7 +1369,7 @@ function gen_config(var)
 					local _, i = string.find(s, "#")
 					local m = string.len(s) - i + 1
 					local n = w:sub(m + 1)
-					sys.call("nft flush set inet fw4 " .. n .. "2>/dev/null")
+					sys.call("nft flush set inet fw4 " .. n .. " 2>/dev/null")
 				end)
 			end
 		end
