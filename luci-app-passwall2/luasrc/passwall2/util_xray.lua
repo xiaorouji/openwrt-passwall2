@@ -1244,11 +1244,14 @@ function gen_config(var)
 			end
 			if direct_nftset then
 				string.gsub(direct_nftset, '[^' .. "," .. ']+', function(w)
-					local s = string.reverse(w)
-					local _, i = string.find(s, "#")
-					local m = string.len(s) - i + 1
-					local n = w:sub(m + 1)
-					sys.call("nft flush set inet fw4 " .. n .. " 2>/dev/null")
+					local split = api.split(w, "#")
+					if #split > 3 then
+						local ip_type = split[1]
+						local family = split[2]
+						local table_name = split[3]
+						local set_name = split[4]
+						sys.call(string.format("nft flush set %s %s %s 2>/dev/null", family, table_name, set_name))
+					end
 				end)
 			end
 		end
