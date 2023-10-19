@@ -57,7 +57,6 @@ jobs:
           echo "![](https://img.shields.io/github/downloads/${{ env.passwall2 }}/${{steps.check_version.outputs.latest_version}}/total?style=flat-square)" >> release.txt
           echo "### Passwall2 Info" >> release.txt
           echo "**:minidisc: Passwall2 Version: ${{steps.check_version.outputs.latest_version}}**" >> release.txt
-          echo "**:gear: OpenWrt SDK Version: 23.05-rc3**" >> release.txt
           touch release.txt
 
       - name: Generate new tag & release
@@ -71,10 +70,22 @@ jobs:
 
 
   job_build_passwall2:
-    name: Build passwall2
+    name: Build passwall2 [Luci ${{ matrix.luci_ver }}]
     needs: job_check
     if: needs.job_check.outputs.has_update == 'true'
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - sdk_ver: 21.02
+            luci_ver: 19.07
+            sdk_url: https://downloads.openwrt.org/releases/21.02.5/targets/x86/64/openwrt-sdk-21.02.5-x86-64_gcc-8.4.0_musl.Linux-x86_64.tar.xz
+
+          - sdk_ver: 23.05
+            luci_ver: 23.05
+            sdk_url: https://downloads.openwrt.org/releases/23.05.0/targets/x86/64/openwrt-sdk-23.05.0-x86-64_gcc-12.3.0_musl.Linux-x86_64.tar.xz
+
     steps:
       - name: Install packages
         run: |
@@ -100,10 +111,10 @@ jobs:
           file_name=$(echo ${{env.url_sdk}} | awk -F/ '{print $NF}')
           mkdir sdk && tar -xJf $file_name -C ./sdk --strip-components=1
           cd sdk
-          echo "src-git base https://github.com/openwrt/openwrt.git;openwrt-23.05" > feeds.conf
-          echo "src-git packages https://github.com/openwrt/packages.git;openwrt-23.05" >> feeds.conf
-          echo "src-git luci https://github.com/openwrt/luci.git;openwrt-23.05" >> feeds.conf
-          echo "src-git routing https://git.openwrt.org/feed/routing.git;openwrt-23.05"  >> feeds.conf
+          echo "src-git base https://github.com/openwrt/openwrt.git;openwrt-${{ matrix.sdk_ver }}" > feeds.conf
+          echo "src-git packages https://github.com/openwrt/packages.git;openwrt-${{ matrix.sdk_ver }}" >> feeds.conf
+          echo "src-git luci https://github.com/openwrt/luci.git;openwrt-${{ matrix.luci_ver }}" >> feeds.conf
+          echo "src-git routing https://git.openwrt.org/feed/routing.git;openwrt-${{ matrix.sdk_ver }}"  >> feeds.conf
           echo "src-git passwall_packages https://github.com/${{ env.packages}}.git;main" >> feeds.conf
           echo "src-git passwall2 https://github.com/${{ env.passwall2 }}.git;main" >> feeds.conf
           ./scripts/feeds update -a
@@ -152,6 +163,8 @@ jobs:
           make package/luci-app-passwall2/{clean,compile} -j$(nproc)
           mv bin/packages/x86_64/passwall2/ ../
           rm .config .config.old
+          cd ../passwall2
+          for i in $(ls); do mv $i luci-${{ matrix.luci_ver }}_$i; done
           cd ..
           echo "status=success" >> $GITHUB_OUTPUT
           echo "FIRMWARE=$PWD" >> $GITHUB_ENV
@@ -321,7 +334,6 @@ jobs:
           echo "![](https://img.shields.io/github/downloads/${{ env.passwall2 }}/${{needs.job_check.outputs.passwall2_version}}/total?style=flat-square)" >> release.txt
           echo "### Passwall2 Info" >> release.txt
           echo "**:minidisc: Passwall2 Version: ${{needs.job_check.outputs.passwall2_version}}**" >> release.txt
-          echo "**:gear: OpenWrt SDK Version: 23.05.0**" >> release.txt
 
           echo "### Packages Version" >> release.txt
           echo "**package name**|**package version**" >> release.txt
