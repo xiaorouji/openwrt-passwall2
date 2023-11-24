@@ -1373,6 +1373,7 @@ function gen_config(var)
 					}
 					if value.outboundTag ~= "block" and value.outboundTag ~= "direct" then
 						dns_rule.server = "remote"
+						dns_rule.rewrite_ttl = 30
 						if value.outboundTag ~= "default" and remote_server.address and remote_server.detour ~= "direct" then
 							local remote_dns_server = api.clone(remote_server)
 							remote_dns_server.tag = value.outboundTag
