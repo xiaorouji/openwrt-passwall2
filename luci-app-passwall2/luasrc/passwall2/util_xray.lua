@@ -554,6 +554,7 @@ function gen_config(var)
 
 	if local_socks_port then
 		local inbound = {
+			tag = "socks-in",
 			listen = local_socks_address,
 			port = tonumber(local_socks_port),
 			protocol = "socks",
@@ -874,6 +875,21 @@ function gen_config(var)
 							table.insert(protocols, w)
 						end)
 					end
+					local inboundTag = nil
+					if e["inbound"] and e["inbound"] ~= "" then
+						inboundTag = {}
+						if e["inbound"]:find("tproxy") then
+							if redir_port then
+								table.insert(inboundTag, "tcp_redir")
+								table.insert(inboundTag, "udp_redir")
+							end
+						end
+						if e["inbound"]:find("socks") then
+							if local_socks_port then
+								table.insert(inboundTag, "socks-in")
+							end
+						end
+					end
 					local domains = nil
 					if e.domain_list then
 						domains = {}
@@ -912,6 +928,7 @@ function gen_config(var)
 					local rule = {
 						_flag = e.remarks,
 						type = "field",
+						inboundTag = inboundTag,
 						outboundTag = outboundTag,
 						balancerTag = balancerTag,
 						network = e["network"] or "tcp,udp",
