@@ -160,6 +160,7 @@ if has_xray then
 	
 	o = s_xray:option(Flag, "sniffing", translate("Sniffing"), translate("When using the shunt, must be enabled, otherwise the shunt will invalid."))
 	o.default = 1
+	o.rmempty = false
 
 	o = s_xray:option(Flag, "route_only", translate("Sniffing Route Only"))
 	o.default = 0
