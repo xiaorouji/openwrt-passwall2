@@ -1607,7 +1607,7 @@ function gen_dns_config(var)
 			tag = "dns-in",
 			settings = {
 				address = other_type_dns_server or "1.1.1.1",
-				port = 53,
+				port = other_type_dns_port or 53,
 				network = "tcp,udp"
 			}
 		})
