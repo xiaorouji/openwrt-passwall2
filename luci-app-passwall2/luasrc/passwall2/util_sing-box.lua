@@ -129,19 +129,6 @@ function gen_outbound(flag, node, tag, proxy_table)
 			}
 		end
 
-		local mux = nil
-		if node.mux == "1" then
-			mux = {
-				enabled = true,
-				padding = (node.mux_padding == "1") and true or false,
-				brutal = {
-					enabled = (node.tcpbrutal == "1") and true or false,
-					up_mbps = tonumber(node.tcpbrutal_up_mbps) or 10,
-					down_mbps = tonumber(node.tcpbrutal_down_mbps) or 50,
-				},
-			}
-		end
-
 		local v2ray_transport = nil
 
 		if node.transport == "http" then
@@ -426,6 +413,19 @@ function gen_config_server(node)
 			key = (node.ech_key and node.ech_key:gsub("\\n","\n")) and node.ech_key:gsub("\\n","\n") or nil,
 			pq_signature_schemes_enabled = (node.pq_signature_schemes_enabled == "1") and true or false,
 			dynamic_record_sizing_disabled = (node.dynamic_record_sizing_disabled == "1") and true or false,
+		}
+	end
+
+	local mux = nil
+	if node.mux == "1" then
+		mux = {
+			enabled = true,
+			padding = (node.mux_padding == "1") and true or false,
+			brutal = {
+				enabled = (node.tcpbrutal == "1") and true or false,
+				up_mbps = tonumber(node.tcpbrutal_up_mbps) or 10,
+				down_mbps = tonumber(node.tcpbrutal_down_mbps) or 50,
+			},
 		}
 	end
 
