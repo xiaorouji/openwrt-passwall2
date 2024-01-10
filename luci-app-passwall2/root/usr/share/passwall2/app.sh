@@ -938,12 +938,14 @@ run_ipset_dnsmasq() {
 	eval_set_val $@
 	cat <<-EOF > $config_file
 		port=${listen_port}
-		server=${server_dns}
 		no-poll
 		no-resolv
 		cache-size=${cache_size:-0}
 		dns-forward-max=${dns_forward_max:-1000}
 	EOF
+	for i in $(echo ${server_dns} | sed "s#,# #g"); do
+		echo "server=${i}" >> $config_file
+	done
 	[ -n "${ipset}" ] && echo "ipset=${ipset}" >> $config_file
 	[ -n "${nftset}" ] && echo "nftset=${nftset}" >> $config_file
 	ln_run "$(first_type dnsmasq)" "dnsmasq" "/dev/null" -C $config_file
