@@ -1304,15 +1304,14 @@ function gen_config(var)
 				strategy = remote_strategy,
 			})
 
-			if tags and tags:find("with_clash_api") then
-				if not experimental then
-					experimental = {}
-				end
-				experimental.clash_api = {
-					store_fakeip = true,
-					cache_file = "/tmp/singbox_passwall2_" .. flag .. ".db"
-				}
+			if not experimental then
+				experimental = {}
 			end
+			experimental.cache_file = {
+				enabled = true,
+				store_fakeip = true,
+				path = "/tmp/singbox_passwall2_" .. flag .. ".db"
+			}
 		end
 	
 		if direct_dns_udp_server then
