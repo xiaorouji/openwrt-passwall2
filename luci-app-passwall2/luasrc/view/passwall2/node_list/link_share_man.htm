@@ -324,10 +324,6 @@ local api = require "luci.passwall2.api"
 				}
 				if (opt.get(dom_prefix + "reality") && opt.get(dom_prefix + "reality").checked) {
 					v_security = "reality";
-					if (opt.get(dom_prefix + "fingerprint") && opt.get(dom_prefix + "fingerprint").value != "") {
-						let v_fp = opt.get(dom_prefix + "fingerprint").value;
-						params += "&fp=" + v_fp;
-					}
 					params += opt.query("pbk", dom_prefix + "reality_publicKey");
 					params += opt.query("sid", dom_prefix + "reality_shortId");
 					params += opt.query("spx", dom_prefix + "reality_spiderX");
