@@ -529,10 +529,7 @@ function gen_config(var)
 	local remote_dns_query_strategy = var["-remote_dns_query_strategy"]
 	local dns_cache = var["-dns_cache"]
 
-	local dns_direct_domains = {}
-	local dns_direct_expectIPs = {}
-	local dns_remote_domains = {}
-	local dns_remote_expectIPs = {}
+	local dns_domain_rules = {}
 	local dns = nil
 	local fakedns = nil
 	local inbounds = {}
@@ -892,30 +889,25 @@ function gen_config(var)
 					end
 					local domains = nil
 					if e.domain_list then
+						local domain_table = {
+							shunt_rule_name = e[".name"],
+							outboundTag = outboundTag,
+							domain = {},
+						}
 						domains = {}
 						string.gsub(e.domain_list, '[^' .. "\r\n" .. ']+', function(w)
 							table.insert(domains, w)
-							if outboundTag == "direct" then
-								table.insert(dns_direct_domains, w)
-							else
-								if outboundTag ~= "nil" then
-									table.insert(dns_remote_domains, w)
-								end
-							end
+							table.insert(domain_table.domain, w)
 						end)
+						if outboundTag and outboundTag ~= "nil" then
+							table.insert(dns_domain_rules, api.clone(domain_table))
+						end
 					end
 					local ip = nil
 					if e.ip_list then
 						ip = {}
 						string.gsub(e.ip_list, '[^' .. "\r\n" .. ']+', function(w)
 							table.insert(ip, w)
-							if outboundTag == "direct" then
-								table.insert(dns_direct_expectIPs, w)
-							else
-								if outboundTag ~= "nil" then
-									table.insert(dns_remote_expectIPs, w)
-								end
-							end
 						end)
 					end
 					local source = nil
@@ -1061,17 +1053,14 @@ function gen_config(var)
 			end)
 		end
 	
+		local _remote_dns = nil
 		if remote_dns_udp_server then
-			local _remote_dns = {
+			_remote_dns = {
 				_flag = "remote",
 				address = remote_dns_udp_server,
 				port = tonumber(remote_dns_udp_port) or 53,
 				queryStrategy = (remote_dns_query_strategy and remote_dns_query_strategy ~= "") and remote_dns_query_strategy or "UseIPv4"
 			}
-			if not remote_dns_fake then
-				_remote_dns.domains = #dns_remote_domains > 0 and dns_remote_domains or nil
-				--_remote_dns.expectIPs = #dns_remote_expectIPs > 0 and dns_remote_expectIPs or nil
-			end
 			_remote_dns_proto = "udp"
 			table.insert(dns.servers, _remote_dns)
 
@@ -1081,10 +1070,11 @@ function gen_config(var)
 					remote_dns_udp_server
 				},
 				port = tonumber(remote_dns_udp_port) or 53,
-				network = "udp",
+				network = _remote_dns_proto,
 				outboundTag = "direct"
 			})
 		end
+		local _remote_fakedns = nil
 		if remote_dns_fake then
 			fakedns = {}
 			local fakedns4 = {
@@ -1103,42 +1093,43 @@ function gen_config(var)
 			elseif remote_dns_query_strategy == "UseIPv6" then
 				table.insert(fakedns, fakedns6)
 			end
-			local _remote_dns = {
+			_remote_fakedns = {
 				_flag = "remote_fakedns",
 				address = "fakedns",
-				domains = #dns_remote_domains > 0 and dns_remote_domains or nil
-				--expectIPs = #dns_remote_expectIPs > 0 and dns_remote_expectIPs or nil
 			}
-			table.insert(dns.servers, _remote_dns)
+			table.insert(dns.servers, _remote_fakedns)
 		end
 	
-		if true then
+		local _direct_dns = nil
+		if direct_dns_udp_server then
+			local domain = {}
 			local nodes_domain_text = sys.exec('uci show passwall2 | grep ".address=" | cut -d "\'" -f 2 | grep "[a-zA-Z]$" | sort -u')
 			string.gsub(nodes_domain_text, '[^' .. "\r\n" .. ']+', function(w)
-				table.insert(dns_direct_domains, "full:" .. w)
+				table.insert(domain, "full:" .. w)
 			end)
-	
-			local _direct_dns = {
-				_flag = "direct",
-				domains = #dns_direct_domains > 0 and dns_direct_domains or nil
-				--expectIPs = #dns_direct_expectIPs > 0 and dns_direct_expectIPs or nil
-			}
-	
-			if direct_dns_udp_server then
-				_direct_dns.address = direct_dns_udp_server
-				_direct_dns.port = tonumber(direct_dns_udp_port) or 53
-				_direct_dns.queryStrategy = (direct_dns_query_strategy and direct_dns_query_strategy ~= "") and direct_dns_query_strategy or "UseIP"
-				table.insert(routing.rules, 1, {
-					type = "field",
-					ip = {
-						direct_dns_udp_server
-					},
-					port = tonumber(direct_dns_udp_port) or 53,
-					network = "udp",
-					outboundTag = "direct"
+			if #domain > 0 then
+				table.insert(dns_domain_rules, 1, {
+					outboundTag = "direct",
+					domain = domain
 				})
 			end
-	
+
+			_direct_dns = {
+				_flag = "direct",
+				address = direct_dns_udp_server,
+				port = tonumber(direct_dns_udp_port) or 53,
+				queryStrategy = (direct_dns_query_strategy and direct_dns_query_strategy ~= "") and direct_dns_query_strategy or "UseIP",
+			}
+			table.insert(routing.rules, 1, {
+				type = "field",
+				ip = {
+					direct_dns_udp_server
+				},
+				port = tonumber(direct_dns_udp_port) or 53,
+				network = "udp",
+				outboundTag = "direct"
+			})
+
 			table.insert(dns.servers, _direct_dns)
 		end
 	
@@ -1221,6 +1212,32 @@ function gen_config(var)
 			end
 			if dns_servers then
 				table.insert(dns.servers, 1, dns_servers)
+			end
+
+			--按分流顺序DNS
+			if dns_domain_rules and #dns_domain_rules > 0 then
+				for index, value in ipairs(dns_domain_rules) do
+					if value.outboundTag and value.domain then
+						local dns_server = nil
+						if value.outboundTag == "direct" then
+							dns_server = api.clone(_direct_dns)
+						else
+							if remote_dns_fake then
+								dns_server = api.clone(_remote_fakedns)
+							else
+								dns_server = api.clone(_remote_dns)
+							end
+						end
+						dns_server.domains = value.domain
+						if value.shunt_rule_name then
+							dns_server["_flag"] = value.shunt_rule_name
+						end
+
+						if dns_server then
+							table.insert(dns.servers, dns_server)
+						end
+					end
+				end
 			end
 
 			for i = #dns.servers, 1, -1 do
