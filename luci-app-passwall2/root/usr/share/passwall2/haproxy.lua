@@ -36,7 +36,7 @@ local cpu_thread = sys.exec('echo -n $(cat /proc/cpuinfo | grep "processor" | wc
 local health_check_type = uci:get(appname, "@global_haproxy[0]", "health_check_type") or "tcp"
 local health_check_inter = uci:get(appname, "@global_haproxy[0]", "health_check_inter") or "10"
 
-log("HAPROXY 负载均衡...")
+log("Haproxy load balancing ...")
 fs.mkdir(haproxy_path)
 local haproxy_file = haproxy_path .. "/" .. haproxy_conf
 
@@ -145,7 +145,7 @@ uci:foreach(appname, "haproxy_config", function(t)
 			t.server_port = server_port
 			table.insert(listens[listen_port], t)
 		else
-			log("  - 丢弃1个明显无效的节点")
+			log("  - Discard 1 obvious invalid node")
 		end
 	end
 end)
@@ -159,7 +159,7 @@ end
 table.sort(sortTable, function(a,b) return (a < b) end)
 
 for i, port in pairs(sortTable) do
-	log("  + 入口 0.0.0.0:%s..." % port)
+	log("  + Entrance 0.0.0.0:%s..." % port)
 
 	f_out:write("\n" .. string.format([[
 listen %s
@@ -196,7 +196,7 @@ listen %s
 			sys.call(string.format("/usr/share/passwall2/app.sh add_ip2route %s %s", o.origin_address, o.export))
 		end
 
-		log(string.format("  | - 出口节点：%s:%s，权重：%s", o.origin_address, o.origin_port, o.lbweight))
+		log(string.format("  | - Exit node:%s:%S, weight:%s", o.origin_address, o.origin_port, o.lbweight))
 	end
 end
 
@@ -214,6 +214,6 @@ listen console
 	%s
 ]]
 f_out:write("\n" .. string.format(str, console_port, (console_user and console_user ~= "" and console_password and console_password ~= "") and "stats auth " .. console_user .. ":" .. console_password or ""))
-log(string.format("  * 控制台端口：%s", console_port))
+log(string.format("  * Console port：%s", console_port))
 
 f_out:close()

@@ -206,11 +206,11 @@ check_depends() {
 	local tables=${1}
 	if [ "$tables" == "iptables" ]; then
 		for depends in "iptables-mod-tproxy" "iptables-mod-socket" "iptables-mod-iprange" "iptables-mod-conntrack-extra" "kmod-ipt-nat"; do
-			[ -z "$(opkg status ${depends} 2>/dev/null | grep 'Status' | awk -F ': ' '{print $2}' 2>/dev/null)" ] && echolog "$tables透明代理基础依赖 $depends 未安装..."
+			[ -z "$(opkg status ${depends} 2>/dev/null | grep 'Status' | awk -F ': ' '{print $2}' 2>/dev/null)" ] && echolog "$Tables transparent proxy base dependencies $depends Not Installed..."
 		done
 	else
 		for depends in "kmod-nft-socket" "kmod-nft-tproxy" "kmod-nft-nat"; do
-			[ -z "$(opkg status ${depends} 2>/dev/null | grep 'Status' | awk -F ': ' '{print $2}' 2>/dev/null)" ] && echolog "$tables透明代理基础依赖 $depends 未安装..."
+			[ -z "$(opkg status ${depends} 2>/dev/null | grep 'Status' | awk -F ': ' '{print $2}' 2>/dev/null)" ] && echolog "$Tables transparent proxy base dependencies $depends Not Installed..."
 		done
 	fi
 }
@@ -265,10 +265,10 @@ ln_run() {
 			ln -s "${file_func}" "${TMP_BIN_PATH}/${ln_name}" >/dev/null 2>&1
 			file_func="${TMP_BIN_PATH}/${ln_name}"
 		}
-		[ -x "${file_func}" ] || echolog "  - $(readlink ${file_func}) 没有执行权限，无法启动：${file_func} $*"
+		[ -x "${file_func}" ] || echolog "  - $(readlink ${file_func}) Without execution permissions, it cannot be activated：${file_func} $*"
 	fi
 	#echo "${file_func} $*" >&2
-	[ -n "${file_func}" ] || echolog "  - 找不到 ${ln_name}，无法启动..."
+	[ -n "${file_func}" ] || echolog "  - Unable to find ${ln_name},Unable to start..."
 	${file_func:-echolog "  - ${ln_name}"} "$@" >${output} 2>&1 &
 	process_count=$(ls $TMP_SCRIPT_FUNC_PATH | grep -v "^_" | wc -l)
 	process_count=$((process_count + 1))
@@ -490,12 +490,12 @@ run_socks() {
 	if [ -n "$server_host" ] && [ -n "$port" ]; then
 		check_host $server_host
 		[ $? != 0 ] && {
-			echolog "  - Socks节点：[$remarks]${server_host} 是非法的服务器地址，无法启动！"
+			echolog "  - Socks node:[$remarks]${server_host} It is an illegal server address that cannot be started!"
 			return 1
 		}
 		tmp="${server_host}:${port}"
 	else
-		error_msg="某种原因，此 Socks 服务的相关配置已失联，启动中止！"
+		error_msg="In some reason, the related configuration of this SOCKS service has been lost, and the start is suspended!"
 	fi
 
 	if [ "$type" == "sing-box" ] || [ "$type" == "xray" ]; then
@@ -506,10 +506,10 @@ run_socks() {
 	fi
 
 	[ -n "${error_msg}" ] && {
-		[ "$bind" != "127.0.0.1" ] && echolog "  - Socks节点：[$remarks]${tmp}，启动中止 ${bind}:${socks_port} ${error_msg}"
+		[ "$bind" != "127.0.0.1" ] && echolog "  - Socks node:[$remarks]${tmp}, Start the suspension ${bind}:${socks_port} ${error_msg}"
 		return 1
 	}
-	[ "$bind" != "127.0.0.1" ] && echolog "  - Socks节点：[$remarks]${tmp}，启动 ${bind}:${socks_port}"
+	[ "$bind" != "127.0.0.1" ] && echolog "  - Socks node:[$remarks]${tmp},start up ${bind}:${socks_port}"
 
 	case "$type" in
 	sing-box)
@@ -636,28 +636,28 @@ run_global() {
 	}
 
 	if [ $PROXY_IPV6 == "1" ]; then
-		echolog "开启实验性IPv6透明代理(TProxy)，请确认您的节点及类型支持IPv6！"
+		echolog "Open the experimental IPv6 transparent proxy (TProxy), please confirm your node and type support IPv6!"
 		PROXY_IPV6_UDP=1
 	fi
 	V2RAY_ARGS="flag=global node=$NODE redir_port=$REDIR_PORT"
 	V2RAY_ARGS="${V2RAY_ARGS} dns_listen_port=${TUN_DNS_PORT} remote_dns_query_strategy=${REMOTE_DNS_QUERY_STRATEGY} dns_cache=${DNS_CACHE}"
-	local msg="${TUN_DNS} （直连DNS：${AUTO_DNS}"
+	local msg="${TUN_DNS} (Direct connection DNS:${AUTO_DNS}"
 
 	[ -n "$REMOTE_DNS_PROTOCOL" ] && {
 		V2RAY_ARGS="${V2RAY_ARGS} remote_dns_protocol=${REMOTE_DNS_PROTOCOL} remote_dns_detour=${REMOTE_DNS_DETOUR}"
 		case "$REMOTE_DNS_PROTOCOL" in
 			udp*)
 				V2RAY_ARGS="${V2RAY_ARGS} remote_dns_udp_server=${REMOTE_DNS}"
-				msg="${msg} 远程DNS：${REMOTE_DNS}"
+				msg="${msg} Remote DNS:${REMOTE_DNS}"
 			;;
 			tcp)
 				V2RAY_ARGS="${V2RAY_ARGS} remote_dns_tcp_server=${REMOTE_DNS}"
-				msg="${msg} 远程DNS：${REMOTE_DNS}"
+				msg="${msg} Remote DNS:${REMOTE_DNS}"
 			;;
 			doh)
 				REMOTE_DNS_DOH=$(config_t_get global remote_dns_doh "https://1.1.1.1/dns-query")
 				V2RAY_ARGS="${V2RAY_ARGS} remote_dns_doh=${REMOTE_DNS_DOH}"
-				msg="${msg} 远程DNS：${REMOTE_DNS_DOH}"
+				msg="${msg} Remote DNS:${REMOTE_DNS_DOH}"
 			;;
 		esac
 		[ "$REMOTE_FAKEDNS" = "1" ] && {
@@ -702,7 +702,7 @@ start_socks() {
 	[ "$SOCKS_ENABLED" = "1" ] && {
 		local ids=$(uci show $CONFIG | grep "=socks" | awk -F '.' '{print $2}' | awk -F '=' '{print $1}')
 		[ -n "$ids" ] && {
-			echolog "分析 Socks 服务的节点配置..."
+			echolog "Analyze the node configuration of the SOCKS service ..."
 			for id in $ids; do
 				local enabled=$(config_n_get $id enabled 0)
 				[ "$enabled" == "0" ] && continue
@@ -728,7 +728,7 @@ clean_log() {
 	logsnum=$(cat $LOG_FILE 2>/dev/null | wc -l)
 	[ "$logsnum" -gt 1000 ] && {
 		echo "" > $LOG_FILE
-		echolog "日志文件过长，清空处理！"
+		echolog "The log file is too long, clear the processing!"
 	}
 }
 
@@ -753,15 +753,15 @@ start_crontab() {
 		time_restart=$(config_t_get global_delay time_restart)
 		[ -z "$time_off" -o "$time_off" != "nil" ] && {
 			echo "0 $time_off * * * /etc/init.d/$CONFIG stop" >>/etc/crontabs/root
-			echolog "配置定时任务：每天 $time_off 点关闭服务。"
+			echolog "Configure timing task: daily $time_off Click to close the service."
 		}
 		[ -z "$time_on" -o "$time_on" != "nil" ] && {
 			echo "0 $time_on * * * /etc/init.d/$CONFIG start" >>/etc/crontabs/root
-			echolog "配置定时任务：每天 $time_on 点开启服务。"
+			echolog "Configure timing task: daily $time_on Click on the service."
 		}
 		[ -z "$time_restart" -o "$time_restart" != "nil" ] && {
 			echo "0 $time_restart * * * /etc/init.d/$CONFIG restart" >>/etc/crontabs/root
-			echolog "配置定时任务：每天 $time_restart 点重启服务。"
+			echolog "Configure timing task: daily $time_restart Revisit service."
 		}
 	fi
 
@@ -772,7 +772,7 @@ start_crontab() {
 		local t="0 $dayupdate * * $weekupdate"
 		[ "$weekupdate" = "7" ] && t="0 $dayupdate * * *"
 		echo "$t lua $APP_PATH/rule_update.lua log > /dev/null 2>&1 &" >>/etc/crontabs/root
-		echolog "配置定时任务：自动更新规则。"
+		echolog "Configure timing task: automatic update rules."
 	fi
 
 	TMP_SUB_PATH=$TMP_PATH/sub_crontabs
@@ -784,7 +784,7 @@ start_crontab() {
 			week_update=$(config_n_get $item week_update)
 			time_update=$(config_n_get $item time_update)
 			echo "$cfgid" >> $TMP_SUB_PATH/${week_update}_${time_update}
-			echolog "配置定时任务：自动更新【$remark】订阅。"
+			echolog "Configuration timing task: automatic update 【$remark】subscription."
 		fi
 	done
 
@@ -804,7 +804,7 @@ start_crontab() {
 		start_daemon=$(config_t_get global_delay start_daemon 0)
 		[ "$start_daemon" = "1" ] && $APP_PATH/monitor.sh > /dev/null 2>&1 &
 	else
-		echolog "运行于非代理模式，仅允许服务启停的定时任务。"
+		echolog "Running in non -proxy mode, only timely tasks that allow service start -stop."
 	fi
 
 	/etc/init.d/cron restart
@@ -819,7 +819,7 @@ stop_crontab() {
 add_ip2route() {
 	local ip=$(get_host_ip "ipv4" $1)
 	[ -z "$ip" ] && {
-		echolog "  - 无法解析[${1}]，路由表添加失败！"
+		echolog "  - Unable to analyze[${1}], Failure to add the routing table!"
 		return 1
 	}
 	local remarks="${1}"
@@ -834,9 +834,9 @@ add_ip2route() {
 	if [ -n "${gateway}" ]; then
 		route add -host ${ip} gw ${gateway} dev ${device} >/dev/null 2>&1
 		echo "$ip" >> $TMP_ROUTE_PATH/${device}
-		echolog "  - [${remarks}]添加到接口[${device}]路由表成功！"
+		echolog "  - [${remarks}]Add to the interface[${device}]Route watch successfully!"
 	else
-		echolog "  - [${remarks}]添加到接口[${device}]路由表失功！原因是找不到[${device}]网关。"
+		echolog "  - [${remarks}]Add to the interface[${device}]Route watch out of power! The reason is that I can't find it[${device}]Gateway."
 	fi
 }
 
@@ -995,7 +995,7 @@ acl_app() {
 
 start() {
 	pgrep -f /tmp/etc/passwall2/bin > /dev/null 2>&1 && {
-		echolog "程序已启动，先停止再重新启动!"
+		echolog "The program has been started, stop first before restarting!"
 		stop
 	}
 
@@ -1010,13 +1010,13 @@ start() {
 			USE_TABLES="iptables"
 		else
 			if [ -n "$(command -v fw4)" ] && [ -n "$(command -v nft)" ] && [ -n "$(dnsmasq --version | grep 'Compile time options:.* nftset')" ]; then
-				echolog "检测到fw4，使用nftables进行透明代理。"
+				echolog "The FW4 is detected and the transparent proxy is used to use NFTables."
 				USE_TABLES="nftables"
 				nftflag=1
 				config_t_set global_forwarding use_nft 1
 				uci commit ${CONFIG}
 			else
-				echolog "系统未安装iptables或ipset或Dnsmasq没有开启ipset支持，无法透明代理！"
+				echolog "The system is not installed with IPTables or ipset or DNSMASQ without opening iPSET support, and it cannot be transparent!"
 			fi
 		fi
 	else
@@ -1024,7 +1024,7 @@ start() {
 			USE_TABLES="nftables"
 			nftflag=1
 		else
-			echolog "Dnsmasq软件包不满足nftables透明代理要求，如需使用请确保dnsmasq版本在2.87以上并开启nftset支持。"
+			echolog "The DNSMASQ software package does not meet the requirements of NFTables transparent agency. If you need to use it, make sure that the DNSMASQ version is above 2.87 and opens NFTSET support."
 		fi
 	fi
 
@@ -1044,7 +1044,7 @@ start() {
 		}
 	fi
 	start_crontab
-	echolog "运行完成！\n"
+	echolog "Completed! \n"
 }
 
 stop() {
@@ -1064,7 +1064,7 @@ stop() {
 	[ -s "$TMP_PATH/bridge_nf_ip6t" ] && sysctl -w net.bridge.bridge-nf-call-ip6tables=$(cat $TMP_PATH/bridge_nf_ip6t) >/dev/null 2>&1
 	rm -rf ${TMP_PATH}
 	rm -rf /tmp/lock/${CONFIG}_socks_auto_switch*
-	echolog "清空并关闭相关程序和缓存完成。"
+	echolog "Clear and close the relevant program and cache."
 	exit 0
 }
 
