@@ -11,11 +11,11 @@ on:
         description: 'SSH connection to Actions'
         required: false
         default: 'false'
-  push:
-    branches:
-      - 'main'
-    paths:
-      - 'luci-app-passwall2/Makefile'
+  #push:
+  #  branches:
+  #    - 'main'
+  #  paths:
+  #    - 'luci-app-passwall2/Makefile'
 env:
   TZ: Asia/Shanghai
   passwall2: ${{ github.repository }}
