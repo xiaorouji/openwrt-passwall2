@@ -17,7 +17,7 @@ on:
   #  paths:
   #    - 'luci-app-passwall2/Makefile'
 env:
-  TZ: Asia/Shanghai
+  TZ: Asia/Jakarta
   passwall2: ${{ github.repository }}
   packages: xiaorouji/openwrt-passwall-packages
 
