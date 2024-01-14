@@ -132,7 +132,7 @@ jobs:
           echo "CONFIG_ALL_KMODS=n" >> .config
           echo "CONFIG_ALL=n" >> .config
           echo "CONFIG_AUTOREMOVE=n" >> .config
-          echo "CONFIG_LUCI_LANG_zh_Hans=y" >> .config
+          echo "CONFIG_LUCI_LANG_zh_Hans=n" >> .config
 
           echo "CONFIG_PACKAGE_luci-app-passwall2=m" >> .config
           echo "CONFIG_PACKAGE_luci-app-passwall2_Iptables_Transparent_Proxy=n" >> .config
