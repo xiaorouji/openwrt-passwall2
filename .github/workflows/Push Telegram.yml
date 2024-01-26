@@ -19,6 +19,42 @@ jobs:
     steps:
       - name: Check
         run: |
-          wget https://github.com/rtaserver/openwrt-passwall2/releases/download/1.24-1/luci-23.05_luci-app-passwall2_1.24-1_all.ipk
-          curl -F "chat_id=${{ secrets.TELEGRAM_CHAT_ID }}" -F "caption=Yo" -F "document=luci-23.05_luci-app-passwall2_1.24-1_all.ipk" \
-          https://api.telegram.org/bot${{ secrets.TELEGRAM_TOKEN }}/sendDocument
+          CHAT_ID='${{ secrets.TELEGRAM_CHAT_ID }}'
+          BOT_TOKEN='${{ secrets.TELEGRAM_TOKEN }}'
+
+          # ngeping, klo berhasil lanjut, klo gagal restart modem dan nunggu on modem, lalu lanjut looping lg.
+
+          log_file="/tmp/log.txt"
+          destination="/root/log_archive/"
+
+          for ((i=1; i<=30; i++)); do
+              if ping -c 2 -i 60 8.8.8.8; then
+                  echo "Koneksi lancar bos"
+                  echo "Pesan: Koneksi internet lancar" >> $log_file
+              else
+                  echo "gk ada koneksi, restart modem bos"
+                  echo "Waktu: $(date +"%d-%m-%Y %H:%M:%S")" >> $log_file
+                  echo "Status: Gagal" >> $log_file
+                  echo "Pesan: Gak ada koneksi internet" >> $log_file
+                  #perintah restart modem disini
+                  sleep 60 #kira² brapa lama modem buat balik on
+              fi
+              echo "Waktu: $(date +"%d-%m-%Y %H:%M:%S")" >> $log_file
+              echo "Monitoring ulang ke-$i" >> $log_file
+              sleep 1
+          done
+
+          max_log_entries=5
+          log_entries_count=$(wc -l < "$log_file")
+          if [ "$log_entries_count" -gt "$max_log_entries" ]; then
+              echo "Jumlah log entries melebihi batas, memindahkan log ke $destination..."
+              mkdir -p "$destination"
+              timestamp=$(date +"%Y%m%d%H%M%S")
+              mv "$log_file" "$destination/log_$timestamp.txt"
+              touch "$log_file"
+          fi
+
+          # SEND LOGS TO TELEGRAM
+          MSG="DONE✅"
+          curl -F "chat_id=$CHAT_ID" -F "caption=$MSG" -F "document=$log_file" \
+          https://api.telegram.org/bot$BOT_TOKEN/sendDocument
