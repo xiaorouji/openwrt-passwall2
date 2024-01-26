@@ -20,8 +20,8 @@ jobs:
       - name: Send Telegram Notification on New Release
         uses: cbrgm/telegram-github-action@v1
         with:
-          token: ${{ secrets.RTASERVER.TELEGRAM_TOKEN }}
-          to: ${{ secrets.RTASERVER.TELEGRAM_CHAT_ID }}
+          token: ${{ secrets.TELEGRAM_TOKEN }}
+          to: ${{ secrets.TELEGRAM_CHAT_ID }}
           message: |
             🚀 New Release Published!
             Release Name: ${{ github.event.release.name }}
