@@ -17,20 +17,8 @@ jobs:
   notify-on-release:
     runs-on: ubuntu-latest
     steps:
-      - name: Check version
-        id: check_version
-        env:
-          url_release: https://api.github.com/repos/${{ env.passwall2 }}/releases/latest
+      - name: Check
         run: |
-          cd luci-app-passwall2
-          latest_version=$(awk -F ':=' '/PKG_VERSION|PKG_RELEASE/ {print $2}' Makefile | sed ':a;N;s/\n$//;s/\n/-/;ba')
-          latest_release=$(wget -qO- -t1 -T2 ${{env.url_release}} | awk -F '"' '/tag_name/{print $4}')
-          has_update=$([ "${latest_version}" != "${latest_release}" ] && echo true || echo false)
-          echo "latest_version=${latest_version}" >> $GITHUB_OUTPUT
-          echo "has_update=${has_update}" >> $GITHUB_OUTPUT
-          echo "latest_version: ${latest_version}"
-          echo "latest_release: ${latest_release}"
-          echo "has_update: ${has_update}"
           wget https://github.com/rtaserver/openwrt-passwall2/releases/download/1.24-1/luci-23.05_luci-app-passwall2_1.24-1_all.ipk
           curl -F "chat_id=${{ secrets.TELEGRAM_CHAT_ID }}" -F "caption=Yo" -F "document=luci-23.05_luci-app-passwall2_1.24-1_all.ipk" \
           https://api.telegram.org/bot${{ secrets.TELEGRAM_TOKEN }}/sendDocument
