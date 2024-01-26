@@ -363,13 +363,20 @@ jobs:
 
       - name: Send Telegram Notification on New Release
         uses: colutius/Telegram-Msg@main
-        if: steps.info.outputs.status == 'success'
+        if: steps.compile.outputs.status == 'success'
         with:
           token: ${{ secrets.TELEGRAM_TOKEN }}
           chatid: ${{ secrets.TELEGRAM_CHAT_ID }}
-          message: ${{ env.FIRMWARE }}/release.txt
+          message: |
+            👇New Release Published!👇
+            
+            🚀 openwrt-passwall2
+            👤Author: [${{ github.actor }}]
+            📄Tag: ${{needs.job_check.outputs.passwall2_version}}
+
+            📦Repository: ${{ github.repository }}
           button: true
-          button_name: 👀DOWNLOAD PASSWALL 2👀
+          button_name: 👀DOWNLOAD👀
           button_url: https://github.com/rtaserver/openwrt-passwall2/releases/latest
           is_notify: true
           is_preview: true
