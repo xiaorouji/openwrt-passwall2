@@ -370,7 +370,7 @@ jobs:
           message: |
             👇New Release Published!👇
             
-            🚀 openwrt-passwall2
+            🚀openwrt-passwall2
             👤Author: [${{ github.actor }}]
             📄Tag: ${{needs.job_check.outputs.passwall2_version}}
 
