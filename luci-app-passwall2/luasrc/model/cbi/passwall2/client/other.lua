@@ -7,6 +7,10 @@ local has_xray = api.finded_com("xray")
 local has_fw3 = api.is_finded("fw3")
 local has_fw4 = api.is_finded("fw4")
 
+local port_validate = function(self, value, t)
+	return value:gsub("-", ":")
+end
+
 m = Map(appname)
 api.set_apply_on_parse(m)
 
@@ -63,6 +67,7 @@ o = s:option(Value, "tcp_no_redir_ports", translate("TCP No Redir Ports"))
 o.default = "disable"
 o:value("disable", translate("No patterns are used"))
 o:value("1:65535", translate("All"))
+o.validate = port_validate
 
 ---- UDP No Redir Ports
 o = s:option(Value, "udp_no_redir_ports", translate("UDP No Redir Ports"),
@@ -72,6 +77,7 @@ o = s:option(Value, "udp_no_redir_ports", translate("UDP No Redir Ports"),
 o.default = "disable"
 o:value("disable", translate("No patterns are used"))
 o:value("1:65535", translate("All"))
+o.validate = port_validate
 
 ---- TCP Redir Ports
 o = s:option(Value, "tcp_redir_ports", translate("TCP Redir Ports"))
@@ -79,11 +85,13 @@ o.default = "22,25,53,143,465,587,853,993,995,80,443"
 o:value("1:65535", translate("All"))
 o:value("22,25,53,143,465,587,853,993,995,80,443", translate("Common Use"))
 o:value("80,443", translate("Only Web"))
+o.validate = port_validate
 
 ---- UDP Redir Ports
 o = s:option(Value, "udp_redir_ports", translate("UDP Redir Ports"))
 o.default = "1:65535"
 o:value("1:65535", translate("All"))
+o.validate = port_validate
 
 ---- Use nftables
 o = s:option(ListValue, "use_nft", translate("Firewall tools"))
