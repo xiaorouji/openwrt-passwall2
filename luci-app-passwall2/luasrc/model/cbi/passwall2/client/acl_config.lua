@@ -2,6 +2,10 @@ local api = require "luci.passwall2.api"
 local appname = api.appname
 local sys = api.sys
 
+local port_validate = function(self, value, t)
+	return value:gsub("-", ":")
+end
+
 m = Map(appname)
 api.set_apply_on_parse(m)
 
@@ -157,6 +161,7 @@ o.default = "default"
 o:value("disable", translate("No patterns are used"))
 o:value("default", translate("Default"))
 o:value("1:65535", translate("All"))
+o.validate = port_validate
 
 ---- UDP No Redir Ports
 o = s:option(Value, "udp_no_redir_ports", translate("UDP No Redir Ports"),
@@ -167,6 +172,7 @@ o.default = "default"
 o:value("disable", translate("No patterns are used"))
 o:value("default", translate("Default"))
 o:value("1:65535", translate("All"))
+o.validate = port_validate
 
 ---- TCP Redir Ports
 o = s:option(Value, "tcp_redir_ports", translate("TCP Redir Ports"))
@@ -175,12 +181,14 @@ o:value("default", translate("Default"))
 o:value("1:65535", translate("All"))
 o:value("22,25,53,143,465,587,853,993,995,80,443", translate("Common Use"))
 o:value("80,443", "80,443")
+o.validate = port_validate
 
 ---- UDP Redir Ports
 o = s:option(Value, "udp_redir_ports", translate("UDP Redir Ports"))
 o.default = "default"
 o:value("default", translate("Default"))
 o:value("1:65535", translate("All"))
+o.validate = port_validate
 
 node = s:option(ListValue, "node", "<a style='color: red'>" .. translate("Node") .. "</a>")
 node.default = "default"
