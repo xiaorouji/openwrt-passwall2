@@ -363,7 +363,6 @@ jobs:
 
       - name: Send Telegram Notification on New Release
         uses: colutius/Telegram-Msg@main
-        if: steps.compile.outputs.status == 'success'
         with:
           token: ${{ secrets.TELEGRAM_TOKEN }}
           chatid: ${{ secrets.TELEGRAM_CHAT_ID }}
