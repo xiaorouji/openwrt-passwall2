@@ -507,6 +507,8 @@ function gen_config(var)
 	local flag = var["-flag"]
 	local loglevel = var["-loglevel"] or "warning"
 	local node_id = var["-node"]
+	local server_host = var["-server_host"]
+	local server_port = var["-server_port"]
 	local tcp_proxy_way = var["-tcp_proxy_way"]
 	local redir_port = var["-redir_port"]
 	local local_socks_address = var["-local_socks_address"] or "0.0.0.0"
@@ -679,6 +681,10 @@ function gen_config(var)
 	end
 
 	for k, v in pairs(nodes) do
+		if server_host and server_port then
+			v.address = server_host
+			v.port = server_port
+		end
 		local node = v
 		if node.protocol == "_shunt" then
 			local rules = {}
