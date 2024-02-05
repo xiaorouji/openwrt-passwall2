@@ -231,10 +231,9 @@ if singbox_tags:find("with_shadowsocksr") then
 	o:depends({ [option_name("protocol")] = "shadowsocksr" })
 end
 
-o = s:option(Flag, option_name("uot"), translate("UDP over TCP"), translate("Need Xray-core or sing-box as server side."))
-o:depends({ [option_name("protocol")] = "shadowsocks", [option_name("ss_method")] = "2022-blake3-aes-128-gcm" })
-o:depends({ [option_name("protocol")] = "shadowsocks", [option_name("ss_method")] = "2022-blake3-aes-256-gcm" })
-o:depends({ [option_name("protocol")] = "shadowsocks", [option_name("ss_method")] = "2022-blake3-chacha20-poly1305" })
+o = s:option(Flag, option_name("uot"), translate("UDP over TCP"))
+o:depends({ [option_name("protocol")] = "socks" })
+o:depends({ [option_name("protocol")] = "shadowsocks" })
 
 o = s:option(Value, option_name("uuid"), translate("ID"))
 o.password = true
@@ -611,5 +610,19 @@ if singbox_tags:find("with_utls") then
 	o.default = "chrome"
 	o:depends({ [option_name("shadowtls")] = true, [option_name("shadowtls_utls")] = true })
 end
+
+-- [[ SIP003 plugin ]]--
+o = s:option(Flag, option_name("plugin_enabled"), translate("plugin"))
+o.default = 0
+o:depends({ [option_name("protocol")] = "shadowsocks" })
+
+o = s:option(ListValue, option_name("plugin"), "SIP003 " .. translate("plugin"))
+o.default = "obfs-local"
+o:depends({ [option_name("plugin_enabled")] = true })
+o:value("obfs-local")
+o:value("v2ray-plugin")
+
+o = s:option(Value, option_name("plugin_opts"), translate("opts"))
+o:depends({ [option_name("plugin_enabled")] = true })
 
 api.luci_types(arg[1], m, s, type_name, option_prefix)
