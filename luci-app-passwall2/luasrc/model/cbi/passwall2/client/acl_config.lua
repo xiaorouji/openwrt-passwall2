@@ -237,8 +237,7 @@ o = s:option(Value, "remote_dns_client_ip", translate("Remote DNS EDNS Client Su
 o.description = translate("Notify the DNS server when the DNS query is notified, the location of the client (cannot be a private IP address).") .. "<br />" ..
 				translate("This feature requires the DNS server to support the Edns Client Subnet (RFC7871).")
 o.datatype = "ipaddr"
-o:depends("remote_dns_protocol", "tcp")
-o:depends("remote_dns_protocol", "doh")
+o:depends({ __hide = true })
 
 o = s:option(ListValue, "remote_dns_detour", translate("Remote DNS Outbound"))
 o.default = "remote"
@@ -264,11 +263,26 @@ o:depends("remote_dns_protocol", "tcp")
 o:depends("remote_dns_protocol", "doh")
 o:depends("remote_dns_protocol", "udp")
 
-hosts = s:option(TextValue, "dns_hosts", translate("Domain Override"))
-hosts.rows = 5
-hosts.wrap = "off"
-hosts:depends("remote_dns_protocol", "tcp")
-hosts:depends("remote_dns_protocol", "doh")
-hosts:depends("remote_dns_protocol", "udp")
+o = s:option(TextValue, "dns_hosts", translate("Domain Override"))
+o.rows = 5
+o.wrap = "off"
+o:depends({ __hide = true })
+o.remove = function(self, section)
+	local node_value = node:formvalue(arg[1])
+	if node_value ~= "nil" then
+		local node_t = m:get(node_value) or {}
+		if node_t.type == "Xray" then
+			AbstractValue.remove(self, section)
+		end
+	end
+end
+
+for k, v in pairs(nodes_table) do
+	if v.type == "Xray" then
+		s.fields["remote_dns_client_ip"]:depends({ node = v.id, remote_dns_protocol = "tcp" })
+		s.fields["remote_dns_client_ip"]:depends({ node = v.id, remote_dns_protocol = "doh" })
+		s.fields["dns_hosts"]:depends({ node = v.id })
+	end
+end
 
 return m
