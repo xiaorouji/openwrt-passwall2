@@ -61,7 +61,7 @@ jobs:
 
       - name: Generate new tag & release
         if: steps.check_version.outputs.has_update == 'true'
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@master
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
@@ -89,6 +89,9 @@ jobs:
     steps:
       - name: Install packages
         run: |
+          docker rmi `docker images -q`
+          sudo -E rm -rf /usr/share/dotnet /etc/mysql /etc/php /etc/apt/sources.list.d /usr/local/lib/android
+          df -hT
           echo "Install packages"
           sudo -E apt-get -qq update
           sudo -E apt-get -qq install build-essential clang flex bison g++ gawk gcc-multilib g++-multilib gettext git libncurses5-dev libssl-dev python3-distutils rsync unzip zlib1g-dev file wget
@@ -97,7 +100,7 @@ jobs:
 
       - name: Cache openwrt SDK
         id: cache-sdk
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: sdk
           key: openwrt-sdk-23.05-rc3-x86_64
@@ -170,7 +173,7 @@ jobs:
           echo "FIRMWARE=$PWD" >> $GITHUB_ENV
 
       - name: Upload passwall2 ipks to release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@master
         if: steps.compile.outputs.status == 'success'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -242,6 +245,9 @@ jobs:
     steps:
       - name: Initialization ${{ matrix.platform }} compile environment
         run: |
+          docker rmi `docker images -q`
+          sudo -E rm -rf /usr/share/dotnet /etc/mysql /etc/php /etc/apt/sources.list.d /usr/local/lib/android
+          df -hT
           echo "install packages!!!!!!"
           sudo -E apt-get -qq update
           sudo -E apt-get -qq install $(curl -fsSL https://github.com/smallprogram/OpenWrtAction/raw/main/diy_script/official_dependence)
@@ -309,7 +315,11 @@ jobs:
         id: compile
         run: |
           cd sdk
-          make package/luci-app-passwall2/{clean,compile} -j$(nproc)
+          for package in $(ls feeds/passwall_packages); do
+              if [ -d "feeds/passwall_packages/$package" ]; then
+                  make package/feeds/passwall_packages/$package/compile -j$(nproc)
+              fi
+          done
 
           echo "status=success" >> $GITHUB_OUTPUT
 
@@ -352,7 +362,7 @@ jobs:
           echo "status=success" >> $GITHUB_OUTPUT
 
       - name: Upload firmware to release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@master
         if: steps.info.outputs.status == 'success'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
