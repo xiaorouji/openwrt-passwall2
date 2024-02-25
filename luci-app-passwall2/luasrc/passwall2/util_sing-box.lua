@@ -74,6 +74,7 @@ function gen_outbound(flag, node, tag, proxy_table)
 			type = node.protocol,
 			server = node.address,
 			server_port = tonumber(node.port),
+			domain_strategy = node.domain_strategy,
 			detour = node.detour,
 		}
 
