@@ -1,1 +1,2 @@
-#
+msgid "PassWall 2"
+msgstr "PassWall 2"
