@@ -300,8 +300,7 @@ o = s:option(Value, option_name("grpc_serviceName"), "ServiceName")
 o:depends({ [option_name("transport")] = "grpc" })
 
 o = s:option(Flag, option_name("acceptProxyProtocol"), translate("acceptProxyProtocol"), translate("Whether to receive PROXY protocol, when this node want to be fallback or forwarded by proxy, it must be enable, otherwise it cannot be used."))
-o:depends({ [option_name("transport")] = "tcp" })
-o:depends({ [option_name("transport")] = "ws" })
+o.default = "0"
 
 -- [[ Fallback部分 ]]--
 o = s:option(Flag, option_name("fallback"), translate("Fallback"))
