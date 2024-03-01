@@ -142,7 +142,7 @@ o:depends({ [option_name("tls")] = true })
 o = s:option(Value, option_name("reality_private_key"), translate("Private Key"))
 o:depends({ [option_name("reality")] = true })
 
-o = s:option(Value, option_name("reality_shortId"), translate("Short Id"))
+o = s:option(DynamicList, option_name("reality_shortId"), translate("Short Id"))
 o:depends({ [option_name("reality")] = true })
 
 o = s:option(Value, option_name("reality_dest"), translate("Dest"))
