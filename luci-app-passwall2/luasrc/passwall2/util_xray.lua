@@ -43,9 +43,11 @@ function gen_outbound(flag, node, tag, proxy_table)
 
 		local proxy = 0
 		local proxy_tag = "nil"
+		local fragment = nil
 		if proxy_table ~= nil and type(proxy_table) == "table" then
 			proxy = proxy_table.proxy or 0
 			proxy_tag = proxy_table.tag or "nil"
+			fragment = proxy_table.fragment or nil
 		end
 
 		if node.type == "Xray" then
@@ -127,7 +129,10 @@ function gen_outbound(flag, node, tag, proxy_table)
 			-- 底层传输配置
 			streamSettings = (node.streamSettings or node.protocol == "vmess" or node.protocol == "vless" or node.protocol == "socks" or node.protocol == "shadowsocks" or node.protocol == "trojan") and {
 				sockopt = {
-					mark = 255
+					mark = 255,
+					tcpMptcp = (node.tcpMptcp == "1") and true or nil,
+					tcpNoDelay = (node.tcpNoDelay == "1") and true or nil,
+					dialerProxy = fragment and "fragment" or nil
 				},
 				network = node.transport,
 				security = node.stream_security,
@@ -240,6 +245,11 @@ function gen_outbound(flag, node, tag, proxy_table)
 				reserved = (node.protocol == "wireguard" and node.wireguard_reserved) and node.wireguard_reserved or nil
 			}
 		}
+
+		if node.protocol == "wireguard" then
+			result.settings.kernelMode = false
+		end
+
 		local alpn = {}
 		if node.alpn and node.alpn ~= "default" then
 			string.gsub(node.alpn, '[^' .. "," .. ']+', function(w)
@@ -637,7 +647,7 @@ function gen_config(var)
 			end
 			if is_new_blc_node then
 				local blc_node = uci:get_all(appname, blc_node_id)
-				local outbound = gen_outbound(flag, blc_node, blc_node_tag)
+				local outbound = gen_outbound(flag, blc_node, blc_node_tag, { fragment = xray_settings.fragment == "1" or nil })
 				if outbound then
 					table.insert(outbounds, outbound)
 					valid_nodes[#valid_nodes + 1] = blc_node_tag
@@ -653,7 +663,7 @@ function gen_config(var)
 				selector = valid_nodes,
 				strategy = { type = _node.balancingStrategy or "random" }
 			}
-			if _node.balancingStrategy == "leastPing" then
+			if _node.balancingStrategy == "leastPing" or _node.balancingStrategy == "leastLoad" then
 				if not observatory then
 					observatory = {
 						subjectSelector = { "blc-" },
@@ -678,6 +688,34 @@ function gen_config(var)
 			end
 		end
 		return balancer, rule
+	end
+
+	local function set_outbound_detour(node, outbound, outbounds_table, shunt_rule_name)
+		if not node or not outbound or not outbounds_table then return nil end
+		local default_outTag = outbound.tag
+
+		if node.to_node then
+			local to_node = uci:get_all(appname, node.to_node)
+			if to_node then
+				local to_outbound = gen_outbound(nil, to_node)
+				if to_outbound then
+					if shunt_rule_name then
+						to_outbound.tag = outbound.tag
+						outbound.tag = node[".name"]
+					else
+						to_outbound.tag = outbound.tag .. " -> " .. to_outbound.tag
+					end
+
+					to_outbound.proxySettings = {
+						tag = outbound.tag,
+						transportLayer = true
+					}
+					table.insert(outbounds_table, to_outbound)
+					default_outTag = to_outbound.tag
+				end
+			end
+		end
+		return default_outTag
 	end
 
 	for k, v in pairs(nodes) do
@@ -715,8 +753,9 @@ function gen_config(var)
 					preproxy_enabled = false
 				end
 			elseif preproxy_node and api.is_normal_node(preproxy_node) then
-				local preproxy_outbound = gen_outbound(flag, preproxy_node, preproxy_tag)
+				local preproxy_outbound = gen_outbound(flag, preproxy_node, preproxy_tag, { fragment = xray_settings.fragment == "1" or nil })
 				if preproxy_outbound then
+					set_outbound_detour(preproxy_node, preproxy_outbound, outbounds, preproxy_tag)
 					table.insert(outbounds, preproxy_outbound)
 				else
 					preproxy_enabled = false
@@ -732,7 +771,7 @@ function gen_config(var)
 				end
 			end
 
-			local function gen_shunt_node(rule_name, _node_id, as_proxy)
+			local function gen_shunt_node(rule_name, _node_id)
 				if not rule_name then return nil, nil end
 				if not _node_id then _node_id = node[rule_name] or "nil" end
 				local rule_outboundTag
@@ -817,8 +856,16 @@ function gen_config(var)
 									})
 								end
 							end
-							local _outbound = gen_outbound(flag, _node, rule_name, { proxy = proxy and 1 or 0, tag = proxy and preproxy_tag or nil })
+							local proxy_table = {
+								proxy = proxy and 1 or 0,
+								tag = proxy and preproxy_tag or nil
+							}
+							if xray_settings.fragment == "1" and not proxy_table.tag then
+								proxy_table.fragment = true
+							end
+							local _outbound = gen_outbound(flag, _node, rule_name, proxy_table)
 							if _outbound then
+								set_outbound_detour(_node, _outbound, outbounds, rule_name)
 								table.insert(outbounds, _outbound)
 								if proxy then preproxy_used = true end
 								rule_outboundTag = rule_name
@@ -979,39 +1026,39 @@ function gen_config(var)
 					}
 				}
 			end
-		else
-			local outbound = nil
-			if node.protocol == "_iface" then
-				if node.iface then
-					outbound = {
-						protocol = "freedom",
-						tag = "outbound",
-						streamSettings = {
-							sockopt = {
-								mark = 255,
-								interface = node.iface
-							}
+		elseif node.protocol == "_iface" then
+			if node.iface then
+				local outbound = {
+					protocol = "freedom",
+					tag = "outbound",
+					streamSettings = {
+						sockopt = {
+							mark = 255,
+							interface = node.iface
 						}
 					}
-					sys.call("touch /tmp/etc/passwall2/iface/" .. node.iface)
-				end
-			else
-				outbound = gen_outbound(flag, node)
+				}
+				table.insert(outbounds, outbound)
+				sys.call("touch /tmp/etc/passwall2/iface/" .. node.iface)
 			end
-			if outbound then table.insert(outbounds, outbound) end
-			routing = {
-				domainStrategy = "AsIs",
-				domainMatcher = "hybrid",
-				rules = {}
-			}
-			table.insert(routing.rules, {
-				_flag = "default",
-				type = "field",
-				outboundTag = node_id,
-				network = "tcp,udp"
-			})
+		else
+			local outbound = gen_outbound(flag, node, nil, { fragment = xray_settings.fragment == "1" or nil })
+			if outbound then
+				local default_outTag = set_outbound_detour(node, outbound, outbounds)
+				table.insert(outbounds, outbound)
+				routing = {
+					domainStrategy = "AsIs",
+					domainMatcher = "hybrid",
+					rules = {}
+				}
+				table.insert(routing.rules, {
+					_flag = "default",
+					type = "field",
+					outboundTag = default_outTag,
+					network = "tcp,udp"
+				})
+			end
 		end
-
 	end
 	
 	if remote_dns_udp_server then
@@ -1167,7 +1214,7 @@ function gen_config(var)
 					address = remote_dns_udp_server,
 					port = tonumber(remote_dns_udp_port) or 53,
 					network = _remote_dns_proto or "tcp",
-					nonIPQuery = "skip"
+					nonIPQuery = "drop"
 				},
 				proxySettings = {
 					tag = "direct"
@@ -1338,6 +1385,28 @@ function gen_config(var)
 				-- }
 			}
 		}
+		
+		if xray_settings.fragment == "1" then
+			table.insert(outbounds, {
+				protocol = "freedom",
+				tag = "fragment",
+				settings = {
+					domainStrategy = (direct_dns_query_strategy and direct_dns_query_strategy ~= "") and direct_dns_query_strategy or "UseIP",
+					fragments = {
+						packets = (xray_settings.fragment_packets and xray_settings.fragment_packets ~= "") and xray_settings.fragment_packets,
+						length = (xray_settings.fragment_length and xray_settings.fragment_length ~= "") and xray_settings.fragment_length,
+						interval = (xray_settings.fragment_interval and xray_settings.fragment_interval ~= "") and xray_settings.fragment_interval
+					}
+				},
+				streamSettings = {
+					sockopt = {
+						mark = 255,
+						tcpNoDelay = true
+					}
+				}
+			})		
+		end
+		
 		table.insert(outbounds, {
 			protocol = "freedom",
 			tag = "direct",
@@ -1670,7 +1739,7 @@ function gen_dns_config(var)
 				address = other_type_dns_server or "1.1.1.1",
 				port = other_type_dns_port or 53,
 				network = other_type_dns_proto or "tcp",
-				nonIPQuery = "skip"
+				nonIPQuery = "drop"
 			}
 		})
 	

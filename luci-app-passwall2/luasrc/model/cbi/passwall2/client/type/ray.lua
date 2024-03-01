@@ -54,7 +54,8 @@ for k, e in ipairs(api.get_valid_nodes()) do
 	if e.node_type == "normal" then
 		nodes_table[#nodes_table + 1] = {
 			id = e[".name"],
-			remarks = e["remark"]
+			remarks = e["remark"],
+			type = e["type"]
 		}
 	end
 	if e.protocol == "_balancing" then
@@ -80,11 +81,13 @@ local o = s:option(ListValue, option_name("balancingStrategy"), translate("Balan
 o:depends({ [option_name("protocol")] = "_balancing" })
 o:value("random")
 o:value("leastPing")
-o.default = "random"
+o:value("leastLoad")
+o.default = "leastLoad"
 
 -- 探测地址
 local o = s:option(Flag, option_name("useCustomProbeUrl"), translate("Use Custome Probe URL"), translate("By default the built-in probe URL will be used, enable this option to use a custom probe URL."))
 o:depends({ [option_name("balancingStrategy")] = "leastPing" })
+o:depends({ [option_name("balancingStrategy")] = "leastLoad" })
 
 local o = s:option(Value, option_name("probeUrl"), translate("Probe URL"))
 o:depends({ [option_name("useCustomProbeUrl")] = true })
@@ -94,6 +97,7 @@ o.description = translate("The URL used to detect the connection status.")
 -- 探测间隔
 local o = s:option(Value, option_name("probeInterval"), translate("Probe Interval"))
 o:depends({ [option_name("balancingStrategy")] = "leastPing" })
+o:depends({ [option_name("balancingStrategy")] = "leastLoad" })
 o.default = "1m"
 o.description = translate("The interval between initiating probes. Every time this time elapses, a server status check is performed on a server. The time format is numbers + units, such as '10s', '2h45m', and the supported time units are <code>ns</code>, <code>us</code>, <code>ms</code>, <code>s</code>, <code>m</code>, <code>h</code>, which correspond to nanoseconds, microseconds, milliseconds, seconds, minutes, and hours, respectively.")
 
@@ -255,6 +259,7 @@ o = s:option(Flag, option_name("tls"), translate("TLS"))
 o.default = 0
 o:depends({ [option_name("protocol")] = "vmess" })
 o:depends({ [option_name("protocol")] = "vless" })
+o:depends({ [option_name("protocol")] = "http" })
 o:depends({ [option_name("protocol")] = "socks" })
 o:depends({ [option_name("protocol")] = "trojan" })
 o:depends({ [option_name("protocol")] = "shadowsocks" })
@@ -514,5 +519,29 @@ o:depends({ [option_name("protocol")] = "vless", [option_name("flow")] = "xtls-r
 o = s:option(Value, option_name("xudp_concurrency"), translate("XUDP Mux concurrency"))
 o.default = 8
 o:depends({ [option_name("xmux")] = true })
+
+--[[tcpMptcp]]
+o = s:option(Flag, option_name("tcpMptcp"), "tcpMptcp", translate("Enable Multipath TCP, need to be enabled in both server and client configuration."))
+o.default = 0
+
+o = s:option(Flag, option_name("tcpNoDelay"), "tcpNoDelay")
+o.default = 0
+
+o = s:option(ListValue, option_name("to_node"), translate("Landing node"), translate("Only support a layer of proxy."))
+o.default = ""
+o:value("", translate("Close(Not use)"))
+for k, v in pairs(nodes_table) do
+	if v.type == "Xray" then
+		o:value(v.id, v.remarks)
+	end
+end
+
+for i, v in ipairs(s.fields[option_name("protocol")].keylist) do
+	if not v:find("_") then
+		s.fields[option_name("tcpMptcp")]:depends({ [option_name("protocol")] = v })
+		s.fields[option_name("tcpNoDelay")]:depends({ [option_name("protocol")] = v })
+		s.fields[option_name("to_node")]:depends({ [option_name("protocol")] = v })
+	end
+end
 
 api.luci_types(arg[1], m, s, type_name, option_prefix)
