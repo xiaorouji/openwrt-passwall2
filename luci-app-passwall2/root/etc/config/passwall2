@@ -1,0 +1,161 @@
+config shunt_rules 'Direct'
+	option network 'tcp,udp'
+	option remarks 'Direct'
+	option ip_list 'geoip:private
+114.114.114.114
+114.114.115.115
+223.5.5.5
+223.6.6.6
+119.29.29.29
+180.76.76.76
+'
+	option domain_list 'apple.com
+microsoft.com
+dyndns.com
+steamcontent.com
+dl.steam.clngaa.com
+dl.steam.ksyna.com
+st.dl.bscstorage.net
+st.dl.eccdnx.com
+st.dl.pinyuncloud.com
+cdn.mileweb.cs.steampowered.com.8686c.com
+cdn-ws.content.steamchina.com
+cdn-qc.content.steamchina.com
+cdn-ali.content.steamchina.com
+epicgames-download1-1251447533.file.myqcloud.com'
+
+config shunt_rules 'QUIC'
+	option remarks 'QUIC'
+	option port '443'
+	option network 'udp'
+
+config shunt_rules 'Indo'
+	option remarks 'Indo'
+	option network 'tcp,udp'
+	option domain_list 'geosite:rule-indo'
+	option ip_list 'geoip:id'
+
+config shunt_rules 'Sosmed'
+	option remarks 'Sosmed'
+	option network 'tcp,udp'
+	option domain_list 'geosite:rule-sosmed'
+	option ip_list 'geoip:facebook
+geoip:telegram
+geoip:twitter'
+
+config shunt_rules 'Streaming'
+	option remarks 'Streaming'
+	option network 'tcp,udp'
+	option domain_list 'geosite:netflix
+geosite:youtube
+geosite:rule-streaming'
+
+config shunt_rules 'GlobalUmum'
+	option remarks 'GlobalUmum'
+	option network 'tcp,udp'
+	option domain_list 'geosite:geolocation-!cn'
+	option ip_list '149.154.160.0/20
+91.108.4.0/22
+91.108.56.0/24
+109.239.140.0/24
+67.198.55.0/24
+8.8.4.4
+8.8.8.8
+208.67.222.222
+208.67.220.220
+1.1.1.1
+1.1.1.2
+1.0.0.1
+9.9.9.9
+149.112.112.112
+2001:67c:4e8::/48
+2001:b28:f23c::/48
+2001:b28:f23d::/48
+2001:b28:f23f::/48
+2001:b28:f242::/48
+2001:4860:4860::8888
+2001:4860:4860::8844
+2606:4700:4700::1111
+2606:4700:4700::1001
+'
+
+config global
+	option enabled '0'
+	option node_socks_port '1070'
+	option localhost_proxy '1'
+	option socks_enabled '0'
+	option acl_enable '0'
+	option node 'nil'
+	option direct_dns_protocol 'auto'
+	option direct_dns_query_strategy 'UseIP'
+	option remote_dns_protocol 'tcp'
+	option remote_dns '1.1.1.1'
+	option remote_dns_query_strategy 'UseIPv4'
+	option dns_hosts 'cloudflare-dns.com 1.1.1.1
+dns.google.com 8.8.8.8'
+	option close_log '1'
+	option loglevel 'error'
+	option remote_dns_detour 'remote'
+	option remote_fakedns '0'
+
+config global_haproxy
+	option balancing_enable '0'
+
+config global_delay
+	option auto_on '0'
+	option start_daemon '1'
+	option start_delay '60'
+
+config global_forwarding
+	option tcp_no_redir_ports 'disable'
+	option udp_no_redir_ports 'disable'
+	option tcp_redir_ports '1:65535'
+	option udp_redir_ports '1:65535'
+	option accept_icmp '0'
+	option use_nft '1'
+	option tcp_proxy_way 'tproxy'
+	option ipv6_tproxy '0'
+
+config global_xray
+	option sniffing '1'
+	option route_only '0'
+
+config global_other
+	option nodes_ping 'auto_ping tcping'
+
+config global_rules
+	option geosite_update '1'
+	option geoip_update '1'
+	option v2ray_location_asset '/usr/share/v2ray/'
+	option geoip_url 'https://api.github.com/repos/rtaserver/meta-rules-dat/releases/latest'
+	option geosite_url 'https://api.github.com/repos/rtaserver/meta-rules-dat/releases/latest'
+	option auto_update '1'
+	option week_update '7'
+	option time_update '3'
+
+config global_app
+	option xray_file '/usr/bin/xray'
+	option brook_file '/usr/bin/brook'
+	option hysteria_file '/usr/bin/hysteria'
+	option singbox_file '/usr/bin/sing-box'
+
+config global_subscribe
+	option filter_keyword_mode '1'
+	list filter_discard_list '过期时间'
+	list filter_discard_list '剩余流量'
+	list filter_discard_list 'QQ群'
+	list filter_discard_list '官网'
+
+config global_singbox
+	option sniff_override_destination '0'
+	option geoip_path '/usr/share/singbox/geoip.db'
+	option geoip_url 'https://github.com/MetaCubeX/meta-rules-dat/releases/download/latest/geoip.db'
+	option geosite_path '/usr/share/singbox/geosite.db'
+	option geosite_url 'https://github.com/MetaCubeX/meta-rules-dat/releases/download/latest/geosite.db'
+
+config nodes 'RNWPEvqh'
+	option remarks 'Global-Main'
+	option type 'Xray'
+	option protocol '_shunt'
+	option domainStrategy 'IPOnDemand'
+	option domainMatcher 'hybrid'

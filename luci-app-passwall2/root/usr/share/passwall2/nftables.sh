@@ -75,7 +75,7 @@ insert_rule_after() {
 
 RULE_LAST_INDEX() {
 	[ $# -ge 3 ] || {
-		echolog "索引列举方式不正确（nftables），终止执行！"
+		echolog "The index enumeration method is incorrect (nftables), execution is terminated!"
 		return 1
 	}
 	local table_name="${1}"; shift
@@ -157,7 +157,7 @@ gen_nftset() {
 }
 
 get_action_chain_name() {
-	echo "全局代理"
+	echo "global agent"
 }
 
 gen_lanlist() {
@@ -217,7 +217,7 @@ get_wan6_ip() {
 load_acl() {
 	[ "$ENABLED_ACLS" == 1 ] && {
 		acl_app
-		echolog "访问控制："
+		echolog "Access control: "
 		for sid in $(ls -F ${TMP_ACL_PATH} | grep '/$' | awk -F '/' '{print $1}'); do
 			eval $(uci -q show "${CONFIG}.${sid}" | cut -d'.' -sf 3-)
 
@@ -242,19 +242,19 @@ load_acl() {
 				if [ -n "$(echo ${i} | grep '^iprange:')" ]; then
 					_iprange=$(echo ${i} | sed 's#iprange:##g')
 					_ipt_source=$(factor ${_iprange} "ip saddr")
-					msg="备注【$remarks】，IP range【${_iprange}】，"
+					msg="Remark【$remarks】, IP range【${_iprange}】，"
 				elif [ -n "$(echo ${i} | grep '^ipset:')" ]; then
 					_ipset=$(echo ${i} | sed 's#ipset:##g')
 					_ipt_source="ip daddr @${_ipset}"
-					msg="备注【$remarks】，NFTset【${_ipset}】，"
+					msg="Remark【$remarks】, NFTset【${_ipset}】，"
 				elif [ -n "$(echo ${i} | grep '^ip:')" ]; then
 					_ip=$(echo ${i} | sed 's#ip:##g')
 					_ipt_source=$(factor ${_ip} "ip saddr")
-					msg="备注【$remarks】，IP【${_ip}】，"
+					msg="Remark【$remarks】, IP【${_ip}】，"
 				elif [ -n "$(echo ${i} | grep '^mac:')" ]; then
 					_mac=$(echo ${i} | sed 's#mac:##g')
 					_ipt_source=$(factor ${_mac} "ether saddr")
-					msg="备注【$remarks】，MAC【${_mac}】，"
+					msg="Remark【$remarks】, MAC【${_mac}】，"
 				else
 					continue
 				fi
@@ -267,11 +267,11 @@ load_acl() {
 				[ -n "$redir_port" ] && {
 					if [ "$tcp_proxy_mode" != "disable" ]; then
 						[ -s "${TMP_ACL_PATH}/${sid}/var_redirect_dns_port" ] && nft "add rule inet fw4 PSW2_REDIRECT ip protocol udp ${_ipt_source} udp dport 53 counter redirect to $(cat ${TMP_ACL_PATH}/${sid}/var_redirect_dns_port) comment \"$remarks\""
-						msg2="${msg}使用TCP节点[$node_remark] [$(get_action_chain_name $tcp_proxy_mode)]"
+						msg2="${msg}Use TCP nodes[$node_remark] [$(get_action_chain_name $tcp_proxy_mode)]"
 						if [ -n "${is_tproxy}" ]; then
-							msg2="${msg2}(TPROXY:${redir_port})代理"
+							msg2="${msg2}(TPROXY:${redir_port})acting"
 						else
-							msg2="${msg2}(REDIRECT:${redir_port})代理"
+							msg2="${msg2}(REDIRECT:${redir_port})acting"
 						fi
 
 						[ -z "${is_tproxy}" ] && nft "add rule inet fw4 PSW2_NAT ip protocol tcp ${_ipt_source} ip daddr @$nftset_whitelist counter return comment \"$remarks\""
@@ -294,7 +294,7 @@ load_acl() {
 							nft "add rule inet fw4 PSW2_MANGLE_V6 ${_ipt_source} meta l4proto tcp $(factor $tcp_no_redir_ports "tcp dport") counter return comment \"$remarks\""
 							msg2="${msg2}[$?]除${tcp_no_redir_ports}外的"
 						}
-						msg2="${msg2}所有端口"
+						msg2="${msg2}All ports"
 
 						if [ -z "${is_tproxy}" ]; then
 							nft "add rule inet fw4 PSW2_NAT ip protocol tcp ${_ipt_source} ip daddr $FAKE_IP $(REDIRECT $redir_port) comment \"$remarks\""
@@ -312,7 +312,7 @@ load_acl() {
 							nft "add rule inet fw4 PSW2_MANGLE_V6 meta l4proto tcp ${_ipt_source} $(REDIRECT $redir_port TPROXY) comment \"$remarks\"" 2>/dev/null
 						}
 					else
-						msg2="${msg}不代理TCP"
+						msg2="${msg}Does not proxy TCP"
 					fi
 					echolog "  - ${msg2}"
 				}
@@ -322,14 +322,14 @@ load_acl() {
 
 				[ -n "$redir_port" ] && {
 					if [ "$udp_proxy_mode" != "disable" ]; then
-						msg2="${msg}使用UDP节点[$node_remark] [$(get_action_chain_name $udp_proxy_mode)]"
-						msg2="${msg2}(TPROXY:${redir_port})代理"
+						msg2="${msg}Use UDP node[$node_remark] [$(get_action_chain_name $udp_proxy_mode)]"
+						msg2="${msg2}(TPROXY:${redir_port})acting"
 						[ "$udp_no_redir_ports" != "disable" ] && {
 							nft "add rule inet fw4 PSW2_MANGLE ip protocol udp ${_ipt_source} $(factor $udp_no_redir_ports "udp dport") counter return comment \"$remarks\""
 							nft "add rule inet fw4 PSW2_MANGLE_V6 meta l4proto udp ${_ipt_source} $(factor $udp_no_redir_ports "udp dport") counter return comment \"$remarks\"" 2>/dev/null
-							msg2="${msg2}[$?]除${udp_no_redir_ports}外的"
+							msg2="${msg2}[$?]remove${udp_no_redir_ports}outside"
 						}
-						msg2="${msg2}所有端口"
+						msg2="${msg2}All ports"
 
 						nft "add rule inet fw4 PSW2_MANGLE ip protocol udp ${_ipt_source} ip daddr @$nftset_whitelist counter return comment \"$remarks\""
 						nft "add rule inet fw4 PSW2_MANGLE ip protocol udp ${_ipt_source} ip daddr $FAKE_IP counter jump PSW2_RULE comment \"$remarks\""
@@ -343,7 +343,7 @@ load_acl() {
 							nft "add rule inet fw4 PSW2_MANGLE_V6 meta l4proto udp ${_ipt_source} $(REDIRECT $redir_port TPROXY) comment \"$remarks\"" 2>/dev/null
 						}
 					else
-						msg2="${msg}不代理UDP"
+						msg2="${msg}Not proxying UDP"
 					fi
 					echolog "  - ${msg2}"
 				}
@@ -360,38 +360,38 @@ load_acl() {
 		#  加载默认代理模式
 		if [ "$TCP_PROXY_MODE" != "disable" ]; then
 			[ "$TCP_NO_REDIR_PORTS" != "disable" ] && {
-				nft add rule inet fw4 $nft_prerouting_chain ip protocol tcp $(factor $TCP_NO_REDIR_PORTS "tcp dport") counter return comment \"默认\"
-				nft add rule inet fw4 PSW2_MANGLE_V6 meta l4proto tcp $(factor $TCP_NO_REDIR_PORTS "tcp dport") counter return comment \"默认\"
+				nft add rule inet fw4 $nft_prerouting_chain ip protocol tcp $(factor $TCP_NO_REDIR_PORTS "tcp dport") counter return comment \"default\"
+				nft add rule inet fw4 PSW2_MANGLE_V6 meta l4proto tcp $(factor $TCP_NO_REDIR_PORTS "tcp dport") counter return comment \"default\"
 			}
 			[ "$NODE" != "nil" ] && {
-				msg="TCP默认代理：使用TCP节点[$(config_n_get $NODE remarks)] [$(get_action_chain_name $TCP_PROXY_MODE)]"
+				msg="TCP default proxy: use TCP node[$(config_n_get $NODE remarks)] [$(get_action_chain_name $TCP_PROXY_MODE)]"
 				if [ -n "${is_tproxy}" ]; then
-					msg="${msg}(TPROXY:${REDIR_PORT})代理"
+					msg="${msg}(TPROXY:${REDIR_PORT})acting"
 				else
-					msg="${msg}(REDIRECT:${REDIR_PORT})代理"
+					msg="${msg}(REDIRECT:${REDIR_PORT})acting"
 				fi
 				
-				[ "$TCP_NO_REDIR_PORTS" != "disable" ] && msg="${msg}除${TCP_NO_REDIR_PORTS}外的"
-				msg="${msg}所有端口"
+				[ "$TCP_NO_REDIR_PORTS" != "disable" ] && msg="${msg}remove${TCP_NO_REDIR_PORTS}outside"
+				msg="${msg}All ports"
 
 				[ -z "${is_tproxy}" ] && nft "add rule inet fw4 PSW2_NAT ip protocol tcp ip daddr @$nftset_global_whitelist counter return comment \"$remarks\""
 				[ -n "${is_tproxy}" ] && nft "add rule inet fw4 PSW2_MANGLE ip protocol tcp ip daddr @$nftset_global_whitelist counter return comment \"$remarks\""
 
 				[ "$accept_icmp" = "1" ] && {
-					nft "add rule inet fw4 PSW2_ICMP_REDIRECT ip protocol icmp ip daddr $FAKE_IP $(REDIRECT) comment \"默认\""
-					nft "add rule inet fw4 PSW2_ICMP_REDIRECT ip protocol icmp $(REDIRECT) comment \"默认\""
-					nft "add rule inet fw4 PSW2_ICMP_REDIRECT ip protocol icmp return comment \"默认\""
+					nft "add rule inet fw4 PSW2_ICMP_REDIRECT ip protocol icmp ip daddr $FAKE_IP $(REDIRECT) comment \"default\""
+					nft "add rule inet fw4 PSW2_ICMP_REDIRECT ip protocol icmp $(REDIRECT) comment \"default\""
+					nft "add rule inet fw4 PSW2_ICMP_REDIRECT ip protocol icmp return comment \"default\""
 				}
 
 				[ "$accept_icmpv6" = "1" ] && [ "$PROXY_IPV6" == "1" ] && {
-					nft "add rule inet fw4 PSW2_ICMP_REDIRECT meta l4proto icmpv6 ip6 daddr $FAKE_IP_6 $(REDIRECT) comment \"默认\""
-					nft "add rule inet fw4 PSW2_ICMP_REDIRECT meta l4proto icmpv6 $(REDIRECT) comment \"默认\""
-					nft "add rule inet fw4 PSW2_ICMP_REDIRECT meta l4proto icmpv6 return comment \"默认\""
+					nft "add rule inet fw4 PSW2_ICMP_REDIRECT meta l4proto icmpv6 ip6 daddr $FAKE_IP_6 $(REDIRECT) comment \"default\""
+					nft "add rule inet fw4 PSW2_ICMP_REDIRECT meta l4proto icmpv6 $(REDIRECT) comment \"default\""
+					nft "add rule inet fw4 PSW2_ICMP_REDIRECT meta l4proto icmpv6 return comment \"default\""
 				}
 
 				if [ -z "${is_tproxy}" ]; then
-					nft "add rule inet fw4 PSW2_NAT ip protocol tcp ip daddr $FAKE_IP $(REDIRECT $REDIR_PORT) comment \"默认\""
-					nft "add rule inet fw4 PSW2_NAT ip protocol tcp $(factor $TCP_REDIR_PORTS "tcp dport") $(REDIRECT $REDIR_PORT) comment \"默认\""
+					nft "add rule inet fw4 PSW2_NAT ip protocol tcp ip daddr $FAKE_IP $(REDIRECT $REDIR_PORT) comment \"default\""
+					nft "add rule inet fw4 PSW2_NAT ip protocol tcp $(factor $TCP_REDIR_PORTS "tcp dport") $(REDIRECT $REDIR_PORT) comment \"default\""
 				else
 					nft "add rule inet fw4 PSW2_MANGLE ip protocol tcp ip daddr $FAKE_IP counter jump PSW2_RULE comment \"默认\""
 					nft "add rule inet fw4 PSW2_MANGLE ip protocol tcp $(factor $TCP_REDIR_PORTS "tcp dport") jump PSW2_RULE comment \"默认\""
@@ -400,9 +400,9 @@ load_acl() {
 
 				[ "$PROXY_IPV6" == "1" ] && {
 					nft "add rule inet fw4 PSW2_MANGLE_V6 meta l4proto tcp ip6 daddr @$nftset_global_whitelist6 counter return comment \"$remarks\""
-					nft "add rule inet fw4 PSW2_MANGLE_V6 meta l4proto tcp ip6 daddr $FAKE_IP_6 jump PSW2_RULE comment \"默认\""
-					nft "add rule inet fw4 PSW2_MANGLE_V6 meta l4proto tcp $(factor $TCP_REDIR_PORTS "tcp dport") jump PSW2_RULE comment \"默认\""
-					nft "add rule inet fw4 PSW2_MANGLE_V6 meta l4proto tcp $(REDIRECT $REDIR_PORT TPROXY) comment \"默认\""
+					nft "add rule inet fw4 PSW2_MANGLE_V6 meta l4proto tcp ip6 daddr $FAKE_IP_6 jump PSW2_RULE comment \"default\""
+					nft "add rule inet fw4 PSW2_MANGLE_V6 meta l4proto tcp $(factor $TCP_REDIR_PORTS "tcp dport") jump PSW2_RULE comment \"default\""
+					nft "add rule inet fw4 PSW2_MANGLE_V6 meta l4proto tcp $(REDIRECT $REDIR_PORT TPROXY) comment \"default\""
 				}
 
 				echolog "${msg}"
@@ -412,15 +412,15 @@ load_acl() {
 		#  加载UDP默认代理模式
 		if [ "$UDP_PROXY_MODE" != "disable" ]; then
 			[ "$UDP_NO_REDIR_PORTS" != "disable" ] && {
-				nft "add inet fw4 PSW2_MANGLE ip protocol udp $(factor $UDP_NO_REDIR_PORTS "udp dport") counter return comment \"默认\""
-				nft "add inet fw4 PSW2_MANGLE_V6 counter meta l4proto udp $(factor $UDP_NO_REDIR_PORTS "udp dport") counter return comment \"默认\""
+				nft "add inet fw4 PSW2_MANGLE ip protocol udp $(factor $UDP_NO_REDIR_PORTS "udp dport") counter return comment \"default\""
+				nft "add inet fw4 PSW2_MANGLE_V6 counter meta l4proto udp $(factor $UDP_NO_REDIR_PORTS "udp dport") counter return comment \"default\""
 			}
 
 			[ -n "1" ] && {
-				msg="UDP默认代理：使用UDP节点[$(config_n_get $NODE remarks)] [$(get_action_chain_name $UDP_PROXY_MODE)](TPROXY:${REDIR_PORT})代理"
+				msg="UDP default proxy: use UDP node[$(config_n_get $NODE remarks)] [$(get_action_chain_name $UDP_PROXY_MODE)](TPROXY:${REDIR_PORT})acting"
 
-				[ "$UDP_NO_REDIR_PORTS" != "disable" ] && msg="${msg}除${UDP_NO_REDIR_PORTS}外的"
-				msg="${msg}所有端口"
+				[ "$UDP_NO_REDIR_PORTS" != "disable" ] && msg="${msg}remove${UDP_NO_REDIR_PORTS}outside"
+				msg="${msg}All ports"
 
 				nft "add rule inet fw4 PSW2_MANGLE ip protocol udp ip daddr @$nftset_global_whitelist counter return comment \"$remarks\""
 				nft "add rule inet fw4 PSW2_MANGLE ip protocol udp ip daddr $FAKE_IP counter jump PSW2_RULE comment \"默认\""
@@ -429,9 +429,9 @@ load_acl() {
 
 				[ "$PROXY_IPV6" == "1" ] && [ "$PROXY_IPV6_UDP" == "1" ] && {
 					nft "add rule inet fw4 PSW2_MANGLE_V6 meta l4proto udp ip6 daddr @$nftset_global_whitelist6 counter return comment \"$remarks\""
-					nft "add rule inet fw4 PSW2_MANGLE_V6 meta l4proto udp ip6 daddr $FAKE_IP_6 jump PSW2_RULE comment \"默认\""
-					nft "add rule inet fw4 PSW2_MANGLE_V6 meta l4proto udp $(factor $UDP_REDIR_PORTS "udp dport") jump PSW2_RULE comment \"默认\""
-					nft "add rule inet fw4 PSW2_MANGLE_V6 meta l4proto udp $(REDIRECT $REDIR_PORT TPROXY) comment \"默认\""
+					nft "add rule inet fw4 PSW2_MANGLE_V6 meta l4proto udp ip6 daddr $FAKE_IP_6 jump PSW2_RULE comment \"default\""
+					nft "add rule inet fw4 PSW2_MANGLE_V6 meta l4proto udp $(factor $UDP_REDIR_PORTS "udp dport") jump PSW2_RULE comment \"default\""
+					nft "add rule inet fw4 PSW2_MANGLE_V6 meta l4proto udp $(REDIRECT $REDIR_PORT TPROXY) comment \"default\""
 				}
 
 				echolog "${msg}"
@@ -446,7 +446,7 @@ filter_haproxy() {
 		local ip=$(get_host_ip ipv4 $(echo $item | awk -F ":" '{print $1}') 1)
 		[ -n "$ip" ] && insert_nftset $NFTSET_VPSLIST "-1" $ip
 	done
-	echolog "加入负载均衡的节点到nftset[$NFTSET_VPSLIST]直连完成"
+	echolog "Add load-balanced nodes to nftset[$NFTSET_VPSLIST]Direct connection completed"
 }
 
 filter_vps_addr() {
@@ -488,7 +488,7 @@ filter_node() {
 				msg="REDIRECT"
 			fi
 		else
-			echolog "  - 节点配置不正常，略过"
+			echolog "  - The node configuration is abnormal, skip it."
 			return 0
 		fi
 
@@ -500,28 +500,28 @@ filter_node() {
 			if [ $? -ne 0 ]; then
 				unset dst_rule
 				local dst_rule="jump PSW2_RULE"
-				msg2="按规则路由(${msg})"
+				msg2="Routing by rules(${msg})"
 				[ -n "${is_tproxy}" ] || {
 					dst_rule=$(REDIRECT $_port)
-					msg2="套娃使用(${msg}:${port} -> ${_port})"
+					msg2="Use of matryoshka dolls(${msg}:${port} -> ${_port})"
 				}
 				[ -n "$_proxy" ] && [ "$_proxy" == "1" ] && [ -n "$_port" ] || {
 					ADD_INDEX=$(RULE_LAST_INDEX "inet fw4" $nft_output_chain $_set_name $FORCE_INDEX)
 					dst_rule="return"
-					msg2="直连代理"
+					msg2="direct agent"
 				}
 				nft "insert rule inet fw4 $nft_output_chain position $ADD_INDEX meta l4proto $stream $_ip_type daddr $address $stream dport $port $dst_rule comment \"${address}:${port}\"" 2>/dev/null
 			else
-				msg2="已配置过的节点，"
+				msg2="Configured nodes,"
 			fi
 		done
-		msg="[$?]$(echo ${2} | tr 'a-z' 'A-Z')${msg2}使用链${ADD_INDEX}，节点（${type}）：${address}:${port}"
+		msg="[$?]$(echo ${2} | tr 'a-z' 'A-Z')${msg2}use chain${ADD_INDEX}, node (${type}) : ${address}:${port}"
 		#echolog "  - ${msg}"
 	}
 
 	local proxy_protocol=$(config_n_get $proxy_node protocol)
 	local proxy_type=$(echo $(config_n_get $proxy_node type nil) | tr 'A-Z' 'a-z')
-	[ "$proxy_type" == "nil" ] && echolog "  - 节点配置不正常，略过！：${proxy_node}" && return 0
+	[ "$proxy_type" == "nil" ] && echolog "  - The node configuration is abnormal, skip it! : ${proxy_node}" && return 0
 	if [ "$proxy_protocol" == "_balancing" ]; then
 		#echolog "  - 多节点负载均衡（${proxy_type}）..."
 		proxy_node=$(config_n_get $proxy_node balancing_node)
@@ -747,9 +747,9 @@ add_firewall_rule() {
 			[ "$enabled" == "1" ] || continue
 			node=$(config_n_get $id node nil)
 			port=$(config_n_get $id port 0)
-			msg="Socks 服务 [:${port}]"
+			msg="Socks service [:${port}]"
 			if [ "$node" == "nil" ] || [ "$port" == "0" ]; then
-				msg="${msg} 未配置完全，略过"
+				msg="${msg} Not fully configured, skip"
 			else
 				filter_node $node TCP > /dev/null 2>&1 &
 				filter_node $node UDP > /dev/null 2>&1 &
@@ -761,7 +761,7 @@ add_firewall_rule() {
 	[ "$ENABLED_DEFAULT_ACL" == 1 ] && {
 		# 加载路由器自身代理 TCP
 		if [ "$NODE" != "nil" ] && [ "$LOCALHOST_PROXY" = "1" ]; then
-			echolog "加载路由器自身 TCP 代理..."
+			echolog "Load the router's own TCP proxy..."
 
 			[ "$accept_icmp" = "1" ] && {
 				nft "add rule inet fw4 PSW2_ICMP_REDIRECT oif lo ip protocol icmp ip daddr $FAKE_IP counter redirect"
@@ -776,13 +776,13 @@ add_firewall_rule() {
 			}
 
 			[ -n "${is_tproxy}" ] && {
-				echolog "  - 启用 TPROXY 模式"
+				echolog "  - Enable TPROXY mode"
 			}
 
 			[ "$TCP_NO_REDIR_PORTS" != "disable" ] && {
 				nft "add rule inet fw4 $nft_output_chain ip protocol tcp $(factor $TCP_NO_REDIR_PORTS "tcp dport") counter return"
 				nft "add rule inet fw4 PSW2_OUTPUT_MANGLE_V6 meta l4proto tcp $(factor $TCP_NO_REDIR_PORTS "tcp dport") counter return"
-				echolog "  - [$?]不代理TCP 端口：$TCP_NO_REDIR_PORTS"
+				echolog "  - [$?]Do not proxy TCP ports: $TCP_NO_REDIR_PORTS"
 			}
 
 			if [ -z "${is_tproxy}" ]; then
@@ -800,8 +800,8 @@ add_firewall_rule() {
 			[ "$PROXY_IPV6" == "1" ] && {
 				nft "add rule inet fw4 PSW2_OUTPUT_MANGLE_V6 meta l4proto tcp ip6 daddr $FAKE_IP_6 jump PSW2_RULE"
 				nft "add rule inet fw4 PSW2_OUTPUT_MANGLE_V6 meta l4proto tcp $(factor $TCP_REDIR_PORTS "tcp dport") jump PSW2_RULE"
-				nft "add rule inet fw4 PSW2_MANGLE_V6 meta l4proto tcp iif lo $(REDIRECT $REDIR_PORT TPROXY) comment \"本机\""
-				nft "add rule inet fw4 PSW2_MANGLE_V6 meta l4proto tcp iif lo counter return comment \"本机\""
+				nft "add rule inet fw4 PSW2_MANGLE_V6 meta l4proto tcp iif lo $(REDIRECT $REDIR_PORT TPROXY) comment \"local machine\""
+				nft "add rule inet fw4 PSW2_MANGLE_V6 meta l4proto tcp iif lo counter return comment \"local machine\""
 			}
 
 			for iface in $(ls ${TMP_IFACE_PATH}); do
@@ -816,12 +816,12 @@ add_firewall_rule() {
 
 		# 加载路由器自身代理 UDP
 		if [ "$NODE" != "nil" ] && [ "$LOCALHOST_PROXY" = "1" ]; then
-			echolog "加载路由器自身 UDP 代理..."
+			echolog "Loading the router's own UDP proxy..."
 
 			[ "$UDP_NO_REDIR_PORTS" != "disable" ] && {
 				nft add rule inet fw4 PSW2_OUTPUT_MANGLE ip protocol udp $(factor $UDP_NO_REDIR_PORTS "udp dport") counter return
 				nft add rule inet fw4 PSW2_OUTPUT_MANGLE_V6 meta l4proto udp $(factor $UDP_NO_REDIR_PORTS "udp dport") counter return
-				echolog "  - [$?]不代理 UDP 端口：$UDP_NO_REDIR_PORTS"
+				echolog "  - [$?]Do not proxy UDP ports: $UDP_NO_REDIR_PORTS"
 			}
 
 			nft "add rule inet fw4 PSW2_OUTPUT_MANGLE ip protocol udp ip daddr $FAKE_IP counter jump PSW2_RULE"
@@ -833,8 +833,8 @@ add_firewall_rule() {
 			if [ "$PROXY_IPV6_UDP" == "1" ]; then
 				nft "add rule inet fw4 PSW2_OUTPUT_MANGLE_V6 meta l4proto udp ip6 daddr $FAKE_IP_6 jump PSW2_RULE"
 				nft "add rule inet fw4 PSW2_OUTPUT_MANGLE_V6 meta l4proto udp $(factor $UDP_REDIR_PORTS "udp dport") jump PSW2_RULE"
-				nft "add rule inet fw4 PSW2_MANGLE_V6 meta l4proto udp iif lo $(REDIRECT $REDIR_PORT TPROXY) comment \"本机\""
-				nft "add rule inet fw4 PSW2_MANGLE_V6 meta l4proto udp iif lo counter return comment \"本机\""
+				nft "add rule inet fw4 PSW2_MANGLE_V6 meta l4proto udp iif lo $(REDIRECT $REDIR_PORT TPROXY) comment \"local machine\""
+				nft "add rule inet fw4 PSW2_MANGLE_V6 meta l4proto udp iif lo counter return comment \"local machine\""
 			fi
 
 			for iface in $(ls ${TMP_IFACE_PATH}); do
@@ -863,7 +863,7 @@ add_firewall_rule() {
 			sysctl -w net.bridge.bridge-nf-call-ip6tables=0 >/dev/null 2>&1
 		}
 	}
-	echolog "防火墙规则加载完成！"
+	echolog "Firewall rules are loaded!"
 }
 
 del_firewall_rule() {
@@ -893,7 +893,7 @@ del_firewall_rule() {
 	destroy_nftset $NFTSET_LANLIST6
 	destroy_nftset $NFTSET_VPSLIST6
 
-	$DIR/app.sh echolog "删除相关防火墙规则完成。"
+	$DIR/app.sh echolog "Deletion of relevant firewall rules is completed."
 }
 
 flush_nftset() {

@@ -50,7 +50,7 @@ logic_restart() {
 	else
 		/etc/init.d/dnsmasq restart >/dev/null 2>&1
 	fi
-	echolog "重启 dnsmasq 服务"
+	echolog "Restart dnsmasq Serve"
 	LOG_FILE=${_LOG_FILE}
 }
 
@@ -60,7 +60,7 @@ restart() {
 	_LOG_FILE=$LOG_FILE
 	[ -n "$no_log" ] && LOG_FILE="/dev/null"
 	/etc/init.d/dnsmasq restart >/dev/null 2>&1
-	echolog "重启 dnsmasq 服务"
+	echolog "Restart dnsmasq Serve"
 	LOG_FILE=${_LOG_FILE}
 }
 
@@ -102,7 +102,7 @@ add() {
 	#始终用国内DNS解析节点域名
 	servers=$(uci show "${CONFIG}" | grep ".address=" | cut -d "'" -f 2)
 	hosts_foreach "servers" host_from_url | grep '[a-zA-Z]$' | sort -u | gen_items settype="${set_type}" setnames="${setflag_4}passwall2_vpslist,${setflag_6}passwall2_vpslist6" dnss="${LOCAL_DNS:-${DEFAULT_DNS}}" outf="${TMP_DNSMASQ_PATH}/10-vpslist_host.conf" ipsetoutf="${TMP_DNSMASQ_PATH}/ipset.conf"
-	echolog "  - [$?]节点列表中的域名(vpslist)：${DEFAULT_DNS:-默认}"
+	echolog "  - [$?]The domain name in the node list(vpslist)：${DEFAULT_DNS:-default}"
 	
 	echo "conf-dir=${TMP_DNSMASQ_PATH}" > $DNSMASQ_CONF_FILE
 	[ -n "${TUN_DNS}" ] && {
@@ -113,7 +113,7 @@ add() {
 			no-poll
 			no-resolv
 		EOF
-		echolog "  - [$?]默认：${TUN_DNS}"
+		echolog "  - [$?]default:${TUN_DNS}"
 	}
 	LOG_FILE=${_LOG_FILE}
 }
