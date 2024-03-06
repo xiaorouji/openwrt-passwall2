@@ -362,7 +362,7 @@ function gen_config_server(node)
 	end
 
 	routing = {
-		domainStrategy = "IPOnDemand",
+		domainStrategy = "AsIs",
 		rules = {
 			{
 				type = "field",
@@ -1066,7 +1066,7 @@ function gen_config(var)
 	
 		if not routing then
 			routing = {
-				domainStrategy = "IPOnDemand",
+				domainStrategy = "AsIs",
 				rules = {}
 			}
 		end
@@ -1111,7 +1111,7 @@ function gen_config(var)
 				_flag = "remote",
 				address = remote_dns_udp_server,
 				port = tonumber(remote_dns_udp_port) or 53,
-				queryStrategy = (remote_dns_query_strategy and remote_dns_query_strategy ~= "") and remote_dns_query_strategy or "UseIPv4"
+				queryStrategy = (remote_dns_query_strategy and remote_dns_query_strategy ~= "") and remote_dns_query_strategy or "UseIP"
 			}
 			_remote_dns_proto = "udp"
 			table.insert(dns.servers, _remote_dns)
@@ -1202,7 +1202,7 @@ function gen_config(var)
 					address = direct_dns_udp_server,
 					port = tonumber(direct_dns_udp_port) or 53,
 					network = "udp",
-					nonIPQuery = "skip"
+					nonIPQuery = "drop"
 				},
 				proxySettings = {
 					tag = "direct"
@@ -1212,7 +1212,7 @@ function gen_config(var)
 				settings = {
 					address = remote_dns_udp_server,
 					port = tonumber(remote_dns_udp_port) or 53,
-					network = _remote_dns_proto or "tcp",
+					network = _remote_dns_proto or "tcp,udp",
 					nonIPQuery = "drop"
 				},
 				proxySettings = {
@@ -1566,7 +1566,7 @@ function gen_dns_config(var)
 
 	if dns_listen_port then
 		routing = {
-			domainStrategy = "IPOnDemand",
+			domainStrategy = "AsIs",
 			rules = {}
 		}
 	
@@ -1583,7 +1583,7 @@ function gen_dns_config(var)
 		local other_type_dns_proto, other_type_dns_server, other_type_dns_port
 	
 		if dns_out_tag == "remote" then
-			dns.queryStrategy = (remote_dns_query_strategy and remote_dns_query_strategy ~= "") and remote_dns_query_strategy or "UseIPv4"
+			dns.queryStrategy = (remote_dns_query_strategy and remote_dns_query_strategy ~= "") and remote_dns_query_strategy or "UseIP"
 			if remote_dns_detour == "direct" then
 				dns_out_tag = "direct"
 				table.insert(outbounds, 1, {
@@ -1737,7 +1737,7 @@ function gen_dns_config(var)
 			settings = {
 				address = other_type_dns_server or "1.1.1.1",
 				port = other_type_dns_port or 53,
-				network = other_type_dns_proto or "tcp",
+				network = other_type_dns_proto or "tcp,udp",
 				nonIPQuery = "drop"
 			}
 		})
