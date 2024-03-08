@@ -208,6 +208,8 @@ load_acl() {
 			[ -s "${TMP_ACL_PATH}/${sid}/var_node" ] && node=$(cat ${TMP_ACL_PATH}/${sid}/var_node)
 			[ -s "${TMP_ACL_PATH}/${sid}/var_port" ] && redir_port=$(cat ${TMP_ACL_PATH}/${sid}/var_port)
 			[ -n "$node" ] && [ "$node" != "default" ] && node_remark=$(config_n_get $node remarks)
+
+			write_ipset_direct=${write_ipset_direct:-1}
 			
 			for i in $(cat ${TMP_ACL_PATH}/${sid}/rule_list); do
 				if [ -n "$(echo ${i} | grep '^iprange:')" ]; then
@@ -249,7 +251,7 @@ load_acl() {
 							msg2="${msg2}(REDIRECT:${redir_port})代理"
 						fi
 
-						$ipt_tmp -A PSW2 $(comment "$remarks") -p tcp ${_ipt_source} $(dst $ipset_whitelist) ! -d $FAKE_IP -j RETURN
+						[ "${write_ipset_direct}" = "1" ] && $ipt_tmp -A PSW2 $(comment "$remarks") -p tcp ${_ipt_source} $(dst $ipset_whitelist) ! -d $FAKE_IP -j RETURN
 
 						[ "$accept_icmp" = "1" ] && {
 							$ipt_n -A PSW2 $(comment "$remarks") -p icmp ${_ipt_source} -d $FAKE_IP $(REDIRECT)
@@ -277,7 +279,7 @@ load_acl() {
 							$ipt_m -A PSW2 $(comment "$remarks") -p tcp ${_ipt_source} $(REDIRECT $redir_port TPROXY)
 						fi
 						[ "$PROXY_IPV6" == "1" ] && {
-							$ip6t_m -A PSW2 $(comment "$remarks") -p tcp ${_ipt_source} $(dst $ipset_whitelist6) ! -d $FAKE_IP_6 -j RETURN
+							[ "${write_ipset_direct}" = "1" ] && $ip6t_m -A PSW2 $(comment "$remarks") -p tcp ${_ipt_source} $(dst $ipset_whitelist6) ! -d $FAKE_IP_6 -j RETURN
 							$ip6t_m -A PSW2 $(comment "$remarks") -p tcp ${_ipt_source} -d $FAKE_IP_6 -j PSW2_RULE 2>/dev/null
 							$ip6t_m -A PSW2 $(comment "$remarks") -p tcp ${_ipt_source} $(factor $tcp_redir_ports "-m multiport --dport") -j PSW2_RULE 2>/dev/null
 							$ip6t_m -A PSW2 $(comment "$remarks") -p tcp ${_ipt_source} $(REDIRECT $redir_port TPROXY) 2>/dev/null
@@ -302,13 +304,13 @@ load_acl() {
 						}
 						msg2="${msg2}所有端口"
 
-						$ipt_m -A PSW2 $(comment "$remarks") -p udp ${_ipt_source} $(dst $ipset_whitelist) ! -d $FAKE_IP -j RETURN
+						[ "${write_ipset_direct}" = "1" ] && $ipt_m -A PSW2 $(comment "$remarks") -p udp ${_ipt_source} $(dst $ipset_whitelist) ! -d $FAKE_IP -j RETURN
 						$ipt_m -A PSW2 $(comment "$remarks") -p udp ${_ipt_source} -d $FAKE_IP -j PSW2_RULE
 						$ipt_m -A PSW2 $(comment "$remarks") -p udp ${_ipt_source} $(factor $udp_redir_ports "-m multiport --dport") -j PSW2_RULE
 						$ipt_m -A PSW2 $(comment "$remarks") -p udp ${_ipt_source} $(REDIRECT $redir_port TPROXY)
 
 						[ "$PROXY_IPV6" == "1" ] && [ "$PROXY_IPV6_UDP" == "1" ] && {
-							$ip6t_m -A PSW2 $(comment "$remarks") -p udp ${_ipt_source} $(dst $ipset_whitelist6) ! -d $FAKE_IP_6 -j RETURN
+							[ "${write_ipset_direct}" = "1" ] && $ip6t_m -A PSW2 $(comment "$remarks") -p udp ${_ipt_source} $(dst $ipset_whitelist6) ! -d $FAKE_IP_6 -j RETURN
 							$ip6t_m -A PSW2 $(comment "$remarks") -p udp ${_ipt_source} -d $FAKE_IP_6 -j PSW2_RULE 2>/dev/null
 							$ip6t_m -A PSW2 $(comment "$remarks") -p udp ${_ipt_source} $(factor $udp_redir_ports "-m multiport --dport") -j PSW2_RULE 2>/dev/null
 							$ip6t_m -A PSW2 $(comment "$remarks") -p udp ${_ipt_source} $(REDIRECT $redir_port TPROXY) 2>/dev/null
@@ -348,7 +350,7 @@ load_acl() {
 				[ "$TCP_NO_REDIR_PORTS" != "disable" ] && msg="${msg}除${TCP_NO_REDIR_PORTS}外的"
 				msg="${msg}所有端口"
 
-				$ipt_tmp -A PSW2 $(comment "默认") -p tcp $(dst $ipset_global_whitelist) ! -d $FAKE_IP -j RETURN
+				[ "${WRITE_IPSET_DIRECT}" = "1" ] && $ipt_tmp -A PSW2 $(comment "默认") -p tcp $(dst $ipset_global_whitelist) ! -d $FAKE_IP -j RETURN
 
 				[ "$accept_icmp" = "1" ] && {
 					$ipt_n -A PSW2 $(comment "默认") -p icmp -d $FAKE_IP $(REDIRECT)
@@ -370,7 +372,7 @@ load_acl() {
 				fi
 
 				[ "$PROXY_IPV6" == "1" ] && {
-					$ip6t_m -A PSW2 $(comment "默认") -p tcp $(dst $ipset_global_whitelist6) ! -d $FAKE_IP_6 -j RETURN
+					[ "${WRITE_IPSET_DIRECT}" = "1" ] && $ip6t_m -A PSW2 $(comment "默认") -p tcp $(dst $ipset_global_whitelist6) ! -d $FAKE_IP_6 -j RETURN
 					$ip6t_m -A PSW2 $(comment "默认") -p tcp -d $FAKE_IP_6 -j PSW2_RULE
 					$ip6t_m -A PSW2 $(comment "默认") -p tcp $(factor $TCP_REDIR_PORTS "-m multiport --dport") -j PSW2_RULE
 					$ip6t_m -A PSW2 $(comment "默认") -p tcp $(REDIRECT $REDIR_PORT TPROXY)
@@ -396,13 +398,13 @@ load_acl() {
 				[ "$UDP_NO_REDIR_PORTS" != "disable" ] && msg="${msg}除${UDP_NO_REDIR_PORTS}外的"
 				msg="${msg}所有端口"
 
-				$ipt_m -A PSW2 $(comment "默认") -p udp $(dst $ipset_global_whitelist) ! -d $FAKE_IP -j RETURN
+				[ "${WRITE_IPSET_DIRECT}" = "1" ] && $ipt_m -A PSW2 $(comment "默认") -p udp $(dst $ipset_global_whitelist) ! -d $FAKE_IP -j RETURN
 				$ipt_m -A PSW2 $(comment "默认") -p udp -d $FAKE_IP -j PSW2_RULE
 				$ipt_m -A PSW2 $(comment "默认") -p udp $(factor $UDP_REDIR_PORTS "-m multiport --dport") -j PSW2_RULE
 				$ipt_m -A PSW2 $(comment "默认") -p udp $(REDIRECT $REDIR_PORT TPROXY)
 
 				if [ "$PROXY_IPV6_UDP" == "1" ]; then
-					$ip6t_m -A PSW2 $(comment "默认") -p udp $(dst $ipset_global_whitelist6) ! -d $FAKE_IP_6 -j RETURN
+					[ "${WRITE_IPSET_DIRECT}" = "1" ] && $ip6t_m -A PSW2 $(comment "默认") -p udp $(dst $ipset_global_whitelist6) ! -d $FAKE_IP_6 -j RETURN
 					$ip6t_m -A PSW2 $(comment "默认") -p udp -d $FAKE_IP_6 -j PSW2_RULE
 					$ip6t_m -A PSW2 $(comment "默认") -p udp $(factor $UDP_REDIR_PORTS "-m multiport --dport") -j PSW2_RULE
 					$ip6t_m -A PSW2 $(comment "默认") -p udp $(REDIRECT $REDIR_PORT TPROXY)
@@ -621,7 +623,7 @@ add_firewall_rule() {
 	$ipt_n -N PSW2_OUTPUT
 	$ipt_n -A PSW2_OUTPUT $(dst $IPSET_LANLIST) -j RETURN
 	$ipt_n -A PSW2_OUTPUT $(dst $IPSET_VPSLIST) -j RETURN
-	$ipt_n -A PSW2_OUTPUT $(dst $ipset_global_whitelist) ! -d $FAKE_IP -j RETURN
+	[ "${WRITE_IPSET_DIRECT}" = "1" ] && $ipt_n -A PSW2_OUTPUT $(dst $ipset_global_whitelist) ! -d $FAKE_IP -j RETURN
 	$ipt_n -A PSW2_OUTPUT -m mark --mark 0xff -j RETURN
 
 	$ipt_n -N PSW2_REDIRECT
@@ -659,7 +661,7 @@ add_firewall_rule() {
 			echolog "  - [$?]追加直连DNS到iptables：${dns_address}:${dns_port:-53}"
 		done
 	}
-	$ipt_m -A PSW2_OUTPUT $(dst $ipset_global_whitelist) ! -d $FAKE_IP -j RETURN
+	[ "${WRITE_IPSET_DIRECT}" = "1" ] && $ipt_m -A PSW2_OUTPUT $(dst $ipset_global_whitelist) ! -d $FAKE_IP -j RETURN
 	$ipt_m -A PSW2_OUTPUT -m mark --mark 0xff -j RETURN
 
 	ip rule add fwmark 1 lookup 100
@@ -674,7 +676,7 @@ add_firewall_rule() {
 		$ip6t_n -N PSW2_OUTPUT
 		$ip6t_n -A PSW2_OUTPUT $(dst $IPSET_LANLIST6) -j RETURN
 		$ip6t_n -A PSW2_OUTPUT $(dst $IPSET_VPSLIST6) -j RETURN
-		$ip6t_n -A PSW2_OUTPUT $(dst $ipset_global_whitelist6) ! -d $FAKE_IP_6 -j RETURN
+		[ "${WRITE_IPSET_DIRECT}" = "1" ] && $ip6t_n -A PSW2_OUTPUT $(dst $ipset_global_whitelist6) ! -d $FAKE_IP_6 -j RETURN
 		$ip6t_n -A PSW2_OUTPUT -m mark --mark 0xff -j RETURN
 	}
 
@@ -704,7 +706,7 @@ add_firewall_rule() {
 	$ip6t_m -A PSW2_OUTPUT -m mark --mark 0xff -j RETURN
 	$ip6t_m -A PSW2_OUTPUT $(dst $IPSET_LANLIST6) -j RETURN
 	$ip6t_m -A PSW2_OUTPUT $(dst $IPSET_VPSLIST6) -j RETURN
-	$ip6t_m -A PSW2_OUTPUT $(dst $ipset_global_whitelist6) ! -d $FAKE_IP_6 -j RETURN
+	[ "${WRITE_IPSET_DIRECT}" = "1" ] && $ip6t_m -A PSW2_OUTPUT $(dst $ipset_global_whitelist6) ! -d $FAKE_IP_6 -j RETURN
 
 	ip -6 rule add fwmark 1 table 100
 	ip -6 route add local ::/0 dev lo table 100

@@ -285,4 +285,8 @@ for k, v in pairs(nodes_table) do
 	end
 end
 
+o = s:option(Flag, "write_ipset_direct", translate("Direct DNS result write to IPSet"), translate("Perform the matching direct domain name rules into IP to IPSet/NFTSet, and then connect directly (not entering the core). Maybe conflict with some special circumstances."))
+o.default = "1"
+o:depends({ node = "default",  ['!reverse'] = true })
+
 return m
