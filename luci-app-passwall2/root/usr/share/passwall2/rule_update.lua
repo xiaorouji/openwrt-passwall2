@@ -64,7 +64,7 @@ local function fetch_geoip()
 						if nixio.fs.access(asset_location .. "geoip.dat") then
 							luci.sys.call(string.format("cp -f %s %s", asset_location .. "geoip.dat", "/tmp/geoip.dat"))
 							if luci.sys.call('sha256sum -c /tmp/geoip.dat.sha256sum > /dev/null 2>&1') == 0 then
-								log("geoip 版本一致，无需更新。")
+								log("The geoip version is consistent and does not need to be updated.")
 								return 1
 							end
 						end
@@ -74,10 +74,10 @@ local function fetch_geoip()
 								if luci.sys.call('sha256sum -c /tmp/geoip.dat.sha256sum > /dev/null 2>&1') == 0 then
 									luci.sys.call(string.format("mkdir -p %s && cp -f %s %s", asset_location, "/tmp/geoip.dat", asset_location .. "geoip.dat"))
 									reboot = 1
-									log("geoip 更新成功。")
+									log("geoip update successful.")
 									return 1
 								else
-									log("geoip 更新失败，请稍后再试。")
+									log("geoip update failed, please try again later.")
 								end
 								break
 							end
@@ -115,7 +115,7 @@ local function fetch_geosite()
 						if nixio.fs.access(asset_location .. "geosite.dat") then
 							luci.sys.call(string.format("cp -f %s %s", asset_location .. "geosite.dat", "/tmp/geosite.dat"))
 							if luci.sys.call('sha256sum -c /tmp/geosite.dat.sha256sum > /dev/null 2>&1') == 0 then
-								log("geosite 版本一致，无需更新。")
+								log("The geosite version is consistent and does not need to be updated.")
 								return 1
 							end
 						end
@@ -125,10 +125,10 @@ local function fetch_geosite()
 								if luci.sys.call('sha256sum -c /tmp/geosite.dat.sha256sum > /dev/null 2>&1') == 0 then
 									luci.sys.call(string.format("mkdir -p %s && cp -f %s %s", asset_location, "/tmp/geosite.dat", asset_location .. "geosite.dat"))
 									reboot = 1
-									log("geosite 更新成功。")
+									log("geosite updated successfully.")
 									return 1
 								else
-									log("geosite 更新失败，请稍后再试。")
+									log("Geosite update failed, please try again later.")
 								end
 								break
 							end
@@ -162,17 +162,17 @@ if geoip_update == 0 and geosite_update == 0 then
 	os.exit(0)
 end
 
-log("开始更新规则...")
+log("Start updating rules...")
 
 if tonumber(geoip_update) == 1 then
-	log("geoip 开始更新...")
+	log("geoip starts updating...")
 	local status = fetch_geoip()
 	os.remove("/tmp/geoip.dat")
 	os.remove("/tmp/geoip.dat.sha256sum")
 end
 
 if tonumber(geosite_update) == 1 then
-	log("geosite 开始更新...")
+	log("geosite starts updating...")
 	local status = fetch_geosite()
 	os.remove("/tmp/geosite.dat")
 	os.remove("/tmp/geosite.dat.sha256sum")
@@ -184,11 +184,11 @@ ucic:save(name)
 luci.sys.call("uci commit " .. name)
 
 if reboot == 1 then
-	log("重启服务，应用新的规则。")
+	log("Restart the service and apply the new rules.")
 	if use_nft == "1" then
 		luci.sys.call("sh /usr/share/" .. name .. "/nftables.sh flush_nftset > /dev/null 2>&1 &")
 	else
 		luci.sys.call("sh /usr/share/" .. name .. "/iptables.sh flush_ipset > /dev/null 2>&1 &")
 	end
 end
-log("规则更新完毕...")
+log("Rules updated...")
