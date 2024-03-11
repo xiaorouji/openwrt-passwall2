@@ -204,7 +204,7 @@ local function start()
 end
 
 local function stop()
-	cmd(string.format("top -bn1 | grep -v 'grep' | grep '%s/' | awk '{print $1}' | xargs kill -9 >/dev/null 2>&1", CONFIG_PATH))
+	cmd(string.format("/bin/busybox top -bn1 | grep -v 'grep' | grep '%s/' | awk '{print $1}' | xargs kill -9 >/dev/null 2>&1", CONFIG_PATH))
 	if nft_flag == "0" then
 		ipt("-D INPUT -j PSW2-SERVER 2>/dev/null")
 		ipt("-F PSW2-SERVER 2>/dev/null")
