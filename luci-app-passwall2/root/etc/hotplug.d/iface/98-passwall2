@@ -15,7 +15,7 @@
 		fi
 		echo $$ > ${LOCK_FILE}
 		
-		/etc/init.d/passwall2 restart
+		/etc/init.d/passwall2 restart >/dev/null 2>&1 &
 		echo "passwall2: restart when $INTERFACE ifup" > /dev/kmsg
 		
 		rm -rf ${LOCK_FILE}

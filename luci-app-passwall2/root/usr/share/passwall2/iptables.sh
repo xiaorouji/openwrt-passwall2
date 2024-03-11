@@ -208,6 +208,8 @@ load_acl() {
 			[ -s "${TMP_ACL_PATH}/${sid}/var_node" ] && node=$(cat ${TMP_ACL_PATH}/${sid}/var_node)
 			[ -s "${TMP_ACL_PATH}/${sid}/var_port" ] && redir_port=$(cat ${TMP_ACL_PATH}/${sid}/var_port)
 			[ -n "$node" ] && [ "$node" != "default" ] && node_remark=$(config_n_get $node remarks)
+
+			write_ipset_direct=${write_ipset_direct:-1}
 			
 			for i in $(cat ${TMP_ACL_PATH}/${sid}/rule_list); do
 				if [ -n "$(echo ${i} | grep '^iprange:')" ]; then
@@ -249,7 +251,7 @@ load_acl() {
 							msg2="${msg2}(REDIRECT:${redir_port})acting"
 						fi
 
-						$ipt_tmp -A PSW2 $(comment "$remarks") -p tcp ${_ipt_source} $(dst $ipset_whitelist) ! -d $FAKE_IP -j RETURN
+						[ "${write_ipset_direct}" = "1" ] && $ipt_tmp -A PSW2 $(comment "$remarks") -p tcp ${_ipt_source} $(dst $ipset_whitelist) ! -d $FAKE_IP -j RETURN
 
 						[ "$accept_icmp" = "1" ] && {
 							$ipt_n -A PSW2 $(comment "$remarks") -p icmp ${_ipt_source} -d $FAKE_IP $(REDIRECT)
@@ -277,7 +279,7 @@ load_acl() {
 							$ipt_m -A PSW2 $(comment "$remarks") -p tcp ${_ipt_source} $(REDIRECT $redir_port TPROXY)
 						fi
 						[ "$PROXY_IPV6" == "1" ] && {
-							$ip6t_m -A PSW2 $(comment "$remarks") -p tcp ${_ipt_source} $(dst $ipset_whitelist6) ! -d $FAKE_IP_6 -j RETURN
+							[ "${write_ipset_direct}" = "1" ] && $ip6t_m -A PSW2 $(comment "$remarks") -p tcp ${_ipt_source} $(dst $ipset_whitelist6) ! -d $FAKE_IP_6 -j RETURN
 							$ip6t_m -A PSW2 $(comment "$remarks") -p tcp ${_ipt_source} -d $FAKE_IP_6 -j PSW2_RULE 2>/dev/null
 							$ip6t_m -A PSW2 $(comment "$remarks") -p tcp ${_ipt_source} $(factor $tcp_redir_ports "-m multiport --dport") -j PSW2_RULE 2>/dev/null
 							$ip6t_m -A PSW2 $(comment "$remarks") -p tcp ${_ipt_source} $(REDIRECT $redir_port TPROXY) 2>/dev/null
@@ -302,13 +304,13 @@ load_acl() {
 						}
 						msg2="${msg2}All ports"
 
-						$ipt_m -A PSW2 $(comment "$remarks") -p udp ${_ipt_source} $(dst $ipset_whitelist) ! -d $FAKE_IP -j RETURN
+						[ "${write_ipset_direct}" = "1" ] && $ipt_m -A PSW2 $(comment "$remarks") -p udp ${_ipt_source} $(dst $ipset_whitelist) ! -d $FAKE_IP -j RETURN
 						$ipt_m -A PSW2 $(comment "$remarks") -p udp ${_ipt_source} -d $FAKE_IP -j PSW2_RULE
 						$ipt_m -A PSW2 $(comment "$remarks") -p udp ${_ipt_source} $(factor $udp_redir_ports "-m multiport --dport") -j PSW2_RULE
 						$ipt_m -A PSW2 $(comment "$remarks") -p udp ${_ipt_source} $(REDIRECT $redir_port TPROXY)
 
 						[ "$PROXY_IPV6" == "1" ] && [ "$PROXY_IPV6_UDP" == "1" ] && {
-							$ip6t_m -A PSW2 $(comment "$remarks") -p udp ${_ipt_source} $(dst $ipset_whitelist6) ! -d $FAKE_IP_6 -j RETURN
+							[ "${write_ipset_direct}" = "1" ] && $ip6t_m -A PSW2 $(comment "$remarks") -p udp ${_ipt_source} $(dst $ipset_whitelist6) ! -d $FAKE_IP_6 -j RETURN
 							$ip6t_m -A PSW2 $(comment "$remarks") -p udp ${_ipt_source} -d $FAKE_IP_6 -j PSW2_RULE 2>/dev/null
 							$ip6t_m -A PSW2 $(comment "$remarks") -p udp ${_ipt_source} $(factor $udp_redir_ports "-m multiport --dport") -j PSW2_RULE 2>/dev/null
 							$ip6t_m -A PSW2 $(comment "$remarks") -p udp ${_ipt_source} $(REDIRECT $redir_port TPROXY) 2>/dev/null
@@ -348,7 +350,7 @@ load_acl() {
 				[ "$TCP_NO_REDIR_PORTS" != "disable" ] && msg="${msg}remove${TCP_NO_REDIR_PORTS}outside"
 				msg="${msg}All ports"
 
-				$ipt_tmp -A PSW2 $(comment "default") -p tcp $(dst $ipset_global_whitelist) ! -d $FAKE_IP -j RETURN
+				[ "${WRITE_IPSET_DIRECT}" = "1" ] && $ipt_tmp -A PSW2 $(comment "default") -p tcp $(dst $ipset_global_whitelist) ! -d $FAKE_IP -j RETURN
 
 				[ "$accept_icmp" = "1" ] && {
 					$ipt_n -A PSW2 $(comment "default") -p icmp -d $FAKE_IP $(REDIRECT)
@@ -370,7 +372,7 @@ load_acl() {
 				fi
 
 				[ "$PROXY_IPV6" == "1" ] && {
-					$ip6t_m -A PSW2 $(comment "default") -p tcp $(dst $ipset_global_whitelist6) ! -d $FAKE_IP_6 -j RETURN
+					[ "${WRITE_IPSET_DIRECT}" = "1" ] && $ip6t_m -A PSW2 $(comment "default") -p tcp $(dst $ipset_global_whitelist6) ! -d $FAKE_IP_6 -j RETURN
 					$ip6t_m -A PSW2 $(comment "default") -p tcp -d $FAKE_IP_6 -j PSW2_RULE
 					$ip6t_m -A PSW2 $(comment "default") -p tcp $(factor $TCP_REDIR_PORTS "-m multiport --dport") -j PSW2_RULE
 					$ip6t_m -A PSW2 $(comment "default") -p tcp $(REDIRECT $REDIR_PORT TPROXY)
@@ -396,13 +398,13 @@ load_acl() {
 				[ "$UDP_NO_REDIR_PORTS" != "disable" ] && msg="${msg}remove${UDP_NO_REDIR_PORTS}outside"
 				msg="${msg}All ports"
 
-				$ipt_m -A PSW2 $(comment "default") -p udp $(dst $ipset_global_whitelist) ! -d $FAKE_IP -j RETURN
+				[ "${WRITE_IPSET_DIRECT}" = "1" ] && $ipt_m -A PSW2 $(comment "default") -p udp $(dst $ipset_global_whitelist) ! -d $FAKE_IP -j RETURN
 				$ipt_m -A PSW2 $(comment "default") -p udp -d $FAKE_IP -j PSW2_RULE
 				$ipt_m -A PSW2 $(comment "default") -p udp $(factor $UDP_REDIR_PORTS "-m multiport --dport") -j PSW2_RULE
 				$ipt_m -A PSW2 $(comment "default") -p udp $(REDIRECT $REDIR_PORT TPROXY)
 
 				if [ "$PROXY_IPV6_UDP" == "1" ]; then
-					$ip6t_m -A PSW2 $(comment "default") -p udp $(dst $ipset_global_whitelist6) ! -d $FAKE_IP_6 -j RETURN
+					[ "${WRITE_IPSET_DIRECT}" = "1" ] && $ip6t_m -A PSW2 $(comment "default") -p udp $(dst $ipset_global_whitelist6) ! -d $FAKE_IP_6 -j RETURN
 					$ip6t_m -A PSW2 $(comment "default") -p udp -d $FAKE_IP_6 -j PSW2_RULE
 					$ip6t_m -A PSW2 $(comment "default") -p udp $(factor $UDP_REDIR_PORTS "-m multiport --dport") -j PSW2_RULE
 					$ip6t_m -A PSW2 $(comment "default") -p udp $(REDIRECT $REDIR_PORT TPROXY)
@@ -529,7 +531,7 @@ filter_node() {
 		done
 !
 	else
-		#echolog "  - 普通节点（${proxy_type}）..."
+		#echolog "  - Ordinary node（${proxy_type}）..."
 		filter_rules "$proxy_node" "$stream"
 	fi
 }
@@ -576,16 +578,16 @@ add_firewall_rule() {
 	[ -n "$ISP_DNS" ] && {
 		#echolog "处理 ISP DNS 例外..."
 		for ispip in $ISP_DNS; do
-			ipset -! add $IPSET_LANLIST $ispip >/dev/null 2>&1 &
-			#echolog "  - 追加到白名单：${ispip}"
+			ipset -! add $IPSET_LANLIST $ispip
+			echolog "  - [$?]追加ISP IPv4 DNS到白名单：${ispip}"
 		done
 	}
 
 	[ -n "$ISP_DNS6" ] && {
 		#echolog "处理 ISP IPv6 DNS 例外..."
 		for ispip6 in $ISP_DNS6; do
-			ipset -! add $IPSET_LANLIST6 $ispip6 >/dev/null 2>&1 &
-			#echolog "  - 追加到白名单：${ispip6}"
+			ipset -! add $IPSET_LANLIST6 $ispip6
+			echolog "  - [$?]追加ISP IPv6 DNS到白名单：${ispip6}"
 		done
 	}
 	
@@ -621,7 +623,7 @@ add_firewall_rule() {
 	$ipt_n -N PSW2_OUTPUT
 	$ipt_n -A PSW2_OUTPUT $(dst $IPSET_LANLIST) -j RETURN
 	$ipt_n -A PSW2_OUTPUT $(dst $IPSET_VPSLIST) -j RETURN
-	$ipt_n -A PSW2_OUTPUT $(dst $ipset_global_whitelist) ! -d $FAKE_IP -j RETURN
+	[ "${WRITE_IPSET_DIRECT}" = "1" ] && $ipt_n -A PSW2_OUTPUT $(dst $ipset_global_whitelist) ! -d $FAKE_IP -j RETURN
 	$ipt_n -A PSW2_OUTPUT -m mark --mark 0xff -j RETURN
 
 	$ipt_n -N PSW2_REDIRECT
@@ -651,7 +653,15 @@ add_firewall_rule() {
 	$ipt_m -N PSW2_OUTPUT
 	$ipt_m -A PSW2_OUTPUT $(dst $IPSET_LANLIST) -j RETURN
 	$ipt_m -A PSW2_OUTPUT $(dst $IPSET_VPSLIST) -j RETURN
-	$ipt_m -A PSW2_OUTPUT $(dst $ipset_global_whitelist) ! -d $FAKE_IP -j RETURN
+	[ -n "$AUTO_DNS" ] && {
+		for auto_dns in $(echo $AUTO_DNS | tr ',' ' '); do
+			local dns_address=$(echo $auto_dns | awk -F '#' '{print $1}')
+			local dns_port=$(echo $auto_dns | awk -F '#' '{print $2}')
+			$ipt_m -A PSW2_OUTPUT -p udp -d ${dns_address} --dport ${dns_port:-53} -j RETURN
+			echolog "  - [$?]追加直连DNS到iptables：${dns_address}:${dns_port:-53}"
+		done
+	}
+	[ "${WRITE_IPSET_DIRECT}" = "1" ] && $ipt_m -A PSW2_OUTPUT $(dst $ipset_global_whitelist) ! -d $FAKE_IP -j RETURN
 	$ipt_m -A PSW2_OUTPUT -m mark --mark 0xff -j RETURN
 
 	ip rule add fwmark 1 lookup 100
@@ -666,7 +676,7 @@ add_firewall_rule() {
 		$ip6t_n -N PSW2_OUTPUT
 		$ip6t_n -A PSW2_OUTPUT $(dst $IPSET_LANLIST6) -j RETURN
 		$ip6t_n -A PSW2_OUTPUT $(dst $IPSET_VPSLIST6) -j RETURN
-		$ip6t_n -A PSW2_OUTPUT $(dst $ipset_global_whitelist6) ! -d $FAKE_IP_6 -j RETURN
+		[ "${WRITE_IPSET_DIRECT}" = "1" ] && $ip6t_n -A PSW2_OUTPUT $(dst $ipset_global_whitelist6) ! -d $FAKE_IP_6 -j RETURN
 		$ip6t_n -A PSW2_OUTPUT -m mark --mark 0xff -j RETURN
 	}
 
@@ -696,7 +706,7 @@ add_firewall_rule() {
 	$ip6t_m -A PSW2_OUTPUT -m mark --mark 0xff -j RETURN
 	$ip6t_m -A PSW2_OUTPUT $(dst $IPSET_LANLIST6) -j RETURN
 	$ip6t_m -A PSW2_OUTPUT $(dst $IPSET_VPSLIST6) -j RETURN
-	$ip6t_m -A PSW2_OUTPUT $(dst $ipset_global_whitelist6) ! -d $FAKE_IP_6 -j RETURN
+	[ "${WRITE_IPSET_DIRECT}" = "1" ] && $ip6t_m -A PSW2_OUTPUT $(dst $ipset_global_whitelist6) ! -d $FAKE_IP_6 -j RETURN
 
 	ip -6 rule add fwmark 1 table 100
 	ip -6 route add local ::/0 dev lo table 100
