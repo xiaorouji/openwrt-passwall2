@@ -1,5 +1,6 @@
 local api = require "luci.passwall2.api"
 local appname = api.appname
+local uci = api.uci
 local sys = api.sys
 
 local port_validate = function(self, value, t)
@@ -156,47 +157,50 @@ end
 sources.write = dynamicList_write
 
 ---- TCP No Redir Ports
+local TCP_NO_REDIR_PORTS = uci:get(appname, "@global_forwarding[0]", "tcp_no_redir_ports")
 o = s:option(Value, "tcp_no_redir_ports", translate("TCP No Redir Ports"))
 o.default = "default"
 o:value("disable", translate("No patterns are used"))
-o:value("default", translate("Default"))
+o:value("default", translate("Use global config") .. "(" .. TCP_NO_REDIR_PORTS .. ")")
 o:value("1:65535", translate("All"))
 o.validate = port_validate
 
 ---- UDP No Redir Ports
+local UDP_NO_REDIR_PORTS = uci:get(appname, "@global_forwarding[0]", "udp_no_redir_ports")
 o = s:option(Value, "udp_no_redir_ports", translate("UDP No Redir Ports"),
 	"<font color='red'>" ..
 	translate("If you don't want to let the device in the list to go proxy, please choose all.") ..
 	"</font>")
 o.default = "default"
 o:value("disable", translate("No patterns are used"))
-o:value("default", translate("Default"))
+o:value("default", translate("Use global config") .. "(" .. UDP_NO_REDIR_PORTS .. ")")
 o:value("1:65535", translate("All"))
 o.validate = port_validate
 
+node = s:option(ListValue, "node", "<a style='color: red'>" .. translate("Node") .. "</a>")
+node.default = "default"
+node:value("default", translate("Use global config"))
+for k, v in pairs(nodes_table) do
+	node:value(v.id, v["remark"])
+end
+
 ---- TCP Redir Ports
+local TCP_REDIR_PORTS = uci:get(appname, "@global_forwarding[0]", "tcp_redir_ports")
 o = s:option(Value, "tcp_redir_ports", translate("TCP Redir Ports"))
 o.default = "default"
-o:value("default", translate("Default"))
+o:value("default", translate("Use global config") .. "(" .. TCP_REDIR_PORTS .. ")")
 o:value("1:65535", translate("All"))
 o:value("22,25,53,143,465,587,853,993,995,80,443", translate("Common Use"))
 o:value("80,443", "80,443")
 o.validate = port_validate
 
 ---- UDP Redir Ports
+local UDP_REDIR_PORTS = uci:get(appname, "@global_forwarding[0]", "udp_redir_ports")
 o = s:option(Value, "udp_redir_ports", translate("UDP Redir Ports"))
 o.default = "default"
-o:value("default", translate("Default"))
+o:value("default", translate("Use global config") .. "(" .. UDP_REDIR_PORTS .. ")")
 o:value("1:65535", translate("All"))
 o.validate = port_validate
-
-node = s:option(ListValue, "node", "<a style='color: red'>" .. translate("Node") .. "</a>")
-node.default = "default"
-node:value("default", translate("Default"))
-
-for k, v in pairs(nodes_table) do
-	node:value(v.id, v["remark"])
-end
 
 o = s:option(ListValue, "remote_dns_protocol", translate("Remote DNS Protocol"))
 o:value("tcp", "TCP")
