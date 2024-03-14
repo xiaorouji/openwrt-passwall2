@@ -1122,6 +1122,7 @@ UDP_REDIR_PORTS=$(config_t_get global_forwarding udp_redir_ports '1:65535')
 TCP_PROXY_MODE="global"
 UDP_PROXY_MODE="global"
 LOCALHOST_PROXY=$(config_t_get global localhost_proxy '1')
+CLIENT_PROXY=$(config_t_get global client_proxy '1')
 REMOTE_DNS_PROTOCOL=$(config_t_get global remote_dns_protocol tcp)
 REMOTE_DNS_DETOUR=$(config_t_get global remote_dns_detour remote)
 REMOTE_DNS=$(config_t_get global remote_dns 1.1.1.1:53 | sed 's/#/:/g' | sed -E 's/\:([^:]+)$/#\1/g')

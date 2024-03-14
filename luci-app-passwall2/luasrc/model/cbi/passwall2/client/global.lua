@@ -211,6 +211,10 @@ o = s:taboption("Main", Flag, "localhost_proxy", translate("Localhost Proxy"), t
 o.default = "1"
 o.rmempty = false
 
+o = s:taboption("Main", Flag, "client_proxy", translate("Client Proxy"), translate("When selected, devices in LAN can transparent proxy. Otherwise, it will not be proxy. But you can still use access control to allow the designated device to proxy."))
+o.default = "1"
+o.rmempty = false
+
 node_socks_port = s:taboption("Main", Value, "node_socks_port", translate("Node") .. " Socks " .. translate("Listen Port"))
 node_socks_port.default = 1070
 node_socks_port.datatype = "port"

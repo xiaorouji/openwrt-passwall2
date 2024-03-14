@@ -335,7 +335,7 @@ load_acl() {
 		done
 	}
 	
-	[ "$ENABLED_DEFAULT_ACL" == 1 ] && {
+	[ "$ENABLED_DEFAULT_ACL" == 1 ] && [ "$CLIENT_PROXY" == 1 ] && {
 		#  加载默认代理模式
 		msg="【默认】，"
 		local ipt_tmp=$ipt_n
