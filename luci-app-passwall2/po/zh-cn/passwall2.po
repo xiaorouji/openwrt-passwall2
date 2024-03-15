@@ -91,6 +91,12 @@ msgstr "路由器本机代理"
 msgid "When selected, localhost can transparent proxy."
 msgstr "当勾选时，路由器本机可以透明代理。"
 
+msgid "Client Proxy"
+msgstr "客户端代理"
+
+msgid "When selected, devices in LAN can transparent proxy. Otherwise, it will not be proxy. But you can still use access control to allow the designated device to proxy."
+msgstr "当勾选时，局域网内的设备可以透明代理。否则，将不代理。但您仍然可以使用访问控制允许指定的设备代理。"
+
 msgid "Socks Config"
 msgstr "Socks配置"
 

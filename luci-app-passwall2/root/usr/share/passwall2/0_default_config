@@ -3,6 +3,7 @@ config global
 	option enabled '0'
 	option node_socks_port '1070'
 	option localhost_proxy '1'
+	option client_proxy '1'
 	option socks_enabled '0'
 	option acl_enable '0'
 	option node 'myshunt'
