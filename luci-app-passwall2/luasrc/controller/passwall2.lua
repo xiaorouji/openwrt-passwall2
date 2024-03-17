@@ -146,7 +146,7 @@ end
 
 function get_now_use_node()
 	local e = {}
-	local data, code, msg = nixio.fs.readfile("/tmp/etc/passwall2/id/global")
+	local data, code, msg = nixio.fs.readfile("/tmp/etc/passwall2/acl/default/global.id")
 	if data then
 		e["global"] = util.trim(data)
 	end
@@ -156,8 +156,10 @@ end
 
 function get_redir_log()
 	local id = luci.http.formvalue("id")
-	if nixio.fs.access("/tmp/etc/passwall2/" .. id .. ".log") then
-		local content = luci.sys.exec("cat /tmp/etc/passwall2/" .. id .. ".log")
+	local name = luci.http.formvalue("name")
+	local file_path = "/tmp/etc/passwall2/acl/" .. id .. "/" .. name .. ".log"
+	if nixio.fs.access(file_path) then
+		local content = luci.sys.exec("cat '" .. file_path .. "'")
 		content = content:gsub("\n", "<br />")
 		luci.http.write(content)
 	else
@@ -176,7 +178,7 @@ end
 
 function status()
 	local e = {}
-	e["global_status"] = luci.sys.call(string.format("/bin/busybox top -bn1 | grep -v -E 'grep|acl/|acl_' | grep '%s/bin/' | grep -i 'global\\.json' >/dev/null", appname)) == 0
+	e["global_status"] = luci.sys.call("/bin/busybox top -bn1 | grep -v 'grep' | grep '/tmp/etc/passwall2/bin/' | grep -v '_acl_' | grep 'global' >/dev/null") == 0
 	luci.http.prepare_content("application/json")
 	luci.http.write_json(e)
 end
