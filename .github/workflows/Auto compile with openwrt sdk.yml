@@ -140,7 +140,6 @@ jobs:
           echo "CONFIG_PACKAGE_luci-app-passwall2=m" >> .config
           echo "CONFIG_PACKAGE_luci-app-passwall2_Iptables_Transparent_Proxy=n" >> .config
           echo "CONFIG_PACKAGE_luci-app-passwall2_Nftables_Transparent_Proxy=n" >> .config
-          echo "CONFIG_PACKAGE_luci-app-passwall2_INCLUDE_Brook=n" >> .config
           echo "CONFIG_PACKAGE_luci-app-passwall2_INCLUDE_Haproxy=n" >> .config
           echo "CONFIG_PACKAGE_luci-app-passwall2_INCLUDE_Hysteria=n" >> .config
           echo "CONFIG_PACKAGE_luci-app-passwall2_INCLUDE_IPv6_Nat=n" >> .config
@@ -291,7 +290,6 @@ jobs:
           echo "CONFIG_PACKAGE_luci-app-passwall2=m" >> .config
           echo "CONFIG_PACKAGE_luci-app-passwall2_Iptables_Transparent_Proxy=y" >> .config
           echo "CONFIG_PACKAGE_luci-app-passwall2_Nftables_Transparent_Proxy=y" >> .config
-          echo "CONFIG_PACKAGE_luci-app-passwall2_INCLUDE_Brook=y" >> .config
           echo "CONFIG_PACKAGE_luci-app-passwall2_INCLUDE_Haproxy=y" >> .config
           echo "CONFIG_PACKAGE_luci-app-passwall2_INCLUDE_Hysteria=y" >> .config
           echo "CONFIG_PACKAGE_luci-app-passwall2_INCLUDE_IPv6_Nat=y" >> .config

@@ -51,7 +51,6 @@ config global_rules
 
 config global_app
 	option xray_file '/usr/bin/xray'
-	option brook_file '/usr/bin/brook'
 	option hysteria_file '/usr/bin/hysteria'
 	option singbox_file '/usr/bin/sing-box'
 

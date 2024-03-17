@@ -850,12 +850,6 @@ msgstr "%s 程序路径"
 msgid "%s Client App Path"
 msgstr "%s 客户端程序路径"
 
-msgid "Trojan-Go Version API"
-msgstr "Trojan-Go 版本 API"
-
-msgid "alternate API URL for version checking"
-msgstr "用于版本检查的 API URL"
-
 msgid "Node Subscribe"
 msgstr "节点订阅"
 
@@ -1065,12 +1059,6 @@ msgstr "插件名称"
 
 msgid "Plugin Arguments"
 msgstr "插件参数"
-
-msgid "Brook Protocol"
-msgstr "Brook协议"
-
-msgid "Use TLS"
-msgstr "使用TLS"
 
 msgid "Naiveproxy Protocol"
 msgstr "Naiveproxy协议"

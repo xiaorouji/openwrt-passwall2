@@ -561,21 +561,6 @@ run_socks() {
 		lua $UTIL_NAIVE gen_config -node $node -run_type socks -local_addr $bind -local_port $socks_port -server_host $server_host -server_port $port > $config_file
 		ln_run "$(first_type naive)" naive $log_file "$config_file"
 	;;
-	brook)
-		local protocol=$(config_n_get $node protocol client)
-		local prefix=""
-		[ "$protocol" == "wsclient" ] && {
-			prefix="ws://"
-			local brook_tls=$(config_n_get $node brook_tls 0)
-			[ "$brook_tls" == "1" ] && {
-				prefix="wss://"
-				protocol="wssclient"
-			}
-			local ws_path=$(config_n_get $node ws_path "/ws")
-		}
-		server_host=${prefix}${server_host}
-		ln_run "$(first_type $(config_t_get global_app brook_file) brook)" "brook_SOCKS_${flag}" $log_file "$protocol" --socks5 "$bind:$socks_port" -s "${server_host}:${port}${ws_path}" -p "$(config_n_get $node password)"
-	;;
 	ssr)
 		lua $UTIL_SS gen_config -node $node -local_addr "0.0.0.0" -local_port $socks_port -server_host $server_host -server_port $port > $config_file
 		ln_run "$(first_type ssr-local)" "ssr-local" $log_file -c "$config_file" -v -u
