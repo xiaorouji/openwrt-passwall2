@@ -61,6 +61,10 @@ if has_singbox or has_xray then
 	o.datatype = "port"
 end
 
+o = s:option(Flag, "log", translate("Enable") .. " " .. translate("Log"))
+o.default = 1
+o.rmempty = false
+
 o = s:option(Flag, "enable_autoswitch", translate("Auto Switch"))
 o.default = 0
 o.rmempty = false
