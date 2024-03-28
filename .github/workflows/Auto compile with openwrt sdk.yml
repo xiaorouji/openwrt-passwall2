@@ -11,13 +11,13 @@ on:
         description: 'SSH connection to Actions'
         required: false
         default: 'false'
-  push:
-    branches:
-      - 'main'
-    paths:
-      - 'luci-app-passwall2/Makefile'
+  #push:
+  #  branches:
+  #    - 'main'
+  #  paths:
+  #    - 'luci-app-passwall2/Makefile'
 env:
-  TZ: Asia/Shanghai
+  TZ: Asia/Jakarta
   passwall2: ${{ github.repository }}
   packages: xiaorouji/openwrt-passwall-packages
 
@@ -135,7 +135,7 @@ jobs:
           echo "CONFIG_ALL_KMODS=n" >> .config
           echo "CONFIG_ALL=n" >> .config
           echo "CONFIG_AUTOREMOVE=n" >> .config
-          echo "CONFIG_LUCI_LANG_zh_Hans=y" >> .config
+          echo "CONFIG_LUCI_LANG_zh_Hans=n" >> .config
 
           echo "CONFIG_PACKAGE_luci-app-passwall2=m" >> .config
           echo "CONFIG_PACKAGE_luci-app-passwall2_Iptables_Transparent_Proxy=n" >> .config
@@ -373,3 +373,22 @@ jobs:
           tag_name: ${{needs.job_check.outputs.passwall2_version}}
           body_path: ${{ env.FIRMWARE }}/release.txt
           files: ${{ env.FIRMWARE }}/upload/*
+
+      - name: Send Telegram Notification on New Release
+        uses: colutius/Telegram-Msg@main
+        with:
+          token: ${{ secrets.TELEGRAM_TOKEN }}
+          chatid: ${{ secrets.TELEGRAM_CHAT_ID }}
+          message: |
+            👇New Release Published!👇
+            
+            🚀openwrt-passwall2
+            👤Author: [${{ github.actor }}]
+            📄Tag: ${{needs.job_check.outputs.passwall2_version}}
+
+            📦Repository: ${{ github.repository }}
+          button: true
+          button_name: 👀DOWNLOAD👀
+          button_url: https://github.com/rtaserver/openwrt-passwall2/releases/latest
+          is_notify: true
+          is_preview: true
