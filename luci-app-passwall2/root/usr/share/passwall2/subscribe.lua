@@ -594,7 +594,9 @@ local function processData(szType, content, add_mode, add_from)
 			local params = {}
 			for _, v in pairs(split(query[2], '&')) do
 				local t = split(v, '=')
-				params[string.lower(t[1])] = UrlDecode(t[2])
+				if #t > 1 then
+					params[string.lower(t[1])] = UrlDecode(t[2])
+				end
 			end
 			-- [2001:4860:4860::8888]:443
 			-- 8.8.8.8:443
@@ -838,7 +840,9 @@ local function processData(szType, content, add_mode, add_from)
 		local params = {}
 		for _, v in pairs(split(query[2], '&')) do
 			local t = split(v, '=')
-			params[string.lower(t[1])] = UrlDecode(t[2])
+			if #t > 1 then
+				params[string.lower(t[1])] = UrlDecode(t[2])
+			end
 		end
 		-- [2001:4860:4860::8888]:443
 		-- 8.8.8.8:443
@@ -1186,7 +1190,8 @@ local function parse_link(raw, add_mode, add_from)
 							tinsert(node_list, result)
 						end
 					end
-				end, function ()
+				end, function (err)
+					--log(err)
 					log(v, "解析错误，跳过此节点。")
 				end
 			)
