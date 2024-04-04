@@ -818,7 +818,7 @@ add_firewall_rule() {
 
 			[ "$accept_icmpv6" = "1" ] && {
 				nft "add rule inet fw4 PSW2_ICMP_REDIRECT oif lo meta l4proto icmpv6 ip6 daddr $FAKE_IP_6 counter redirect"
-				nft "add rule inet fw4 PSW2_ICMP_REDIRECT oif lo meta l4proto counter redirect"
+				nft "add rule inet fw4 PSW2_ICMP_REDIRECT oif lo meta l4proto icmpv6 counter redirect"
 				nft "add rule inet fw4 PSW2_ICMP_REDIRECT oif lo meta l4proto icmpv6 counter return"
 			}
 
