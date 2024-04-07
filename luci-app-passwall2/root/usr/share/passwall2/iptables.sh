@@ -868,14 +868,19 @@ del_firewall_rule() {
 	ip -6 rule del fwmark 1 table 100 2>/dev/null
 	ip -6 route del local ::/0 dev lo table 100 2>/dev/null
 
-	$DIR/app.sh echolog "删除相关防火墙规则完成。"
+	$DIR/app.sh echolog "删除iptables防火墙规则完成。"
 }
 
 flush_ipset() {
-	del_firewall_rule
+	$DIR/app.sh echolog "清空 IPSET。"
 	for _name in $(ipset list | grep "Name: " | grep "passwall2_" | awk '{print $2}'); do
 		destroy_ipset ${_name}
 	done
+}
+
+flush_ipset_reload() {
+	del_firewall_rule
+	flush_ipset
 	rm -rf /tmp/singbox_passwall2_*
 	/etc/init.d/passwall2 reload
 }
@@ -987,6 +992,9 @@ insert_rule_after)
 	;;
 flush_ipset)
 	flush_ipset
+	;;
+flush_ipset_reload)
+	flush_ipset_reload
 	;;
 get_ipt_bin)
 	get_ipt_bin

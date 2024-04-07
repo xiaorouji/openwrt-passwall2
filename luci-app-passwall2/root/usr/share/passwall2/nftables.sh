@@ -918,14 +918,19 @@ del_firewall_rule() {
 	destroy_nftset $NFTSET_LANLIST6
 	destroy_nftset $NFTSET_VPSLIST6
 
-	$DIR/app.sh echolog "删除相关防火墙规则完成。"
+	$DIR/app.sh echolog "删除nftables防火墙规则完成。"
 }
 
 flush_nftset() {
-	del_firewall_rule
+	$DIR/app.sh echolog "清空 NFTSET。"
 	for _name in $(nft -a list sets | grep -E "passwall2" | awk -F 'set ' '{print $2}' | awk '{print $1}'); do
 		destroy_nftset ${_name}
 	done
+}
+
+flush_nftset_reload() {
+	del_firewall_rule
+	flush_nftset
 	rm -rf /tmp/singbox_passwall2_*
 	/etc/init.d/passwall2 reload
 }
@@ -1030,6 +1035,9 @@ insert_rule_after)
 	;;
 flush_nftset)
 	flush_nftset
+	;;
+flush_nftset_reload)
+	flush_nftset_reload
 	;;
 get_wan_ip)
 	get_wan_ip
