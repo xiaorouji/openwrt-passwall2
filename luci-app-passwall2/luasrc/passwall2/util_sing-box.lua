@@ -864,7 +864,7 @@ function gen_config(var)
 
 		table.insert(inbounds, inbound_tproxy)
 	end
-	
+
 	local default_outTag = nil
 
 	if node then
@@ -1307,7 +1307,7 @@ function gen_config(var)
 				path = "/tmp/singbox_passwall2_" .. flag .. ".db"
 			}
 		end
-	
+
 		if direct_dns_udp_server then
 			local domain = {}
 			local nodes_domain_text = sys.exec('uci show passwall2 | grep ".address=" | cut -d "\'" -f 2 | grep "[a-zA-Z]$" | sort -u')
@@ -1320,16 +1320,16 @@ function gen_config(var)
 					domain = domain
 				})
 			end
-	
+
 			local direct_strategy = "prefer_ipv6"
 			if direct_dns_query_strategy == "UseIPv4" then
 				direct_strategy = "ipv4_only"
 			elseif direct_dns_query_strategy == "UseIPv6" then
 				direct_strategy = "ipv6_only"
 			end
-	
+
 			local port = tonumber(direct_dns_udp_port) or 53
-	
+
 			table.insert(dns.servers, {
 				tag = "direct",
 				address = "udp://" .. direct_dns_udp_server .. ":" .. port,
@@ -1388,7 +1388,7 @@ function gen_config(var)
 				end
 			end
 		end
-	
+
 		table.insert(inbounds, {
 			type = "direct",
 			tag = "dns-in",
@@ -1430,7 +1430,7 @@ function gen_config(var)
 			end
 		end
 	end
-	
+
 	if inbounds or outbounds then
 		local config = {
 			log = {
@@ -1535,7 +1535,7 @@ function gen_proto_config(var)
 		}
 		if outbound then table.insert(outbounds, outbound) end
 	end
-	
+
 	local config = {
 		log = {
 			disabled = true,
@@ -1577,7 +1577,7 @@ function gen_dns_config(var)
 	local log = var["-log"] or "0"
 	local loglevel = var["-loglevel"] or "warn"
 	local logfile = var["-logfile"] or "/dev/null"
-	
+
 	local inbounds = {}
 	local outbounds = {}
 	local dns = nil
@@ -1625,21 +1625,21 @@ function gen_dns_config(var)
 				strategy = (dns_query_strategy and dns_query_strategy ~= "UseIP") and "ipv4_only" or "prefer_ipv6",
 				detour = out_tag,
 			}
-	
+
 			if remote_dns_udp_server then
 				local server_port = tonumber(remote_dns_udp_port) or 53
 				server.address = "udp://" .. remote_dns_udp_server .. ":" .. server_port
 			end
-	
+
 			if remote_dns_tcp_server then
 				local server_port = tonumber(remote_dns_tcp_port) or 53
 				server.address = "tcp://" .. remote_dns_tcp_server .. ":" .. server_port
 			end
-	
+
 			if remote_dns_doh_url then
 				server.address = remote_dns_doh_url
 			end
-	
+
 			table.insert(dns.servers, server)
 
 			route.final = out_tag
@@ -1658,21 +1658,21 @@ function gen_dns_config(var)
 				strategy = (dns_query_strategy and dns_query_strategy ~= "UseIP") and "ipv4_only" or "prefer_ipv6",
 				detour = out_tag,
 			}
-	
+
 			if direct_dns_udp_server then
 				local server_port = tonumber(direct_dns_udp_port) or 53
 				server.address = "udp://" .. direct_dns_udp_server .. ":" .. server_port
 			end
-	
+
 			if direct_dns_tcp_server then
 				local server_port = tonumber(direct_dns_tcp_port) or 53
 				server.address = "tcp://" .. direct_dns_tcp_server .. ":" .. server_port
 			end
-	
+
 			if direct_dns_doh_url then
 				server.address = direct_dns_doh_url
 			end
-	
+
 			table.insert(dns.servers, server)
 
 			route.final = out_tag
@@ -1685,12 +1685,12 @@ function gen_dns_config(var)
 			listen_port = tonumber(dns_listen_port),
 			sniff = true,
 		})
-	
+
 		table.insert(outbounds, {
 			type = "dns",
 			tag = "dns-out",
 		})
-	
+
 		table.insert(route.rules, 1, {
 			protocol = "dns",
 			inbound = {
@@ -1699,7 +1699,7 @@ function gen_dns_config(var)
 			outbound = "dns-out"
 		})
 	end
-	
+
 	if inbounds or outbounds then
 		local config = {
 			log = {
