@@ -14,7 +14,7 @@ config global
 	option remote_dns_query_strategy 'UseIPv4'
 	option dns_hosts 'cloudflare-dns.com 1.1.1.1
 dns.google.com 8.8.8.8'
-	option close_log '0'
+	option log_node '1'
 	option loglevel 'error'
 	
 config global_haproxy

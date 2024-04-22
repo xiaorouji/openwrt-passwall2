@@ -329,7 +329,8 @@ for k, v in pairs(nodes_table) do
 end
 
 s:tab("log", translate("Log"))
-o = s:taboption("log", Flag, "close_log", translate("Close Node Log"))
+o = s:taboption("log", Flag, "log_node", translate("Enable Node Log"))
+o.default = "1"
 o.rmempty = false
 
 loglevel = s:taboption("log", ListValue, "loglevel", translate("Log Level"))
