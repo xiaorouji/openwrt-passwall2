@@ -477,6 +477,13 @@ if singbox_tags:find("with_wireguard") then
 	o.default = "1420"
 	o:depends({ [option_name("protocol")] = "wireguard" })
 
+	o = s:option(Flag, option_name("wireguard_system_interface"), translate("System interface"))
+	o.default = 0
+	o:depends({ [option_name("protocol")] = "wireguard" })
+
+	o = s:option(Value, option_name("wireguard_interface_name"), translate("System interface name"))
+	o:depends({ [option_name("protocol")] = "wireguard" })
+
 	o = s:option(Value, option_name("wireguard_reserved"), translate("Reserved"), translate("Decimal numbers separated by \",\" or Base64-encoded strings."))
 	o:depends({ [option_name("protocol")] = "wireguard" })
 end
