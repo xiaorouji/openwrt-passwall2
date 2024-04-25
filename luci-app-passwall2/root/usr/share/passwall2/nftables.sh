@@ -632,6 +632,9 @@ add_firewall_rule() {
 
 	accept_icmp=$(config_t_get global_forwarding accept_icmp 0)
 	accept_icmpv6=$(config_t_get global_forwarding accept_icmpv6 0)
+	vpn_icmp_proxy=$(config_t_get global_forwarding vpn_icmp_proxy 0)
+	vpn_route_table=$(config_t_get global_forwarding vpn_route_table 0)
+	[ -z "$vpn_route_table" -o "$vpn_route_table" = "0" ] && vpn_icmp_proxy=0
 
 	local tcp_proxy_way=$(config_t_get global_forwarding tcp_proxy_way redirect)
 	if [ "$tcp_proxy_way" = "redirect" ]; then
@@ -729,6 +732,27 @@ add_firewall_rule() {
 	ip rule add fwmark 1 lookup 100
 	ip route add local 0.0.0.0/0 dev lo table 100
 
+	# 创建VPN路由策略
+	if [ -n "$vpn_icmp_proxy" -a "$vpn_icmp_proxy" != "0" ]; then
+		ip rule add fwmark 1 ipproto icmp lookup "$vpn_route_table" protocol 100
+		if [ -z "$(ip route show table all | grep "table $vpn_route_table")" -a "$vpn_route_table" != "main" ]; then
+			ip route add 0.0.0.0/0 dev "$vpn_icmp_proxy" table "$vpn_route_table" protocol 100
+		fi
+		nft "add chain inet fw4 PSW2_VPN_REDIRECT"
+		nft "flush chain inet fw4 PSW2_VPN_REDIRECT"
+		# 设置VPN代理ICMP
+		nft "add rule inet fw4 PSW2_VPN_REDIRECT ip daddr @$NFTSET_LANLIST counter return"
+		nft "add rule inet fw4 PSW2_VPN_REDIRECT ip daddr @$NFTSET_VPSLIST counter return"
+		[ "${WRITE_IPSET_DIRECT}" = "1" ] && nft "add rule inet fw4 PSW2_VPN_REDIRECT ip daddr @$nftset_global_whitelist counter return"
+		nft "add rule inet fw4 PSW2_VPN_REDIRECT ip protocol icmp meta mark set mark and 0x0 xor 0x1 counter"
+		[ "$PROXY_IPV6" == "1" ] && {
+			nft "add rule inet fw4 PSW2_VPN_REDIRECT ip6 daddr @$NFTSET_LANLIST6 counter return"
+			nft "add rule inet fw4 PSW2_VPN_REDIRECT ip6 daddr @$NFTSET_VPSLIST6 counter return"
+			[ "${WRITE_IPSET_DIRECT}" = "1" ] && nft "add rule inet fw4 PSW2_VPN_REDIRECT ip6 daddr @$nftset_global_whitelist6 counter return"
+			nft "add rule inet fw4 PSW2_VPN_REDIRECT meta l4proto icmpv6 meta mark set mark and 0x0 xor 0x1 counter"
+		}
+	fi
+
 	#ipv6 tproxy mode and udp
 	nft "add chain inet fw4 PSW2_MANGLE_V6"
 	nft "flush chain inet fw4 PSW2_MANGLE_V6"
@@ -754,6 +778,14 @@ add_firewall_rule() {
 
 		ip -6 rule add fwmark 1 table 100
 		ip -6 route add local ::/0 dev lo table 100
+
+		if [ -n "$vpn_icmp_proxy" -a "$vpn_icmp_proxy" != "0" ]; then
+			# 创建VPN路由策略
+			ip -6 rule add fwmark 1 ipproto ipv6-icmp lookup "$vpn_route_table" protocol 100
+			if [ -z "$(ip -6 route show table all | grep "table $vpn_route_table")" -a "$vpn_route_table" != "main" ]; then
+				ip -6 route add ::/0 dev "$vpn_icmp_proxy" table "$vpn_route_table" protocol 100
+			fi
+		fi
 	}
 	
 	# 过滤Socks节点
@@ -875,6 +907,12 @@ add_firewall_rule() {
 		nft "add rule inet fw4 PSW2_MANGLE_V6 meta l4proto udp udp dport 53 counter return"
 	}
 
+	# 添加VPN的ICMP代理勾子
+	if [ -n "$vpn_icmp_proxy" -a "$vpn_icmp_proxy" != "0" ]; then
+		nft "add rule inet fw4 mangle_prerouting meta l4proto {icmp,icmpv6} counter jump PSW2_VPN_REDIRECT"
+		nft "add rule inet fw4 mangle_output meta l4proto {icmp,icmpv6} counter jump PSW2_VPN_REDIRECT"
+	fi
+
 	#  加载ACLS
 	load_acl
 
@@ -911,6 +949,18 @@ del_firewall_rule() {
 
 	ip -6 rule del fwmark 1 table 100 2>/dev/null
 	ip -6 route del local ::/0 dev lo table 100 2>/dev/null
+
+	vpn_icmp_proxy=$(config_t_get global_forwarding vpn_icmp_proxy 0)
+	vpn_route_table=$(config_t_get global_forwarding vpn_route_table 0)
+	[ -z "$vpn_route_table" -o "$vpn_route_table" = "0" ] && vpn_icmp_proxy=0
+
+	# 删除VPN路由策略
+	if [ -n "$vpn_icmp_proxy" -a "$vpn_icmp_proxy" != "0" ]; then
+		ip rule del fwmark 1 ipproto icmp lookup "$vpn_route_table" protocol 100 2>/dev/null
+		ip route del 0.0.0.0/0 dev "$vpn_icmp_proxy" table "$vpn_route_table" protocol 100 2>/dev/null
+		ip -6 rule del fwmark 1 ipproto ipv6-icmp lookup "$vpn_route_table" protocol 100 2>/dev/null
+		ip -6 route del ::/0 dev "$vpn_icmp_proxy" table "$vpn_route_table" protocol 100 2>/dev/null
+	fi
 
 	destroy_nftset $NFTSET_LANLIST
 	destroy_nftset $NFTSET_VPSLIST
@@ -1001,6 +1051,11 @@ gen_include() {
 
 		nft "add rule inet fw4 mangle_output oif lo counter return comment \"PSW2_OUTPUT_MANGLE\""
 		nft "add rule inet fw4 mangle_output meta mark 1 counter return comment \"PSW2_OUTPUT_MANGLE\""
+
+		[ -n "$vpn_icmp_proxy" -a "$vpn_icmp_proxy" != "0" ] && {
+			nft "add rule inet fw4 mangle_prerouting meta l4proto {icmp,icmpv6} counter jump PSW2_VPN_REDIRECT"
+			nft "add rule inet fw4 mangle_output meta l4proto {icmp,icmpv6} counter jump PSW2_VPN_REDIRECT"
+		}
 	EOF
 	)
 

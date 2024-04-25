@@ -136,6 +136,13 @@ o = s:option(Flag, "accept_icmpv6", translate("Hijacking ICMPv6 (IPv6 PING)"))
 o:depends("ipv6_tproxy", true)
 o.default = 0
 
+o = s:option(Value, "vpn_icmp_proxy", translate("VPN interface for ICMP Proxy"), translate("Ping some IPs requires VPN proxy, leave blank to not proxy."))
+o:depends("use_nft", "1")
+
+o = s:option(Value, "vpn_route_table", translate("Route table number of VPN ICMP Proxy"), translate("If route table is empty, a default route will be created, and if not empty, it will not change."))
+o:depends("use_nft", "1")
+o.default = "51820"
+
 if has_xray then
 	s_xray = m:section(TypedSection, "global_xray", "Xray " .. translate("Settings"))
 	s_xray.anonymous = true

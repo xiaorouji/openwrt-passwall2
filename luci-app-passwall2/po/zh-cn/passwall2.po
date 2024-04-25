@@ -637,6 +637,18 @@ msgstr "劫持ICMP (PING)"
 msgid "Hijacking ICMPv6 (IPv6 PING)"
 msgstr "劫持ICMPv6 (IPv6 PING)"
 
+msgid "VPN interface for ICMP Proxy"
+msgstr "用于代理ICMP的VPN网卡"
+
+msgid "Ping some IPs requires VPN proxy, leave blank to not proxy."
+msgstr "某些IP的ping需要VPN代理，留空则不代理"
+
+msgid "Route table number of VPN ICMP Proxy"
+msgstr "VPN代理ICMP的路由表编号"
+
+msgid "If route table is empty, a default route will be created, and if not empty, it will not change."
+msgstr "若路由表为空则会创建默认路由，否则路由表不会改变"
+
 msgid "Sniffing"
 msgstr "流量嗅探"
 
