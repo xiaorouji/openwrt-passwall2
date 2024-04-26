@@ -637,6 +637,9 @@ msgstr "劫持ICMP (PING)"
 msgid "Hijacking ICMPv6 (IPv6 PING)"
 msgstr "劫持ICMPv6 (IPv6 PING)"
 
+msgid "ICMP proxy if available"
+msgstr "尝试代理ICMP"
+
 msgid "VPN interface for ICMP Proxy"
 msgstr "用于代理ICMP的VPN网卡"
 

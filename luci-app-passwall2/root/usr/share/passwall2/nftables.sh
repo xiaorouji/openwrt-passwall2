@@ -223,6 +223,7 @@ load_acl() {
 
 			tcp_no_redir_ports=${tcp_no_redir_ports:-default}
 			udp_no_redir_ports=${udp_no_redir_ports:-default}
+			icmp_proxy=${icmp_proxy:-1}
 			tcp_proxy_mode="global"
 			udp_proxy_mode="global"
 			node=${node:-default}
@@ -306,16 +307,21 @@ load_acl() {
 					[ "${write_ipset_direct}" = "1" ] && [ -z "${is_tproxy}" ] && nft "add rule inet fw4 PSW2_NAT ip protocol tcp ${_ipt_source} ip daddr @$nftset_whitelist counter return comment \"$remarks\""
 					[ "${write_ipset_direct}" = "1" ] && [ -n "${is_tproxy}" ] && nft "add rule inet fw4 PSW2_MANGLE ip protocol tcp ${_ipt_source} ip daddr @$nftset_whitelist counter return comment \"$remarks\""
 
-					[ "$accept_icmp" = "1" ] && {
-						nft "add rule inet fw4 PSW2_ICMP_REDIRECT ip protocol icmp ${_ipt_source} ip daddr $FAKE_IP $(REDIRECT) comment \"$remarks\""
-						nft "add rule inet fw4 PSW2_ICMP_REDIRECT ip protocol icmp ${_ipt_source} $(REDIRECT) comment \"$remarks\""
-						nft "add rule inet fw4 PSW2_ICMP_REDIRECT ip protocol icmp ${_ipt_source} return comment \"$remarks\""
-					}
+					[ "$icmp_proxy" = "1" ] && {
+						[ -n "$vpn_icmp_proxy" -a "$vpn_icmp_proxy" != "0" ] && {
+							nft "add rule inet fw4 PSW2_VPN_REDIRECT ip protocol icmp ${_ipt_source} meta mark set mark and 0x0 xor 0x1 counter comment \"$remarks\""
+							[ "$PROXY_IPV6" == "1" ] && nft "add rule inet fw4 PSW2_VPN_REDIRECT meta l4proto icmpv6 ${_ipt_source} meta mark set mark and 0x0 xor 0x1 counter comment \"$remarks\"" 2>/dev/null
+						}
 
-					[ "$accept_icmpv6" = "1" ] && [ "$PROXY_IPV6" == "1" ] && {
-						nft "add rule inet fw4 PSW2_ICMP_REDIRECT meta l4proto icmpv6 ${_ipt_source} ip6 daddr $FAKE_IP_6 $(REDIRECT) comment \"$remarks\"" 2>/dev/null
-						nft "add rule inet fw4 PSW2_ICMP_REDIRECT meta l4proto icmpv6 ${_ipt_source} $(REDIRECT) comment \"$remarks\"" 2>/dev/null
-						nft "add rule inet fw4 PSW2_ICMP_REDIRECT meta l4proto icmpv6 ${_ipt_source} return comment \"$remarks\"" 2>/dev/null
+						[ "$accept_icmp" = "1" ] && {
+							nft "add rule inet fw4 PSW2_ICMP_REDIRECT ip protocol icmp ${_ipt_source} ip daddr $FAKE_IP $(REDIRECT) comment \"$remarks\""
+							nft "add rule inet fw4 PSW2_ICMP_REDIRECT ip protocol icmp ${_ipt_source} $(REDIRECT) comment \"$remarks\""
+						}
+
+						[ "$accept_icmpv6" = "1" ] && [ "$PROXY_IPV6" == "1" ] && {
+							nft "add rule inet fw4 PSW2_ICMP_REDIRECT meta l4proto icmpv6 ${_ipt_source} ip6 daddr $FAKE_IP_6 $(REDIRECT) comment \"$remarks\"" 2>/dev/null
+							nft "add rule inet fw4 PSW2_ICMP_REDIRECT meta l4proto icmpv6 ${_ipt_source} $(REDIRECT) comment \"$remarks\"" 2>/dev/null
+						}
 					}
 
 					if [ -z "${is_tproxy}" ]; then
@@ -337,6 +343,13 @@ load_acl() {
 				}
 				nft "add rule inet fw4 $nft_prerouting_chain ip protocol tcp ${_ipt_source} counter return comment \"$remarks\""
 				nft "add rule inet fw4 PSW2_MANGLE_V6 meta l4proto tcp ${_ipt_source} counter return comment \"$remarks\"" 2>/dev/null
+
+				[ "$accept_icmp" = "1" ] && nft "add rule inet fw4 PSW2_ICMP_REDIRECT ip protocol icmp ${_ipt_source} counter return comment \"$remarks\""
+				[ "$accept_icmpv6" = "1" -a "$PROXY_IPV6" == "1" ] && nft "add rule inet fw4 PSW2_ICMP_REDIRECT meta l4proto icmpv6 ${_ipt_source} counter return comment \"$remarks\"" 2>/dev/null
+				[ -n "$vpn_icmp_proxy" -a "$vpn_icmp_proxy" != "0" ] && {
+					nft "add rule inet fw4 PSW2_VPN_REDIRECT ip protocol icmp ${_ipt_source} counter return comment \"$remarks\""
+					[ "$PROXY_IPV6" == "1" ] && nft "add rule inet fw4 PSW2_VPN_REDIRECT meta l4proto icmpv6 ${_ipt_source} counter return comment \"$remarks\"" 2>/dev/null
+				}
 
 				[ "$udp_proxy_mode" != "disable" ] && [ -n "$redir_port" ] && {
 					msg2="${msg}使用 UDP 节点[$node_remark](TPROXY:${redir_port})"
@@ -399,6 +412,11 @@ load_acl() {
 
 			[ "${WRITE_IPSET_DIRECT}" = "1" ] && [ -z "${is_tproxy}" ] && nft "add rule inet fw4 PSW2_NAT ip protocol tcp ip daddr @$nftset_global_whitelist counter return comment \"$remarks\""
 			[ "${WRITE_IPSET_DIRECT}" = "1" ] && [ -n "${is_tproxy}" ] && nft "add rule inet fw4 PSW2_MANGLE ip protocol tcp ip daddr @$nftset_global_whitelist counter return comment \"$remarks\""
+
+			[ -n "$vpn_icmp_proxy" -a "$vpn_icmp_proxy" != "0" ] && {
+				nft "add rule inet fw4 PSW2_VPN_REDIRECT ip protocol icmp meta mark set mark and 0x0 xor 0x1 counter comment \"默认\""
+				[ "$PROXY_IPV6" == "1" ] && nft "add rule inet fw4 PSW2_VPN_REDIRECT meta l4proto icmpv6 meta mark set mark and 0x0 xor 0x1 counter comment \"默认\""
+			}
 
 			[ "$accept_icmp" = "1" ] && {
 				nft "add rule inet fw4 PSW2_ICMP_REDIRECT ip protocol icmp ip daddr $FAKE_IP $(REDIRECT) comment \"默认\""
@@ -744,12 +762,10 @@ add_firewall_rule() {
 		nft "add rule inet fw4 PSW2_VPN_REDIRECT ip daddr @$NFTSET_LANLIST counter return"
 		nft "add rule inet fw4 PSW2_VPN_REDIRECT ip daddr @$NFTSET_VPSLIST counter return"
 		[ "${WRITE_IPSET_DIRECT}" = "1" ] && nft "add rule inet fw4 PSW2_VPN_REDIRECT ip daddr @$nftset_global_whitelist counter return"
-		nft "add rule inet fw4 PSW2_VPN_REDIRECT ip protocol icmp meta mark set mark and 0x0 xor 0x1 counter"
 		[ "$PROXY_IPV6" == "1" ] && {
 			nft "add rule inet fw4 PSW2_VPN_REDIRECT ip6 daddr @$NFTSET_LANLIST6 counter return"
 			nft "add rule inet fw4 PSW2_VPN_REDIRECT ip6 daddr @$NFTSET_VPSLIST6 counter return"
 			[ "${WRITE_IPSET_DIRECT}" = "1" ] && nft "add rule inet fw4 PSW2_VPN_REDIRECT ip6 daddr @$nftset_global_whitelist6 counter return"
-			nft "add rule inet fw4 PSW2_VPN_REDIRECT meta l4proto icmpv6 meta mark set mark and 0x0 xor 0x1 counter"
 		}
 	fi
 
