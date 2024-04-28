@@ -238,6 +238,10 @@ node_socks_port = s:taboption("Main", Value, "node_socks_port", translate("Node"
 node_socks_port.default = 1070
 node_socks_port.datatype = "port"
 
+node_socks_bind_local = s:taboption("Main", Flag, "node_socks_bind_local", translate("Node") .. " Socks " .. translate("Bind Local"), translate("When selected, it can only be accessed localhost."))
+node_socks_bind_local.default = "1"
+node_socks_bind_local:depends({ node = "nil", ["!reverse"] = true })
+
 s:tab("DNS", translate("DNS"))
 
 o = s:taboption("DNS", ListValue, "remote_dns_protocol", translate("Remote DNS Protocol"))
