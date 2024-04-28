@@ -710,10 +710,12 @@ add_firewall_rule() {
 		nft "flush chain inet fw4 PSW2_ICMP_REDIRECT"
 		nft "add rule inet fw4 PSW2_ICMP_REDIRECT ip daddr @$NFTSET_LANLIST counter return"
 		nft "add rule inet fw4 PSW2_ICMP_REDIRECT ip daddr @$NFTSET_VPSLIST counter return"
+		[ "${WRITE_IPSET_DIRECT}" = "1" ] && nft "add rule inet fw4 PSW2_ICMP_REDIRECT ip daddr @$nftset_global_whitelist counter return"
 
 		[ "$accept_icmpv6" = "1" ] && {
 			nft "add rule inet fw4 PSW2_ICMP_REDIRECT ip6 daddr @$NFTSET_LANLIST6 counter return"
 			nft "add rule inet fw4 PSW2_ICMP_REDIRECT ip6 daddr @$NFTSET_VPSLIST6 counter return"
+			[ "${WRITE_IPSET_DIRECT}" = "1" ] && nft "add rule inet fw4 PSW2_ICMP_REDIRECT ip6 daddr @$nftset_global_whitelist6 counter return"
 		}
 
 		nft "add rule inet fw4 dstnat meta l4proto {icmp,icmpv6} counter jump PSW2_ICMP_REDIRECT"
