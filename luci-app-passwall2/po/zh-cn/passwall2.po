@@ -1084,6 +1084,12 @@ msgstr "额外的对称加密密钥"
 msgid "Local Address"
 msgstr "本地地址"
 
+msgid "System interface"
+msgstr "系统接口"
+
+msgid "System interface name"
+msgstr "系统接口名称"
+
 msgid "Decimal numbers separated by \",\" or Base64-encoded strings."
 msgstr "用“,”隔开的十进制数字或 Base64 编码字符串。"
 
