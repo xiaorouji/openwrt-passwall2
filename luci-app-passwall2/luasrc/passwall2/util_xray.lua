@@ -633,11 +633,11 @@ function gen_config(var)
 			settings = {network = "tcp,udp", followRedirect = true},
 			streamSettings = {sockopt = {tproxy = "tproxy"}},
 			sniffing = {
-				enabled = xray_settings.sniffing == "1" or node.protocol == "_shunt",
+				enabled = xray_settings.sniffing_override_dest == "1" or node.protocol == "_shunt",
 				destOverride = {"http", "tls", "quic", (remote_dns_fake) and "fakedns"},
 				metadataOnly = false,
-				routeOnly = (xray_settings.sniffing == "1" and xray_settings.route_only == "1") or (xray_settings.sniffing == "0" and node.protocol == "_shunt"),
-				domainsExcluded = (xray_settings.sniffing == "1" and xray_settings.route_only == "0") and get_domain_excluded() or nil
+				routeOnly = node.protocol == "_shunt" and xray_settings.sniffing_override_dest ~= "1" or nil,
+				domainsExcluded = xray_settings.sniffing_override_dest == "1" and get_domain_excluded() or nil
 			}
 		}
 		local tcp_inbound = api.clone(inbound)
