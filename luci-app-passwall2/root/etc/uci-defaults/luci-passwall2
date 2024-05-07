@@ -31,10 +31,11 @@ uci -q batch <<-EOF >/dev/null
 	commit uhttpd
 EOF
 
-touch /etc/config/passwall2_show >/dev/null 2>&1
 [ ! -s "/etc/config/passwall2" ] && cp -f /usr/share/passwall2/0_default_config /etc/config/passwall2
 
 chmod +x /usr/share/passwall2/*.sh
+
+[ -e "/etc/config/passwall2_show" ] && rm -rf /etc/config/passwall2_show
 
 rm -f /tmp/luci-indexcache
 rm -rf /tmp/luci-modulecache/
