@@ -1099,6 +1099,7 @@ gen_include() {
 				nft "add rule inet fw4 srcnat oifname \"$vpn_icmp_proxy\" meta l4proto icmpv6 counter masquerade comment \"PSW2_VPN_REDIRECT\""
 			}
 		}
+		: set a success state return
 	EOF
 	)
 
