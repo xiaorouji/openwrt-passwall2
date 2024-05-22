@@ -692,9 +692,7 @@ function gen_config(var)
 				end
 			end
 		end
-		if fallback_node_id == "" then
-			fallback_node_id = nil
-		end
+		if fallback_node_id == "" then fallback_node_id = nil end
 		if fallback_node_id then
 			local is_new_node = true
 			for _, outbound in ipairs(outbounds) do
@@ -730,7 +728,7 @@ function gen_config(var)
 				fallbackTag = fallback_node_id,
 				strategy = { type = _node.balancingStrategy or "random" }
 			})
-			if _node.balancingStrategy == "leastPing" then
+			if _node.balancingStrategy == "leastPing" or fallback_node_id then
 				if not observatory then
 					observatory = {
 						subjectSelector = { "blc-" },
