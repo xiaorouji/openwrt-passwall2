@@ -975,8 +975,8 @@ del_firewall_rule() {
 	ip -6 rule del fwmark 1 table 100 2>/dev/null
 	ip -6 route del local ::/0 dev lo table 100 2>/dev/null
 
-	vpn_icmp_proxy=$(config_t_get global_forwarding vpn_icmp_proxy 0)
-	vpn_route_table=$(config_t_get global_forwarding vpn_route_table 0)
+	vpn_icmp_proxy=$(uci -q get "passwall2.@global_forwarding[0].vpn_icmp_proxy" 2>/dev/null)
+	vpn_route_table=$(uci -q get "passwall2.@global_forwarding[0].vpn_route_table" 2>/dev/null)
 	[ -z "$vpn_route_table" -o "$vpn_route_table" = "0" ] && vpn_icmp_proxy=0
 
 	# 删除VPN路由策略
