@@ -970,6 +970,7 @@ function gen_config(var)
 						if outboundTag and outboundTag ~= "nil" then
 							table.insert(dns_domain_rules, api.clone(domain_table))
 						end
+						if #domains == 0 then domains = nil end
 					end
 					local ip = nil
 					if e.ip_list then
@@ -978,6 +979,7 @@ function gen_config(var)
 							if w:find("#") == 1 then return end
 							table.insert(ip, w)
 						end)
+						if #ip == 0 then ip = nil end
 					end
 					local source = nil
 					if e.source then
