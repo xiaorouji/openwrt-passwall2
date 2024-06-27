@@ -1566,3 +1566,18 @@ msgstr "落地节点"
 
 msgid "Only support a layer of proxy."
 msgstr "仅支持一层代理。"
+
+msgid "Set the default domain resolution strategy for the sing-box node."
+msgstr "为 sing-box 节点设置默认的域名解析策略。"
+
+msgid "Prefer IPv4"
+msgstr "IPv4 优先"
+
+msgid "Prefer IPv6"
+msgstr "IPv6 优先"
+
+msgid "IPv4 Only"
+msgstr "仅 IPv4"
+
+msgid "IPv6 Only"
+msgstr "仅 IPv6"
