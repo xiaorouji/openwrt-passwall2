@@ -154,7 +154,10 @@ o:depends({ [option_name("reality")] = true })
 
 o = s:option(ListValue, option_name("alpn"), translate("alpn"))
 o.default = "h2,http/1.1"
+o:value("h3,h2,http/1.1")
+o:value("h3,h2")
 o:value("h2,http/1.1")
+o:value("h3")
 o:value("h2")
 o:value("http/1.1")
 o:depends({ [option_name("tls")] = true })
@@ -165,7 +168,6 @@ o:depends({ [option_name("tls")] = true })
 --o:depends({ [option_name("tls")] = true })
 
 -- [[ TLS部分 ]] --
-
 o = s:option(FileUpload, option_name("tls_certificateFile"), translate("Public key absolute path"), translate("as:") .. "/etc/ssl/fullchain.pem")
 o.default = m:get(s.section, "tls_certificateFile") or "/etc/config/ssl/" .. arg[1] .. ".pem"
 o:depends({ [option_name("tls")] = true, [option_name("reality")] = false })
@@ -203,6 +205,7 @@ o:value("ds", "DomainSocket")
 o:value("quic", "QUIC")
 o:value("grpc", "gRPC")
 o:value("httpupgrade", "HttpUpgrade")
+o:value("splithttp", "SplitHTTP")
 o:depends({ [option_name("protocol")] = "vmess" })
 o:depends({ [option_name("protocol")] = "vless" })
 o:depends({ [option_name("protocol")] = "socks" })
@@ -210,7 +213,6 @@ o:depends({ [option_name("protocol")] = "shadowsocks" })
 o:depends({ [option_name("protocol")] = "trojan" })
 
 -- [[ WebSocket部分 ]]--
-
 o = s:option(Value, option_name("ws_host"), translate("WebSocket Host"))
 o:depends({ [option_name("transport")] = "ws" })
 
@@ -226,12 +228,27 @@ o.placeholder = "/"
 o:depends({ [option_name("transport")] = "httpupgrade" })
 
 -- [[ HTTP/2部分 ]]--
-
 o = s:option(Value, option_name("h2_host"), translate("HTTP/2 Host"))
 o:depends({ [option_name("transport")] = "h2" })
 
 o = s:option(Value, option_name("h2_path"), translate("HTTP/2 Path"))
 o:depends({ [option_name("transport")] = "h2" })
+
+-- [[ SplitHTTP部分 ]]--
+o = s:option(Value, option_name("splithttp_host"), translate("SplitHTTP Host"))
+o:depends({ [option_name("transport")] = "splithttp" })
+
+o = s:option(Value, option_name("splithttp_path"), translate("SplitHTTP Path"))
+o.placeholder = "/"
+o:depends({ [option_name("transport")] = "splithttp" })
+
+o = s:option(Value, option_name("splithttp_maxuploadsize"), translate("maxUploadSize"))
+o.default = "1000000"
+o:depends({ [option_name("transport")] = "splithttp" })
+
+o = s:option(Value, option_name("splithttp_maxconcurrentuploads"), translate("maxConcurrentUploads"))
+o.default = "10"
+o:depends({ [option_name("transport")] = "splithttp" })
 
 -- [[ TCP部分 ]]--
 
@@ -250,7 +267,6 @@ o = s:option(DynamicList, option_name("tcp_guise_http_path"), translate("HTTP Pa
 o:depends({ [option_name("tcp_guise")] = "http" })
 
 -- [[ mKCP部分 ]]--
-
 o = s:option(ListValue, option_name("mkcp_guise"), translate("Camouflage Type"), translate('<br />none: default, no masquerade, data sent is packets with no characteristics.<br />srtp: disguised as an SRTP packet, it will be recognized as video call data (such as FaceTime).<br />utp: packets disguised as uTP will be recognized as bittorrent downloaded data.<br />wechat-video: packets disguised as WeChat video calls.<br />dtls: disguised as DTLS 1.2 packet.<br />wireguard: disguised as a WireGuard packet. (not really WireGuard protocol)'))
 for a, t in ipairs(header_type_list) do o:value(t) end
 o:depends({ [option_name("transport")] = "mkcp" })
@@ -286,7 +302,6 @@ o = s:option(Value, option_name("mkcp_seed"), translate("KCP Seed"))
 o:depends({ [option_name("transport")] = "mkcp" })
 
 -- [[ DomainSocket部分 ]]--
-
 o = s:option(Value, option_name("ds_path"), "Path", translate("A legal file path. This file must not exist before running."))
 o:depends({ [option_name("transport")] = "ds" })
 
