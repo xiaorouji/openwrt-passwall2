@@ -184,6 +184,9 @@ for k, v in pairs(nodes_table) do
 	node:value(v.id, v["remark"])
 end
 
+o = s:option(Flag, "icmp_proxy", translate("ICMP proxy if available"))
+o.default = 1
+
 ---- TCP Redir Ports
 local TCP_REDIR_PORTS = uci:get(appname, "@global_forwarding[0]", "tcp_redir_ports")
 o = s:option(Value, "tcp_redir_ports", translate("TCP Redir Ports"))
