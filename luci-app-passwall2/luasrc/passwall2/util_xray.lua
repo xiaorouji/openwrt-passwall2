@@ -577,13 +577,7 @@ function gen_config(var)
 
 	local xray_settings = uci:get_all(appname, "@global_xray[0]") or {}
 
-	local nodes = {}
-	if node_id then
-		local node = uci:get_all(appname, node_id)
-		if node then
-			nodes[node_id] = node
-		end
-	end
+	local node = node_id and uci:get_all(appname, node_id) or nil
 	local balancers = {}
 	local rules = {}
 
@@ -774,12 +768,11 @@ function gen_config(var)
 		return default_outTag
 	end
 
-	for k, v in pairs(nodes) do
+	if node then
 		if server_host and server_port then
-			v.address = server_host
-			v.port = server_port
+			node.address = server_host
+			node.port = server_port
 		end
-		local node = v
 		if node.protocol == "_shunt" then
 			local proxy_tag = "main"
 			local proxy_node_id = node["main_node"]
