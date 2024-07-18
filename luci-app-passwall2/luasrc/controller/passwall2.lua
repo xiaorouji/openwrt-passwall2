@@ -22,7 +22,7 @@ function index()
 	entry({"admin", "services", appname, "hide"}, call("hide_menu")).leaf = true
 	local e
 	if uci:get(appname, "@global[0]", "hide_from_luci") ~= "1" then
-		e = entry({"admin", "services", appname}, alias("admin", "services", appname, "settings"), _("Pass Wall"), -1)
+		e = entry({"admin", "services", appname}, alias("admin", "services", appname, "settings"), _("PassWall 2"), -1)
 	else
 		e = entry({"admin", "services", appname}, alias("admin", "services", appname, "settings"), nil, -1)
 	end
