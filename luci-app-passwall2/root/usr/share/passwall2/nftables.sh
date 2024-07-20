@@ -685,7 +685,8 @@ add_firewall_rule() {
 	nft "add rule inet fw4 PSW2_OUTPUT_MANGLE meta mark 0xff counter return"
 
 	# jump chains
-	nft "add rule inet fw4 mangle_prerouting meta nfproto {ipv4} counter jump PSW2_MANGLE"
+	nft "add rule inet fw4 mangle_prerouting ip protocol udp counter jump PSW2_MANGLE"
+	[ -n "${is_tproxy}" ] && nft "add rule inet fw4 mangle_prerouting ip protocol tcp counter jump PSW2_MANGLE"
 	insert_rule_before "inet fw4" "mangle_prerouting" "PSW2_MANGLE" "counter jump PSW2_DIVERT"
 
 	#ipv4 tcp redirect mode
@@ -978,14 +979,16 @@ gen_include() {
 			nft "add rule inet fw4 dstnat ip protocol tcp counter jump PSW2_NAT"
 			nft "add rule inet fw4 nat_output ip protocol tcp counter jump PSW2_OUTPUT_NAT"
 		}
+		
+		PR_INDEX=\$(sh ${MY_PATH} RULE_LAST_INDEX "inet fw4" PSW2_MANGLE WAN_IP_RETURN -1)
+		if [ \$PR_INDEX -ge 0 ]; then
+			WAN_IP=\$(sh ${MY_PATH} get_wan_ip)
+			[ ! -z "\${WAN_IP}" ] && nft "replace rule inet fw4 PSW2_MANGLE handle \$PR_INDEX ip daddr "\${WAN_IP}" counter return comment \"WAN_IP_RETURN\""
+		fi
+		nft "add rule inet fw4 mangle_prerouting ip protocol udp counter jump PSW2_MANGLE"
 
 		[ -n "${is_tproxy}" ] && {
-			PR_INDEX=\$(sh ${MY_PATH} RULE_LAST_INDEX "inet fw4" PSW2_MANGLE WAN_IP_RETURN -1)
-			if [ \$PR_INDEX -ge 0 ]; then
-				WAN_IP=\$(sh ${MY_PATH} get_wan_ip)
-				[ ! -z "\${WAN_IP}" ] && nft "replace rule inet fw4 PSW2_MANGLE handle \$PR_INDEX ip daddr "\${WAN_IP}" counter return comment \"WAN_IP_RETURN\""
-			fi
-			nft "add rule inet fw4 mangle_prerouting meta nfproto {ipv4} counter jump PSW2_MANGLE"
+			nft "add rule inet fw4 mangle_prerouting ip protocol tcp counter jump PSW2_MANGLE"
 			nft "add rule inet fw4 mangle_output ip protocol tcp counter jump PSW2_OUTPUT_MANGLE comment \"PSW2_OUTPUT_MANGLE\""
 		}
 		\$(sh ${MY_PATH} insert_rule_before "inet fw4" "mangle_prerouting" "PSW2_MANGLE" "counter jump PSW2_DIVERT")
