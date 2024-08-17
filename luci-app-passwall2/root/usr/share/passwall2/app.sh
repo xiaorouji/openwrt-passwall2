@@ -327,7 +327,7 @@ run_xray() {
 				set_flag=$(echo ${flag} | awk -F '_' '{print $2}')
 			}
 			if [ "${nftflag}" = "1" ]; then
-				local direct_nftset="4#inet#fw4#passwall2_${set_flag}_whitelist,6#inet#fw4#passwall2_${set_flag}_whitelist6"
+				local direct_nftset="4#inet#passwall2#passwall2_${set_flag}_whitelist,6#inet#passwall2#passwall2_${set_flag}_whitelist6"
 			else
 				local direct_ipset="passwall2_${set_flag}_whitelist,passwall2_${set_flag}_whitelist6"
 			fi
@@ -439,7 +439,7 @@ run_singbox() {
 				set_flag=$(echo ${flag} | awk -F '_' '{print $2}')
 			}
 			if [ "${nftflag}" = "1" ]; then
-				local direct_nftset="4#inet#fw4#passwall2_${set_flag}_whitelist,6#inet#fw4#passwall2_${set_flag}_whitelist6"
+				local direct_nftset="4#inet#passwall2#passwall2_${set_flag}_whitelist,6#inet#passwall2#passwall2_${set_flag}_whitelist6"
 			else
 				local direct_ipset="passwall2_${set_flag}_whitelist,passwall2_${set_flag}_whitelist6"
 			fi

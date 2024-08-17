@@ -95,8 +95,8 @@ add() {
 	local set_type="ipset"
 	[ "${NFTFLAG}" = "1" ] && {
 		set_type="nftset"
-		local setflag_4="4#inet#fw4#"
-		local setflag_6="6#inet#fw4#"
+		local setflag_4="4#inet#passwall2#"
+		local setflag_6="6#inet#passwall2#"
 	}
 	
 	#始终用国内DNS解析节点域名
