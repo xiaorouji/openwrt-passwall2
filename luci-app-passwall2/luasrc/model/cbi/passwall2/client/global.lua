@@ -244,6 +244,16 @@ node_socks_bind_local:depends({ node = "nil", ["!reverse"] = true })
 
 s:tab("DNS", translate("DNS"))
 
+o = s:taboption("DNS", ListValue, "direct_dns_query_strategy", translate("Direct Query Strategy"))
+o.default = "UseIP"
+o:value("UseIP")
+o:value("UseIPv4")
+o:value("UseIPv6")
+
+o = s:taboption("DNS", Flag, "write_ipset_direct", translate("Direct DNS result write to IPSet"), translate("Perform the matching direct domain name rules into IP to IPSet/NFTSet, and then connect directly (not entering the core). Maybe conflict with some special circumstances."))
+o.default = "1"
+o.rmempty = false
+
 o = s:taboption("DNS", ListValue, "remote_dns_protocol", translate("Remote DNS Protocol"))
 o:value("tcp", "TCP")
 o:value("doh", "DoH")
@@ -315,10 +325,6 @@ o.remove = function(self, section)
 	end
 end
 
-o = s:taboption("DNS", Flag, "write_ipset_direct", translate("Direct DNS result write to IPSet"), translate("Perform the matching direct domain name rules into IP to IPSet/NFTSet, and then connect directly (not entering the core). Maybe conflict with some special circumstances."))
-o.default = "1"
-o.rmempty = false
-
 o = s:taboption("DNS", Button, "clear_ipset", translate("Clear IPSet"), translate("Try this feature if the rule modification does not take effect."))
 o.inputstyle = "remove"
 function o.write(e, e)
@@ -331,6 +337,8 @@ for k, v in pairs(nodes_table) do
 		s.fields["remote_dns_client_ip"]:depends({ node = v.id, remote_dns_protocol = "tcp" })
 		s.fields["remote_dns_client_ip"]:depends({ node = v.id, remote_dns_protocol = "doh" })
 		s.fields["dns_hosts"]:depends({ node = v.id })
+	elseif v.type == "sing-box" then
+		s.fields["direct_dns_query_strategy"]:depends({ node = v.id })
 	end
 end
 
