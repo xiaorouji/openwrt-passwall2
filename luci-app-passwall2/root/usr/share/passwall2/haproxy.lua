@@ -220,3 +220,11 @@ f_out:write("\n" .. string.format(str, console_port, (console_user and console_u
 log(string.format("  * 控制台端口：%s", console_port))
 
 f_out:close()
+
+--内置健康检查URL
+if health_check_type == "passwall_logic" then
+	local probeUrl = uci:get(appname, "@global_haproxy[0]", "health_probe_url") or "https://www.google.com/generate_204"
+	local f_url = io.open(haproxy_path .. "/Probe_URL", "w")
+	f_url:write(probeUrl)
+	f_url:close()
+end
