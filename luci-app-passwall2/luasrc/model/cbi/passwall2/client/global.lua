@@ -337,8 +337,6 @@ for k, v in pairs(nodes_table) do
 		s.fields["remote_dns_client_ip"]:depends({ node = v.id, remote_dns_protocol = "tcp" })
 		s.fields["remote_dns_client_ip"]:depends({ node = v.id, remote_dns_protocol = "doh" })
 		s.fields["dns_hosts"]:depends({ node = v.id })
-	elseif v.type == "sing-box" then
-		s.fields["direct_dns_query_strategy"]:depends({ node = v.id })
 	end
 end
 

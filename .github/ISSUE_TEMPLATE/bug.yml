@@ -60,7 +60,7 @@ body:
       label: 系统相关信息
       description: 填写相关信息以便更好的确定问题
       placeholder: |
-        - Passwall版本：
+        - Passwall2版本：
         - 浏览器版本（如Chrome 96.0.4664.45 64位 正式版）：
         - 其他：
     validations:
