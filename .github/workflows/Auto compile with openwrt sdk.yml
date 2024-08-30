@@ -162,7 +162,7 @@ jobs:
         run: |
           cd sdk
           echo "make package/luci-app-passwall2/{clean,compile} -j$(nproc)"
-          make package/luci-app-passwall2/{clean,compile} -j$(nproc)
+          make package/luci-app-passwall2/{clean,compile} -j1
           mv bin/packages/x86_64/passwall2/ ../
           rm .config .config.old
           cd ../passwall2
