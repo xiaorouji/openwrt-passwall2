@@ -202,6 +202,17 @@ o:value("default", translate("Use global config") .. "(" .. UDP_REDIR_PORTS .. "
 o:value("1:65535", translate("All"))
 o.validate = port_validate
 
+o = s:option(ListValue, "direct_dns_query_strategy", translate("Direct Query Strategy"))
+o.default = "UseIP"
+o:value("UseIP")
+o:value("UseIPv4")
+o:value("UseIPv6")
+o:depends({ node = "default",  ['!reverse'] = true })
+
+o = s:option(Flag, "write_ipset_direct", translate("Direct DNS result write to IPSet"), translate("Perform the matching direct domain name rules into IP to IPSet/NFTSet, and then connect directly (not entering the core). Maybe conflict with some special circumstances."))
+o.default = "1"
+o:depends({ node = "default",  ['!reverse'] = true })
+
 o = s:option(ListValue, "remote_dns_protocol", translate("Remote DNS Protocol"))
 o:value("tcp", "TCP")
 o:value("doh", "DoH")
@@ -290,9 +301,5 @@ for k, v in pairs(nodes_table) do
 		s.fields["dns_hosts"]:depends({ node = v.id })
 	end
 end
-
-o = s:option(Flag, "write_ipset_direct", translate("Direct DNS result write to IPSet"), translate("Perform the matching direct domain name rules into IP to IPSet/NFTSet, and then connect directly (not entering the core). Maybe conflict with some special circumstances."))
-o.default = "1"
-o:depends({ node = "default",  ['!reverse'] = true })
 
 return m
