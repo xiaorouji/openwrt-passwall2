@@ -597,8 +597,8 @@ add_firewall_rule() {
 	
 	local ipset_global_whitelist="passwall2_global_whitelist"
 	local ipset_global_whitelist6="passwall2_global_whitelist6"
-	ipset -! create $ipset_global_whitelist nethash maxelem 1048576
-	ipset -! create $ipset_global_whitelist6 nethash family inet6 maxelem 1048576
+	ipset -! create $ipset_global_whitelist nethash maxelem 1048576 timeout 259200
+	ipset -! create $ipset_global_whitelist6 nethash family inet6 maxelem 1048576 timeout 259200
 
 	#  过滤所有节点IP
 	filter_vpsip > /dev/null 2>&1 &
