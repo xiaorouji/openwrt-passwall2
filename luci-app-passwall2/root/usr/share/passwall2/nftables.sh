@@ -271,8 +271,8 @@ load_acl() {
 				else
 					local nftset_whitelist="passwall2_${sid}_whitelist"
 					local nftset_whitelist6="passwall2_${sid}_whitelist6"
-					gen_nftset $nftset_whitelist ipv4_addr 0 0
-					gen_nftset $nftset_whitelist6 ipv6_addr 0 0
+					gen_nftset $nftset_whitelist ipv4_addr 3d 3d
+					gen_nftset $nftset_whitelist6 ipv6_addr 3d 3d
 				fi
 			}
 			
