@@ -757,6 +757,9 @@ msgstr "备用"
 msgid "Check update"
 msgstr "检查更新"
 
+msgid "Force update"
+msgstr "强制更新"
+
 msgid "Enable custom URL"
 msgstr "启用自定义规则地址"
 
@@ -834,6 +837,9 @@ msgstr "点击更新"
 
 msgid "Updating..."
 msgstr "更新中"
+
+msgid "Retry"
+msgstr "重试"
 
 msgid "Unexpected error"
 msgstr "意外错误"
