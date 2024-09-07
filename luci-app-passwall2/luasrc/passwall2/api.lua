@@ -789,7 +789,7 @@ function to_check(arch, app_name)
 
 	return {
 		code = 0,
-		has_update,
+		has_update = has_update,
 		local_version = local_version,
 		remote_version = remote_version,
 		html_url = json.html_url,
