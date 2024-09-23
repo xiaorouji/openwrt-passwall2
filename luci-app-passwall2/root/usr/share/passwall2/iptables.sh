@@ -222,25 +222,35 @@ load_acl() {
 				fi
 			}
 			
-			for i in $(cat ${TMP_ACL_PATH}/${sid}/rule_list); do
-				if [ -n "$(echo ${i} | grep '^iprange:')" ]; then
-					_iprange=$(echo ${i} | sed 's#iprange:##g')
-					_ipt_source=$(factor ${_iprange} "-m iprange --src-range")
-					msg="【$remarks】，IP range【${_iprange}】，"
-				elif [ -n "$(echo ${i} | grep '^ipset:')" ]; then
-					_ipset=$(echo ${i} | sed 's#ipset:##g')
-					_ipt_source="-m set --match-set ${_ipset} src"
-					msg="【$remarks】，IPset【${_ipset}】，"
-				elif [ -n "$(echo ${i} | grep '^ip:')" ]; then
-					_ip=$(echo ${i} | sed 's#ip:##g')
-					_ipt_source=$(factor ${_ip} "-s")
-					msg="【$remarks】，IP【${_ip}】，"
-				elif [ -n "$(echo ${i} | grep '^mac:')" ]; then
-					_mac=$(echo ${i} | sed 's#mac:##g')
-					_ipt_source=$(factor ${_mac} "-m mac --mac-source")
-					msg="【$remarks】，MAC【${_mac}】，"
+			_acl_list=${TMP_ACL_PATH}/${sid}/rule_list
+			[ $use_interface = "1" ] && _acl_list=${TMP_ACL_PATH}/${sid}/interface_list
+
+			for i in $(cat $_acl_list); do
+				if [ $use_interface = "0" ]; then
+					if [ -n "$(echo ${i} | grep '^iprange:')" ]; then
+						_iprange=$(echo ${i} | sed 's#iprange:##g')
+						_ipt_source=$(factor ${_iprange} "-m iprange --src-range")
+						msg="【$remarks】，IP range【${_iprange}】，"
+					elif [ -n "$(echo ${i} | grep '^ipset:')" ]; then
+						_ipset=$(echo ${i} | sed 's#ipset:##g')
+						_ipt_source="-m set --match-set ${_ipset} src"
+						msg="【$remarks】，IPset【${_ipset}】，"
+					elif [ -n "$(echo ${i} | grep '^ip:')" ]; then
+						_ip=$(echo ${i} | sed 's#ip:##g')
+						_ipt_source=$(factor ${_ip} "-s")
+						msg="【$remarks】，IP【${_ip}】，"
+					elif [ -n "$(echo ${i} | grep '^mac:')" ]; then
+						_mac=$(echo ${i} | sed 's#mac:##g')
+						_ipt_source=$(factor ${_mac} "-m mac --mac-source")
+						msg="【$remarks】，MAC【${_mac}】，"
+					else
+						continue
+					fi
 				else
-					continue
+					[ -z "${i}" ] && continue
+					_ifname="${i}"
+					_ipt_source="-i $_ifname"
+					msg="【$remarks】，IF【${_ifname}】，"
 				fi
 
 				ipt_tmp=$ipt_n
@@ -329,8 +339,8 @@ load_acl() {
 				$ipt_m -A PSW2 $(comment "$remarks") ${_ipt_source} -p udp -j RETURN
 				$ip6t_m -A PSW2 $(comment "$remarks") ${_ipt_source} -p udp -j RETURN 2>/dev/null
 			done
-			unset enabled sid remarks sources tcp_no_redir_ports udp_no_redir_ports tcp_redir_ports udp_redir_ports node
-			unset _ip _mac _iprange _ipset _ip_or_mac rule_list node_remark
+			unset enabled sid remarks sources tcp_no_redir_ports udp_no_redir_ports tcp_redir_ports udp_redir_ports node use_interface interface
+			unset _ip _mac _iprange _ipset _ip_or_mac rule_list node_remark _acl_list
 			unset ipt_tmp msg msg2
 		done
 	}
