@@ -408,7 +408,7 @@ if singbox_tags:find("with_ech") then
 	o:depends({ [option_name("protocol")] = "hysteria" })
 	o:depends({ [option_name("protocol")] = "hysteria2" })
 
-	o = s:option(Value, option_name("ech_config"), translate("ECH Config"))
+	o = s:option(DynamicList, option_name("ech_config"), translate("ECH Config"))
 	o.default = ""
 	o:depends({ [option_name("ech")] = true })
 
