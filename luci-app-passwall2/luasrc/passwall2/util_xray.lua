@@ -885,7 +885,11 @@ function gen_config(var)
 							local outbound = gen_outbound(flag, _node, rule_name, proxy_table)
 							if outbound then
 								set_outbound_detour(_node, outbound, outbounds, rule_name)
-								table.insert(outbounds, outbound)
+								if rule_name == "default" then
+									table.insert(outbounds, 1, outbound)
+								else
+									table.insert(outbounds, outbound)
+								end
 								rule_outboundTag = rule_name
 							end
 						end
