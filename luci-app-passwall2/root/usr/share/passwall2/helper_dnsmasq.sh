@@ -90,7 +90,7 @@ add() {
 	eval_set_val $@
 	_LOG_FILE=$LOG_FILE
 	[ -n "$NO_LOGIC_LOG" ] && LOG_FILE="/dev/null"
-	mkdir -p "${TMP_DNSMASQ_PATH}" "${DNSMASQ_PATH}" "/tmp/dnsmasq.d"
+	mkdir -p "${TMP_DNSMASQ_PATH}" "${DNSMASQ_PATH}" "${DNSMASQ_CONF_DIR}"
 	
 	local set_type="ipset"
 	[ "${NFTFLAG}" = "1" ] && {
@@ -119,7 +119,7 @@ add() {
 }
 
 del() {
-	rm -rf /tmp/dnsmasq.d/dnsmasq-$CONFIG.conf
+	rm -rf $DNSMASQ_CONF_DIR/dnsmasq-$CONFIG.conf
 	rm -rf $DNSMASQ_PATH/dnsmasq-$CONFIG.conf
 	rm -rf $TMP_DNSMASQ_PATH
 }

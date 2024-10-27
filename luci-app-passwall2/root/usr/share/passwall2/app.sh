@@ -14,7 +14,8 @@ TMP_ACL_PATH=$TMP_PATH/acl
 TMP_IFACE_PATH=$TMP_PATH/iface
 TMP_PATH2=/tmp/etc/${CONFIG}_tmp
 DNSMASQ_PATH=/etc/dnsmasq.d
-TMP_DNSMASQ_PATH=/tmp/dnsmasq.d/passwall2
+DNSMASQ_CONF_DIR=/tmp/dnsmasq.d
+TMP_DNSMASQ_PATH=${DNSMASQ_CONF_DIR}/${CONFIG}
 LOG_FILE=/tmp/log/$CONFIG.log
 APP_PATH=/usr/share/$CONFIG
 RULES_PATH=/usr/share/${CONFIG}/rules
@@ -282,6 +283,17 @@ lua_api() {
 		return
 	}
 	echo $(lua -e "local api = require 'luci.passwall2.api' print(api.${func})")
+}
+
+get_dnsmasq_conf_dir() {
+	local dnsmasq_conf_path=$(grep -l "^conf-dir=" /tmp/etc/dnsmasq.conf.${DEFAULT_DNSMASQ_CFGID})
+	[ -n "$dnsmasq_conf_path" ] && {
+		local dnsmasq_conf_dir=$(grep '^conf-dir=' "$dnsmasq_conf_path" | cut -d'=' -f2 | head -n 1)
+		[ -n "$dnsmasq_conf_dir" ] && {
+			DNSMASQ_CONF_DIR=${dnsmasq_conf_dir%*/}
+			TMP_DNSMASQ_PATH=${DNSMASQ_CONF_DIR}/${CONFIG}
+		}
+	}
 }
 
 run_xray() {
@@ -688,7 +700,7 @@ run_global() {
 	echolog ${msg}
 
 	source $APP_PATH/helper_dnsmasq.sh stretch
-	source $APP_PATH/helper_dnsmasq.sh add TMP_DNSMASQ_PATH=$TMP_DNSMASQ_PATH DNSMASQ_CONF_FILE=/tmp/dnsmasq.d/dnsmasq-passwall2.conf DEFAULT_DNS=$AUTO_DNS LOCAL_DNS=$LOCAL_DNS TUN_DNS=$TUN_DNS NFTFLAG=${nftflag:-0}
+	source $APP_PATH/helper_dnsmasq.sh add TMP_DNSMASQ_PATH=$TMP_DNSMASQ_PATH DNSMASQ_CONF_FILE=${DNSMASQ_CONF_DIR}/dnsmasq-${CONFIG}.conf DEFAULT_DNS=$AUTO_DNS LOCAL_DNS=$LOCAL_DNS TUN_DNS=$TUN_DNS NFTFLAG=${nftflag:-0}
 
 	V2RAY_CONFIG=$TMP_ACL_PATH/default/global.json
 	V2RAY_LOG=$TMP_ACL_PATH/default/global.log
@@ -1177,6 +1189,8 @@ PROXY_IPV6=$(config_t_get global_forwarding ipv6_tproxy 0)
 
 XRAY_BIN=$(first_type $(config_t_get global_app xray_file) xray)
 SINGBOX_BIN=$(first_type $(config_t_get global_app singbox_file) sing-box)
+
+get_dnsmasq_conf_dir
 
 export V2RAY_LOCATION_ASSET=$(config_t_get global_rules v2ray_location_asset "/usr/share/v2ray/")
 export XRAY_LOCATION_ASSET=$V2RAY_LOCATION_ASSET
