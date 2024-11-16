@@ -53,7 +53,7 @@ o.rewrite_option = o.option
 o = s:option(Value, option_name("down_mbps"), translate("Max download Mbps"))
 o.rewrite_option = o.option
 
-o = s:option(Value, option_name("hop_interval"), translate("Hop Interval"))
+o = s:option(Value, option_name("hop_interval"), translate("Hop Interval"), translate("Example:") .. "30s (≥5s)")
 o.rewrite_option = o.option
 
 o = s:option(Value, option_name("recv_window"), translate("QUIC stream receive window"))
@@ -62,7 +62,7 @@ o.rewrite_option = o.option
 o = s:option(Value, option_name("recv_window_conn"), translate("QUIC connection receive window"))
 o.rewrite_option = o.option
 
-o = s:option(Value, option_name("idle_timeout"), translate("Idle Timeout"))
+o = s:option(Value, option_name("idle_timeout"), translate("Idle Timeout"), translate("Example:") .. "30s (4s-120s)")
 o.rewrite_option = o.option
 
 o = s:option(Flag, option_name("disable_mtu_discovery"), translate("Disable MTU detection"))
