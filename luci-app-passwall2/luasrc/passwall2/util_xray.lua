@@ -110,6 +110,15 @@ function gen_outbound(flag, node, tag, proxy_table)
 			end
 		end
 
+		if node.type == "Xray" and node.transport == "xhttp" then
+			if node.xhttp_download_tls and node.xhttp_download_tls == "1" then
+				node.xhttp_download_stream_security = "tls"
+				if node.xhttp_download_reality and node.xhttp_download_reality == "1" then
+					node.xhttp_download_stream_security = "reality"
+				end
+			end
+		end
+
 		if node.protocol == "wireguard" and node.wireguard_reserved then
 			local bytes = {}
 			if not node.wireguard_reserved:match("[^%d,]+") then
@@ -159,7 +168,7 @@ function gen_outbound(flag, node, tag, proxy_table)
 					spiderX = node.reality_spiderX or "/",
 					fingerprint = (node.type == "Xray" and node.fingerprint and node.fingerprint ~= "") and node.fingerprint or "chrome"
 				} or nil,
-				tcpSettings = (node.transport == "tcp" and node.protocol ~= "socks") and {
+				rawSettings = ((node.transport == "raw" or node.transport == "tcp") and node.protocol ~= "socks") and {
 					header = {
 						type = node.tcp_guise or "none",
 						request = (node.tcp_guise == "http") and {
@@ -213,9 +222,35 @@ function gen_outbound(flag, node, tag, proxy_table)
 					path = node.httpupgrade_path or "/",
 					host = node.httpupgrade_host
 				} or nil,
-				splithttpSettings = (node.transport == "splithttp") and {
-					path = node.splithttp_path or "/",
-					host = node.splithttp_host
+				xhttpSettings = (node.transport == "xhttp" or node.transport == "splithttp") and {
+					path = node.xhttp_path or node.splithttp_path or "/",
+					host = node.xhttp_host or node.splithttp_host,
+					downloadSettings = (node.xhttp_download == "1") and {
+						address = node.xhttp_download_address,
+						port = tonumber(node.xhttp_download_port),
+						network = "xhttp",
+						xhttpSettings = {
+							path = node.xhttp_download_path,
+							host = node.xhttp_download_host,
+						},
+						security = node.xhttp_download_stream_security,
+						tlsSettings = (node.xhttp_download_stream_security == "tls") and {
+							serverName = node.xhttp_download_tls_serverName,
+							allowInsecure = false,
+							fingerprint = (node.xhttp_download_utls == "1" and
+								node.xhttp_download_fingerprint and
+								node.xhttp_download_fingerprint ~= "") and node.xhttp_download_fingerprint or nil
+						} or nil,
+						realitySettings = (node.xhttp_download_stream_security == "reality") and {
+							serverName = node.xhttp_download_tls_serverName,
+							publicKey = node.xhttp_download_reality_publicKey,
+							shortId = node.xhttp_download_reality_shortId or "",
+							spiderX = node.xhttp_download_reality_spiderX or "/",
+							fingerprint = (
+								node.xhttp_download_fingerprint and
+								node.xhttp_download_fingerprint ~= "") and node.xhttp_download_fingerprint or nil
+						} or nil,
+					} or nil
 				} or nil,
 			} or nil,
 			settings = {
@@ -280,6 +315,41 @@ function gen_outbound(flag, node, tag, proxy_table)
 				result.streamSettings.tlsSettings.alpn = alpn
 			end
 		end
+
+		local alpn_download = {}
+		if node.xhttp_download_alpn and node.xhttp_download_alpn ~= "default" then
+			string.gsub(node.xhttp_download_alpn, '[^' .. "," .. ']+', function(w)
+				table.insert(alpn_download, w)
+			end)
+		end
+		if alpn_download and #alpn_download > 0 then
+			if result.streamSettings.xhttpSettings.downloadSettings.tlsSettings then
+				result.streamSettings.xhttpSettings.downloadSettings.tlsSettings.alpn = alpn_download
+			end
+		end
+
+		local xmux = {}
+		if (node.xhttp_xmux == "1") then
+			xmux.maxConcurrency = node.maxConcurrency and (string.find(node.maxConcurrency, "-") and node.maxConcurrency or tonumber(node.maxConcurrency)) or 0
+			xmux.maxConnections = node.maxConnections and (string.find(node.maxConnections, "-") and node.maxConnections or tonumber(node.maxConnections)) or 0
+			xmux.cMaxReuseTimes = node.cMaxReuseTimes and (string.find(node.cMaxReuseTimes, "-") and node.cMaxReuseTimes or tonumber(node.cMaxReuseTimes)) or 0
+			xmux.cMaxLifetimeMs = node.cMaxLifetimeMs and (string.find(node.cMaxLifetimeMs, "-") and node.cMaxLifetimeMs or tonumber(node.cMaxLifetimeMs)) or 0
+			if result.streamSettings.xhttpSettings then
+				result.streamSettings.xhttpSettings.xmux = xmux
+			end
+		end
+
+		local xmux_download = {}
+		if (node.xhttp_download_xmux == "1") then
+			xmux_download.maxConcurrency = node.download_maxConcurrency and (string.find(node.download_maxConcurrency, "-") and node.download_maxConcurrency or tonumber(node.download_maxConcurrency)) or 0
+			xmux_download.maxConnections = node.download_maxConnections and (string.find(node.download_maxConnections, "-") and node.download_maxConnections or tonumber(node.download_maxConnections)) or 0
+			xmux_download.cMaxReuseTimes = node.download_cMaxReuseTimes and (string.find(node.download_cMaxReuseTimes, "-") and node.download_cMaxReuseTimes or tonumber(node.download_cMaxReuseTimes)) or 0
+			xmux_download.cMaxLifetimeMs = node.download_cMaxLifetimeMs and (string.find(node.download_cMaxLifetimeMs, "-") and node.download_cMaxLifetimeMs or tonumber(node.download_cMaxLifetimeMs)) or 0
+			if result.streamSettings.xhttpSettings.downloadSettings.xhttpSettings then
+				result.streamSettings.xhttpSettings.downloadSettings.xhttpSettings.xmux = xmux_download
+			end
+		end
+
 	end
 	return result
 end
@@ -447,7 +517,7 @@ function gen_config_server(node)
 							}
 						}
 					} or nil,
-					tcpSettings = (node.transport == "tcp") and {
+					rawSettings = (node.transport == "raw" or node.transport == "tcp") and {
 						header = {
 							type = node.tcp_guise,
 							request = (node.tcp_guise == "http") and {
