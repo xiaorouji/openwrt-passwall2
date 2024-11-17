@@ -210,7 +210,7 @@ local api = require "luci.passwall2.api"
 					v_transport = "http";
 					params += opt.query("host", dom_prefix + "h2_host");
 					params += opt.query("path", dom_prefix + "h2_path");
-				} else if (v_transport === "tcp") {
+				} else if (v_transport === "raw" || v_transport === "tcp") {
 					params += opt.query("headerType", dom_prefix + "tcp_guise");
 					params += opt.query("host", dom_prefix + "tcp_guise_http_host");
 					params += opt.query("path", dom_prefix + "tcp_guise_http_path");
@@ -300,7 +300,7 @@ local api = require "luci.passwall2.api"
 			} else if (v_transport === "h2") {
 				info.host = opt.get(dom_prefix + "h2_host").value;
 				info.path = opt.get(dom_prefix + "h2_path").value;
-			} else if (v_transport === "tcp") {
+			} else if (v_transport === "raw" || v_transport === "tcp") {
 				info.type = opt.get(dom_prefix + "tcp_guise").value;
 				if (info.type === "http") {
 					info.host = opt.get(dom_prefix + "tcp_guise_http_host").value;
@@ -349,7 +349,7 @@ local api = require "luci.passwall2.api"
 				v_transport = "http";
 				params += opt.query("host", dom_prefix + "h2_host");
 				params += opt.query("path", dom_prefix + "h2_path");
-			} else if (v_transport === "tcp") {
+			} else if (v_transport === "raw" || v_transport === "tcp") {
 				params += opt.query("headerType", dom_prefix + "tcp_guise");
 				params += opt.query("host", dom_prefix + "tcp_guise_http_host");
 				params += opt.query("path", dom_prefix + "tcp_guise_http_path");
@@ -364,12 +364,7 @@ local api = require "luci.passwall2.api"
 				params += opt.query("path", dom_prefix + "grpc_serviceName");
 				params += opt.query("serviceName", dom_prefix + "grpc_serviceName");
 				params += opt.query("mode", dom_prefix + "grpc_mode");
-			} else if (v_transport === "splithttp") {
-				v_transport = "splithttp";
-				params += opt.query("host", dom_prefix + "splithttp_host");
-				params += opt.query("path", dom_prefix + "splithttp_path");
 			} else if (v_transport === "xhttp") {
-				v_transport = "xhttp";
 				params += opt.query("host", dom_prefix + "xhttp_host");
 				params += opt.query("path", dom_prefix + "xhttp_path");
 			}
@@ -423,7 +418,7 @@ local api = require "luci.passwall2.api"
 				v_transport = "http";
 				params += opt.query("host", dom_prefix + "h2_host");
 				params += opt.query("path", dom_prefix + "h2_path");
-			} else if (v_transport === "tcp") {
+			} else if (v_transport === "raw" || v_transport === "tcp") {
 				params += opt.query("headerType", dom_prefix + "tcp_guise");
 				params += opt.query("host", dom_prefix + "tcp_guise_http_host");
 				params += opt.query("path", dom_prefix + "tcp_guise_http_path");
@@ -800,7 +795,7 @@ local api = require "luci.passwall2.api"
 					if (queryParam.type === "h2" || queryParam.type === "http")
 						queryParam.type = "h2"
 					opt.set(dom_prefix + 'transport', queryParam.type);
-					if (queryParam.type === "tcp") {
+					if (queryParam.type === "raw" || queryParam.type === "tcp") {
 						opt.set(dom_prefix + 'tcp_guise', queryParam.headerType || "none");
 						if (queryParam.headerType && queryParam.headerType != "none") {
 							opt.set(dom_prefix + 'tcp_guise_http_host', queryParam.host || "");
@@ -909,7 +904,7 @@ local api = require "luci.passwall2.api"
 			if (queryParam.type === "h2" || queryParam.type === "http")
 				queryParam.type = "h2"
 			opt.set(dom_prefix + 'transport', queryParam.type);
-			if (queryParam.type === "tcp") {
+			if (queryParam.type === "raw" || queryParam.type === "tcp") {
 				opt.set(dom_prefix + 'tcp_guise', queryParam.headerType || "none");
 				if (queryParam.headerType && queryParam.headerType != "none") {
 					opt.set(dom_prefix + 'tcp_guise_http_host', queryParam.host || "");
@@ -989,7 +984,7 @@ local api = require "luci.passwall2.api"
 			if (ssm.net === "kcp" || ssm.net === "mkcp")
 				ssm.net = "mkcp"
 			opt.set(dom_prefix + 'transport', ssm.net);
-			if (ssm.net === "tcp") {
+			if (ssm.net === "raw") {
 				opt.set(dom_prefix + 'tcp_guise', (ssm.host && ssm.path) ? "http" : "none");
 				if (ssm.host && ssm.path) {
 					opt.set(dom_prefix + 'tcp_guise_http_host', ssm.host);
@@ -1097,7 +1092,7 @@ local api = require "luci.passwall2.api"
 			if (queryParam.type === "h2" || queryParam.type === "http")
 				queryParam.type = "h2"
 			opt.set(dom_prefix + 'transport', queryParam.type);
-			if (queryParam.type === "tcp") {
+			if (queryParam.type === "raw" || queryParam.type === "tcp") {
 				opt.set(dom_prefix + 'tcp_guise', queryParam.headerType || "none");
 				if (queryParam.headerType && queryParam.headerType != "none") {
 					opt.set(dom_prefix + 'tcp_guise_http_host', queryParam.host || "");
@@ -1136,10 +1131,7 @@ local api = require "luci.passwall2.api"
 			} else if (queryParam.type === "grpc") {
 				opt.set(dom_prefix + 'grpc_serviceName', (queryParam.serviceName || queryParam.path) || "");
 				opt.set(dom_prefix + 'grpc_mode', queryParam.mode);
-			} else if (queryParam.type === "splithttp") {
-				opt.set(dom_prefix + 'splithttp_host', queryParam.host || "");
-				opt.set(dom_prefix + 'splithttp_path', queryParam.path || "");
-			} else if (queryParam.type === "xhttp") {
+			} else if (queryParam.type === "xhttp" || queryParam.type === "splithttp") {
 				opt.set(dom_prefix + 'xhttp_host', queryParam.host || "");
 				opt.set(dom_prefix + 'xhttp_path', queryParam.path || "");
 			}

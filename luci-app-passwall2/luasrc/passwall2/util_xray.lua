@@ -264,7 +264,7 @@ function gen_outbound(flag, node, tag, proxy_table)
 								level = 0,
 								security = (node.protocol == "vmess") and node.security or nil,
 								encryption = node.encryption or "none",
-								flow = (node.protocol == "vless" and node.tls == '1' and node.flow) and node.flow or nil
+								flow = (node.protocol == "vless" and node.tls == "1" and node.transport == "raw" and node.flow and node.flow ~= "") and node.flow or nil
 							}
 						}
 					}
@@ -367,7 +367,7 @@ function gen_config_server(node)
 			for i = 1, #node.uuid do
 				clients[i] = {
 					id = node.uuid[i],
-					flow = ("vless" == node.protocol and "1" == node.tls and node.flow) and node.flow or nil
+					flow = ("vless" == node.protocol and "1" == node.tls and "raw" == node.transport and node.flow and node.flow ~= "") and node.flow or nil
 				}
 			end
 			settings = {
@@ -561,11 +561,11 @@ function gen_config_server(node)
 						path = node.httpupgrade_path or "/",
 						host = node.httpupgrade_host
 					} or nil,
-					splithttpSettings = (node.transport == "splithttp") and {
-						path = node.splithttp_path or "/",
-						host = node.splithttp_host,
-						maxUploadSize = node.splithttp_maxuploadsize,
-						maxConcurrentUploads = node.splithttp_maxconcurrentuploads
+					xhttpSettings = (node.transport == "xhttp") and {
+						path = node.xhttp_path or "/",
+						host = node.xhttp_host,
+						maxUploadSize = node.xhttp_maxuploadsize,
+						maxConcurrentUploads = node.xhttp_maxconcurrentuploads
 					} or nil,
 					sockopt = {
 						acceptProxyProtocol = (node.acceptProxyProtocol and node.acceptProxyProtocol == "1") and true or false
