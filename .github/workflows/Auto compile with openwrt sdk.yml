@@ -124,7 +124,7 @@ jobs:
           ./scripts/feeds update -a
           echo "CONFIG_PACKAGE_luci-app-passwall2=m" > .config
           ./scripts/feeds install -d n luci-app-passwall2
-          make package/luci-app-passwall2/download -j8 || make package/luci-app-passwall2/download -j1
+          make package/luci-app-passwall2/download -j1
 
       - name: Update passwall2 feeds
         if: steps.cache-sdk.outputs.cache-hit == 'true'
@@ -296,7 +296,7 @@ jobs:
       - name: ${{ matrix.platform }} download
         run: |
           cd sdk
-          make download -j8
+          make download -j1
           find dl -size -1024c -exec ls -l {} \;
 
       - name: ${{ matrix.platform }} compile
@@ -305,7 +305,7 @@ jobs:
           cd sdk
           for package in $(ls feeds/passwall_packages); do
               if [ -d "feeds/passwall_packages/$package" ]; then
-                  make package/feeds/passwall_packages/$package/compile -j$(nproc) 2>/dev/null || make package/feeds/passwall_packages/$package/compile -j1 2>/dev/null
+                  make package/feeds/passwall_packages/$package/compile -j1 2>/dev/null
               fi
           done
 
