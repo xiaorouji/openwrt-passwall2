@@ -11,11 +11,6 @@ on:
         description: 'SSH connection to Actions'
         required: false
         default: 'false'
-  push:
-    branches:
-      - 'main'
-    paths:
-      - 'luci-app-passwall2/Makefile'
 env:
   TZ: Asia/Shanghai
   passwall2: ${{ github.repository }}
@@ -85,11 +80,11 @@ jobs:
         include:
           - sdk_ver: 21.02
             luci_ver: 19.07
-            sdk_url: https://downloads.openwrt.org/releases/21.02.5/targets/x86/64/openwrt-sdk-21.02.5-x86-64_gcc-8.4.0_musl.Linux-x86_64.tar.xz
+            sdk_url: https://downloads.openwrt.org/releases/21.02.7/targets/x86/64/openwrt-sdk-21.02.7-x86-64_gcc-8.4.0_musl.Linux-x86_64.tar.xz
 
           - sdk_ver: 23.05
             luci_ver: 23.05
-            sdk_url: https://downloads.openwrt.org/releases/23.05.0/targets/x86/64/openwrt-sdk-23.05.0-x86-64_gcc-12.3.0_musl.Linux-x86_64.tar.xz
+            sdk_url: https://downloads.openwrt.org/releases/23.05.5/targets/x86/64/openwrt-sdk-23.05.5-x86-64_gcc-12.3.0_musl.Linux-x86_64.tar.xz
     steps:
       - name: Install packages
         run: |
@@ -178,55 +173,55 @@ jobs:
       matrix:
         include:
           - platform: x86_64
-            url_sdk: https://downloads.openwrt.org/releases/23.05.0/targets/x86/64/openwrt-sdk-23.05.0-x86-64_gcc-12.3.0_musl.Linux-x86_64.tar.xz
+            url_sdk: https://downloads.openwrt.org/releases/23.05.5/targets/x86/64/openwrt-sdk-23.05.5-x86-64_gcc-12.3.0_musl.Linux-x86_64.tar.xz
 
           - platform: aarch64_generic
-            url_sdk: https://downloads.openwrt.org/releases/23.05.0/targets/rockchip/armv8/openwrt-sdk-23.05.0-rockchip-armv8_gcc-12.3.0_musl.Linux-x86_64.tar.xz
+            url_sdk: https://downloads.openwrt.org/releases/23.05.5/targets/rockchip/armv8/openwrt-sdk-23.05.5-rockchip-armv8_gcc-12.3.0_musl.Linux-x86_64.tar.xz
 
           - platform: aarch64_cortex-a53
-            url_sdk: https://downloads.openwrt.org/releases/23.05.0/targets/mvebu/cortexa53/openwrt-sdk-23.05.0-mvebu-cortexa53_gcc-12.3.0_musl.Linux-x86_64.tar.xz
+            url_sdk: https://downloads.openwrt.org/releases/23.05.5/targets/mvebu/cortexa53/openwrt-sdk-23.05.5-mvebu-cortexa53_gcc-12.3.0_musl.Linux-x86_64.tar.xz
 
           - platform: aarch64_cortex-a72
-            url_sdk: https://downloads.openwrt.org/releases/23.05.0/targets/mvebu/cortexa72/openwrt-sdk-23.05.0-mvebu-cortexa72_gcc-12.3.0_musl.Linux-x86_64.tar.xz
+            url_sdk: https://downloads.openwrt.org/releases/23.05.5/targets/mvebu/cortexa72/openwrt-sdk-23.05.5-mvebu-cortexa72_gcc-12.3.0_musl.Linux-x86_64.tar.xz
 
           - platform: arm_cortex-a7
-            url_sdk: https://downloads.openwrt.org/releases/23.05.0/targets/mediatek/mt7629/openwrt-sdk-23.05.0-mediatek-mt7629_gcc-12.3.0_musl_eabi.Linux-x86_64.tar.xz
+            url_sdk: https://downloads.openwrt.org/releases/23.05.5/targets/mediatek/mt7629/openwrt-sdk-23.05.5-mediatek-mt7629_gcc-12.3.0_musl_eabi.Linux-x86_64.tar.xz
 
           - platform: arm_cortex-a7_neon-vfpv4
-            url_sdk: https://downloads.openwrt.org/releases/23.05.0/targets/sunxi/cortexa7/openwrt-sdk-23.05.0-sunxi-cortexa7_gcc-12.3.0_musl_eabi.Linux-x86_64.tar.xz
+            url_sdk: https://downloads.openwrt.org/releases/23.05.5/targets/sunxi/cortexa7/openwrt-sdk-23.05.5-sunxi-cortexa7_gcc-12.3.0_musl_eabi.Linux-x86_64.tar.xz
 
           - platform: arm_cortex-a8_vfpv3
-            url_sdk: https://downloads.openwrt.org/releases/23.05.0/targets/sunxi/cortexa8/openwrt-sdk-23.05.0-sunxi-cortexa8_gcc-12.3.0_musl_eabi.Linux-x86_64.tar.xz
+            url_sdk: https://downloads.openwrt.org/releases/23.05.5/targets/sunxi/cortexa8/openwrt-sdk-23.05.5-sunxi-cortexa8_gcc-12.3.0_musl_eabi.Linux-x86_64.tar.xz
 
           - platform: arm_cortex-a9
-            url_sdk: https://downloads.openwrt.org/releases/23.05.0/targets/bcm53xx/generic/openwrt-sdk-23.05.0-bcm53xx-generic_gcc-12.3.0_musl_eabi.Linux-x86_64.tar.xz
+            url_sdk: https://downloads.openwrt.org/releases/23.05.5/targets/bcm53xx/generic/openwrt-sdk-23.05.5-bcm53xx-generic_gcc-12.3.0_musl_eabi.Linux-x86_64.tar.xz
 
           - platform: arm_cortex-a9_neon
-            url_sdk: https://downloads.openwrt.org/releases/23.05.0/targets/zynq/generic/openwrt-sdk-23.05.0-zynq-generic_gcc-12.3.0_musl_eabi.Linux-x86_64.tar.xz
+            url_sdk: https://downloads.openwrt.org/releases/23.05.5/targets/zynq/generic/openwrt-sdk-23.05.5-zynq-generic_gcc-12.3.0_musl_eabi.Linux-x86_64.tar.xz
 
           - platform: arm_cortex-a9_vfpv3-d16
-            url_sdk: https://downloads.openwrt.org/releases/23.05.0/targets/mvebu/cortexa9/openwrt-sdk-23.05.0-mvebu-cortexa9_gcc-12.3.0_musl_eabi.Linux-x86_64.tar.xz
+            url_sdk: https://downloads.openwrt.org/releases/23.05.5/targets/mvebu/cortexa9/openwrt-sdk-23.05.5-mvebu-cortexa9_gcc-12.3.0_musl_eabi.Linux-x86_64.tar.xz
 
           - platform: arm_cortex-a15_neon-vfpv4
-            url_sdk: https://downloads.openwrt.org/releases/23.05.0/targets/ipq806x/generic/openwrt-sdk-23.05.0-ipq806x-generic_gcc-12.3.0_musl_eabi.Linux-x86_64.tar.xz
+            url_sdk: https://downloads.openwrt.org/releases/23.05.5/targets/ipq806x/generic/openwrt-sdk-23.05.5-ipq806x-generic_gcc-12.3.0_musl_eabi.Linux-x86_64.tar.xz
 
           - platform: mips_24kc
-            url_sdk: https://downloads.openwrt.org/releases/23.05.0/targets/ath79/generic/openwrt-sdk-23.05.0-ath79-generic_gcc-12.3.0_musl.Linux-x86_64.tar.xz
+            url_sdk: https://downloads.openwrt.org/releases/23.05.5/targets/ath79/generic/openwrt-sdk-23.05.5-ath79-generic_gcc-12.3.0_musl.Linux-x86_64.tar.xz
 
           - platform: mips_4kec
-            url_sdk: https://downloads.openwrt.org/releases/23.05.0/targets/realtek/rtl838x/openwrt-sdk-23.05.0-realtek-rtl838x_gcc-12.3.0_musl.Linux-x86_64.tar.xz
+            url_sdk: https://downloads.openwrt.org/releases/23.05.5/targets/realtek/rtl838x/openwrt-sdk-23.05.5-realtek-rtl838x_gcc-12.3.0_musl.Linux-x86_64.tar.xz
 
           - platform: mips_mips32
-            url_sdk: https://downloads.openwrt.org/releases/23.05.0/targets/bcm63xx/generic/openwrt-sdk-23.05.0-bcm63xx-generic_gcc-12.3.0_musl.Linux-x86_64.tar.xz
+            url_sdk: https://downloads.openwrt.org/releases/23.05.5/targets/bcm63xx/generic/openwrt-sdk-23.05.5-bcm63xx-generic_gcc-12.3.0_musl.Linux-x86_64.tar.xz
 
           - platform: mipsel_24kc
-            url_sdk: https://downloads.openwrt.org/releases/23.05.0/targets/ramips/rt288x/openwrt-sdk-23.05.0-ramips-rt288x_gcc-12.3.0_musl.Linux-x86_64.tar.xz
+            url_sdk: https://downloads.openwrt.org/releases/23.05.5/targets/ramips/rt288x/openwrt-sdk-23.05.5-ramips-rt288x_gcc-12.3.0_musl.Linux-x86_64.tar.xz
 
           - platform: mipsel_74kc
-            url_sdk: https://downloads.openwrt.org/releases/23.05.0/targets/ramips/rt3883/openwrt-sdk-23.05.0-ramips-rt3883_gcc-12.3.0_musl.Linux-x86_64.tar.xz
+            url_sdk: https://downloads.openwrt.org/releases/23.05.5/targets/ramips/rt3883/openwrt-sdk-23.05.5-ramips-rt3883_gcc-12.3.0_musl.Linux-x86_64.tar.xz
 
           - platform: mipsel_mips32
-            url_sdk: https://downloads.openwrt.org/releases/23.05.0/targets/bcm47xx/generic/openwrt-sdk-23.05.0-bcm47xx-generic_gcc-12.3.0_musl.Linux-x86_64.tar.xz
+            url_sdk: https://downloads.openwrt.org/releases/23.05.5/targets/bcm47xx/generic/openwrt-sdk-23.05.5-bcm47xx-generic_gcc-12.3.0_musl.Linux-x86_64.tar.xz
 
     steps:
       - name: Initialization ${{ matrix.platform }} compile environment
@@ -303,19 +298,18 @@ jobs:
         id: compile
         run: |
           cd sdk
-          make package/feeds/passwall_packages/tcping/compile -j1 V=s 2>/dev/null
-          make package/feeds/passwall_packages/xray-core/compile -j1 V=s 2>/dev/null
-          make package/feeds/passwall_packages/v2ray-geoip/compile -j1 V=s 2>/dev/null
-          make package/feeds/passwall_packages/v2ray-geodata/compile -j1 V=s 2>/dev/null
+          make package/feeds/passwall_packages/tcping/compile -j1 2>/dev/null
+          make package/feeds/passwall_packages/xray-core/compile -j1 2>/dev/null
+          make package/feeds/passwall_packages/v2ray-geodata/compile -j1 2>/dev/null
 
-          make package/feeds/passwall_packages/hysteria/compile -j1 V=s 2>/dev/null
-          make package/feeds/passwall_packages/naiveproxy/compile -j1 V=s 2>/dev/null
-          make package/feeds/passwall_packages/shadowsocks-rust/compile -j1 V=s 2>/dev/null
-          make package/feeds/passwall_packages/shadowsocksr-libev/compile -j1 V=s 2>/dev/null
-          make package/feeds/passwall_packages/simple-obfs/compile -j1 V=s 2>/dev/null
-          make package/feeds/passwall_packages/sing-box/compile -j1 V=s 2>/dev/null
-          make package/feeds/passwall_packages/tuic-client/compile -j1 V=s 2>/dev/null
-          make package/feeds/passwall_packages/v2ray-plugin/compile -j1 V=s 2>/dev/null
+          make package/feeds/passwall_packages/hysteria/compile -j1 2>/dev/null
+          make package/feeds/passwall_packages/naiveproxy/compile -j1 2>/dev/null
+          make package/feeds/passwall_packages/shadowsocks-rust/compile -j1 2>/dev/null
+          make package/feeds/passwall_packages/shadowsocksr-libev/compile -j1 2>/dev/null
+          make package/feeds/passwall_packages/simple-obfs/compile -j1 2>/dev/null
+          make package/feeds/passwall_packages/sing-box/compile -j1 2>/dev/null
+          make package/feeds/passwall_packages/tuic-client/compile -j1 2>/dev/null
+          make package/feeds/passwall_packages/v2ray-plugin/compile -j1 2>/dev/null
 
           echo "status=success" >> $GITHUB_OUTPUT
 
@@ -345,7 +339,7 @@ jobs:
           echo "**package name**|**package version**" >> release.txt
           echo "-|-" >> release.txt
 
-          pkgs=$(ls feeds/passwall_packages -I v2ray-geodata)
+          pkgs=$(ls feeds/passwall_packages -I v2ray-geodata | grep -E "tcping|xray-core|hysteria|naiveproxy|shadowsocks-rust|shadowsocksr-libev|simple-obfs|sing-box|tuic-client|v2ray-plugin")
           for pkg in $pkgs; do
             version=$(awk -F ':=' '/PKG_VERSION:=/{print $2}' feeds/passwall_packages/$pkg/Makefile | sed 's/\r//g')
             [ -z "${version}" ] && version=$(awk -F ':=' '/PKG_SOURCE_DATE:=/{print $2}' feeds/passwall_packages/$pkg/Makefile | sed 's/\r//g')
