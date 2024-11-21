@@ -962,35 +962,33 @@ acl_app() {
 		for item in $items; do
 			index=$(expr $index + 1)
 			local enabled sid remarks sources node direct_dns_query_strategy remote_dns_protocol remote_dns remote_dns_doh remote_dns_client_ip remote_dns_detour remote_fakedns remote_dns_query_strategy interface use_interface
-			local _ip _mac _iprange _ipset _ip_or_mac rule_list interface_list config_file
+			local _ip _mac _iprange _ipset _ip_or_mac source_list config_file
 			sid=$(uci -q show "${CONFIG}.${item}" | grep "=acl_rule" | awk -F '=' '{print $1}' | awk -F '.' '{print $2}')
 			eval $(uci -q show "${CONFIG}.${item}" | cut -d'.' -sf 3-)
+
 			[ "$enabled" = "1" ] || continue
 
-			[ -z "${sources}" ] && [ -z "${interface}" ] && continue
 			for s in $sources; do
+				local s2
 				is_iprange=$(lua_api "iprange(\"${s}\")")
 				if [ "${is_iprange}" = "true" ]; then
-					rule_list="${rule_list}\niprange:${s}"
+					s2="iprange:${s}"
 				elif [ -n "$(echo ${s} | grep '^ipset:')" ]; then
-					rule_list="${rule_list}\nipset:${s}"
+					s2="ipset:${s}"
 				else
 					_ip_or_mac=$(lua_api "ip_or_mac(\"${s}\")")
 					if [ "${_ip_or_mac}" = "ip" ]; then
-						rule_list="${rule_list}\nip:${s}"
+						s2="ip:${s}"
 					elif [ "${_ip_or_mac}" = "mac" ]; then
-						rule_list="${rule_list}\nmac:${s}"
+						s2="mac:${s}"
 					fi
 				fi
+				[ -n "${s2}" ] && source_list="${source_list}\n${s2}"
+				unset s2
 			done
-			for i in $interface; do
-				interface_list="${interface_list}\n$i"
-			done
-			[ -z "${rule_list}" ] && [ -z "${interface_list}" ] && continue
+
 			mkdir -p $TMP_ACL_PATH/$sid
-			
-			[ ! -z "${rule_list}" ] && echo -e "${rule_list}" | sed '/^$/d' > $TMP_ACL_PATH/$sid/rule_list
-			[ ! -z "${interface_list}" ] && echo -e "${interface_list}" | sed '/^$/d' > $TMP_ACL_PATH/$sid/interface_list
+			[ ! -z "${source_list}" ] && echo -e "${source_list}" | sed '/^$/d' > $TMP_ACL_PATH/$sid/source_list
 
 			tcp_proxy_mode="global"
 			udp_proxy_mode="global"
@@ -1062,7 +1060,7 @@ acl_app() {
 			}
 			[ -n "$redirect_dns_port" ] && echo "${redirect_dns_port}" > $TMP_ACL_PATH/$sid/var_redirect_dns_port
 			unset enabled sid remarks sources interface node direct_dns_query_strategy remote_dns_protocol remote_dns remote_dns_doh remote_dns_client_ip remote_dns_detour remote_fakedns remote_dns_query_strategy 
-			unset _ip _mac _iprange _ipset _ip_or_mac rule_list config_file interface_list
+			unset _ip _mac _iprange _ipset _ip_or_mac source_list config_file
 			unset redirect_dns_port
 		done
 		unset redir_port dns_port dnsmasq_port

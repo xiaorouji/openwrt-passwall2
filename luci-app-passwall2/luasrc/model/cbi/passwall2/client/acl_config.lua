@@ -70,10 +70,10 @@ o = s:option(Value, "remarks", translate("Remarks"))
 o.default = arg[1]
 o.rmempty = true
 
-use_if = s:option(Flag, "use_interface", translate("Use Interface With ACLs"))
-use_if.default = 0
-use_if.rmempty = false
-
+o = s:option(ListValue, "interface", translate("Source Interface"))
+o:value("", translate("All"))
+local wa = require "luci.tools.webadmin"
+wa.cbi_add_networks(o)
 
 local mac_t = {}
 sys.net.mac_hints(function(e, t)
@@ -95,17 +95,6 @@ table.sort(mac_t, function(a,b)
 	return false
 end)
 
-local device_list = {}
-device_list = sys.net.devices()
-table.sort(device_list)
-interface = s:option(ListValue, "interface", translate("Source Interface"))
-
-for k, name in ipairs(device_list) do
-	interface:value(name)
-end
-
-interface:depends({ use_interface = 1 })
-
 ---- Source
 sources = s:option(DynamicList, "sources", translate("Source"))
 sources.description = "<ul><li>" .. translate("Example:")
@@ -119,7 +108,6 @@ sources.cast = "string"
 for _, key in pairs(mac_t) do
 	sources:value(key.mac, "%s (%s)" % {key.mac, key.ip})
 end
-sources:depends({ use_interface = 0 })
 
 sources.cfgvalue = function(self, section)
 	local value
