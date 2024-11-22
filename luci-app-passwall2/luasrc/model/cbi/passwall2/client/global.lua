@@ -275,7 +275,7 @@ o:depends("remote_dns_protocol", "tcp")
 o:depends("remote_dns_protocol", "udp")
 
 ---- DoH
-o = s:taboption("DNS", Value, "remote_dns_doh", translate("Remote DNS DoH"))
+o = s:taboption("DNS", Value, "remote_dns_doh", translate("Remote DNS DoH"), translate("Format:'https://xx.com/dns-query,1.1.1.1'"))
 o.default = "https://1.1.1.1/dns-query"
 o:value("https://1.1.1.1/dns-query", "CloudFlare")
 o:value("https://1.1.1.2/dns-query", "CloudFlare-Security")
@@ -287,6 +287,7 @@ o:value("https://208.67.222.222/dns-query", "OpenDNS")
 o:value("https://dns.adguard.com/dns-query,176.103.130.130", "AdGuard")
 o:value("https://doh.libredns.gr/dns-query,116.202.176.26", "LibreDNS")
 o:value("https://doh.libredns.gr/ads,116.202.176.26", "LibreDNS (No Ads)")
+o:value("https://223.6.6.6/dns-query", "ali dns")
 o.validate = doh_validate
 o:depends("remote_dns_protocol", "doh")
 

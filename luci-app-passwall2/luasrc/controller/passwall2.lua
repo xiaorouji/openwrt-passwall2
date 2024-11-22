@@ -74,7 +74,9 @@ function index()
 	entry({"admin", "services", appname, "clear_all_nodes"}, call("clear_all_nodes")).leaf = true
 	entry({"admin", "services", appname, "delete_select_nodes"}, call("delete_select_nodes")).leaf = true
 	entry({"admin", "services", appname, "update_rules"}, call("update_rules")).leaf = true
-
+	--更换节点ip日志
+	entry({"admin", "services", appname, "update_ip_log"}, call("update_ip_log")).leaf = true
+	entry({"admin", "services", appname, "get_redip_log"}, call("get_redip_log")).leaf = true
 	--[[Components update]]
 	entry({"admin", "services", appname, "check_passwall2"}, call("app_check")).leaf = true
 	local coms = require "luci.passwall2.com"
@@ -428,4 +430,20 @@ function com_update(comname)
 	http_write_json(json)
 end
 
+--自改
+--执行更换ip脚本
+function update_ip_log()
+	luci.sys.call("bash /root/CloudflareST_linux_amd64/start.sh > /dev/null 2>&1")
+end
 
+--查看日志
+function get_redip_log()
+	local path = "/root/CloudflareST_linux_amd64/cloudflare_update.log"
+	if nixio.fs.access(path) then
+		local content = luci.sys.exec("cat ".. path)
+		content = content:gsub("\n", "<br />")
+		luci.http.write(content)
+	else
+		luci.http.write(string.format("<script>alert('%s');window.close();</script>", i18n.translate("Not enabled log")))
+	end
+end

@@ -241,7 +241,7 @@ o:depends("remote_dns_protocol", "tcp")
 o:depends("remote_dns_protocol", "udp")
 
 ---- DoH
-o = s:option(Value, "remote_dns_doh", translate("Remote DNS DoH"))
+o = s:option(Value, "remote_dns_doh", translate("Remote DNS DoH"), translate("Format:'https://xx.com/dns-query,1.1.1.1'"))
 o:value("https://1.1.1.1/dns-query", "CloudFlare")
 o:value("https://1.1.1.2/dns-query", "CloudFlare-Security")
 o:value("https://8.8.4.4/dns-query", "Google 8844")

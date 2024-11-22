@@ -766,6 +766,10 @@ function gen_config(var)
 	local remote_dns_fake = var["-remote_dns_fake"]
 	local dns_cache = var["-dns_cache"]
 	local tags = var["-tags"]
+	-- 自改
+	local dns_address = var["-dns_address"]
+	local dns_port = var["-dns_port"]
+
 
 	local dns_domain_rules = {}
 	local dns = nil
@@ -1401,7 +1405,84 @@ function gen_config(var)
 			end
 		end
 	end
-	
+
+	-- 添加自定义规则
+
+	--域名解析策略,防止不解析ip,直接域名出栈
+	if singbox_settings.domain_strategy and singbox_settings.domain_strategy ~= "" then
+		for _, inbound in ipairs(inbounds) do
+			if inbound.tag ~= "dns-in" then
+				inbound.domain_strategy = singbox_settings.domain_strategy
+			end
+		end
+	end
+
+	--规则
+	local custom_rules = singbox_settings.dns_rules
+	if custom_rules and custom_rules ~= "" then
+		dns.final="direct"
+		local ok, parsed = pcall(jsonc.parse, custom_rules)
+		if ok and parsed then
+			dns.rules = api.clone(parsed)
+			if remote_dns_fake then
+				--查找
+				-- 查找设值的dns中的远程dns元素,然后设置为对应的domains
+				local fakedns_dns_rule = nil
+				local remote_index = nil
+				for index, rule in ipairs(parsed) do
+					if rule.server == "remote" then
+						remote_index = index
+						fakedns_dns_rule = api.clone(rule)
+						break
+					end
+				end
+
+				if fakedns_dns_rule then
+					local fakedns_tag = "remote_fakeip"
+					fakedns_dns_rule.query_type = {
+						"A"
+					}
+					fakedns_dns_rule.server = fakedns_tag
+					fakedns_dns_rule.disable_cache = true
+					if remote_index then
+						table.insert(dns.rules, remote_index, fakedns_dns_rule)
+					else table.insert(dns.rules, fakedns_dns_rule)
+					end
+				end
+
+			end
+			-- 修改servers, 在开启写入IPset时，更改原有的direct和添加新direct
+			-- 直连 DNS 解析结果写入到 IPSet
+			local global_settings = uci:get_all(appname, "@global[0]") or {}
+			local write_ipset_direct = global_settings.write_ipset_direct
+			local custom_dns_ipset_rules = singbox_settings.dns_ipset_rules
+			if write_ipset_direct == "1" and custom_dns_ipset_rules and custom_dns_ipset_rules ~= "" then
+				for _, server in ipairs(dns.servers) do
+					if server.tag == "direct" then
+						local tmpServer = api.clone(server)
+						server.tag = 'ipset'
+						tmpServer.address = "udp://" .. dns_address .. ":" .. dns_port
+						--写入servers
+						table.insert(dns.servers, tmpServer)
+						--写入rules
+						local ok1, parsed1 = pcall(jsonc.parse, custom_dns_ipset_rules)
+						if ok1 and parsed1 then
+							table.insert(dns.rules, 1, parsed1)
+						else
+							print("Failed to parse custom_dns_ipset_rules:", custom_dns_ipset_rules)
+						end
+
+						break
+					end
+				end
+			end
+		else
+			print("Failed to parse DNS rules:", parsed)
+		end
+	end
+
+
+
 	if inbounds or outbounds then
 		local config = {
 			log = {

@@ -36,7 +36,9 @@ config global_forwarding
 	option ipv6_tproxy '0'
 
 config global_xray
-	option sniffing_override_dest '0'
+	option sniffing_override_dest '1'
+	option dns_rules '[{"port":{direct_port},"address":"{direct_addr}","queryStrategy":"UseIPv4","_flag":"direct"},{"address":"localhost","domains":["qiwu.com","nanhua.com"],"skipFallback":true},{"port":{remote_port},"address":"{remote_addr}","domains":["geosite:gfw"],"queryStrategy":"UseIPv4","skipFallback":true,"_flag":"remote"}]'
+	option dns_ipset_rules '{"port":{ipset_port},"address":"{ipset_addr}","domains":["geosite:cn","geosite:private"],"queryStrategy":"UseIPv4","_flag":"ipset"}'
 
 config global_other
 	option auto_detection_time 'tcping'
@@ -61,11 +63,14 @@ config global_subscribe
 	list filter_discard_list '官网'
 	
 config global_singbox
-	option sniff_override_destination '0'
+	option sniff_override_destination '1'
 	option geoip_path '/usr/share/singbox/geoip.db'
-	option geoip_url 'https://github.com/MetaCubeX/meta-rules-dat/releases/download/latest/geoip.db'
+	option geoip_url 'https://github.com/lyc8503/sing-box-rules/releases/latest/download/geoip.db'
 	option geosite_path '/usr/share/singbox/geosite.db'
-	option geosite_url 'https://github.com/MetaCubeX/meta-rules-dat/releases/download/latest/geosite.db'
+	option geosite_url 'https://github.com/lyc8503/sing-box-rules/releases/latest/download/geosite.db'
+	option dns_rules '[{"disable_cache":false,"domain_suffix":["qiwu.com","nanhua.com"],"rewrite_ttl":30,"server":"direct"},{"disable_cache":false,"geosite":["gfw"],"rewrite_ttl":30,"server":"remote"},{"geosite":["category-ads-all","win-spy"],"server":"block"}]'
+    option dns_ipset_rules '{"disable_cache": false,"geosite": ["private","cn"],"server": "ipset"}'
+    option domain_strategy 'ipv4_only'
 
 config nodes 'myshunt'
 	option remarks '分流总节点'
@@ -158,20 +163,7 @@ config shunt_rules 'Direct'
 119.29.29.29
 180.76.76.76
 '
-	option domain_list 'apple.com
-microsoft.com
-dyndns.com
-steamcontent.com
-dl.steam.clngaa.com
-dl.steam.ksyna.com
-st.dl.bscstorage.net
-st.dl.eccdnx.com
-st.dl.pinyuncloud.com
-cdn.mileweb.cs.steampowered.com.8686c.com
-cdn-ws.content.steamchina.com
-cdn-qc.content.steamchina.com
-cdn-ali.content.steamchina.com
-epicgames-download1-1251447533.file.myqcloud.com'
+	option domain_list 'apple.com'
 
 config shunt_rules 'GooglePlay'
 	option remarks 'GooglePlay'

@@ -182,6 +182,16 @@ if has_xray then
 	o = s_xray:option(Value, "buffer_size", translate("Buffer Size"), translate("Buffer size for every connection (kB)"))
 	o.datatype = "uinteger"
 
+	---- 自改 dns router
+	o = s_xray:option(TextValue, "dns_rules", translate("dns rules setting"), translate("json type"))
+	o.rows = 5
+	o.size = 50
+
+	---- 自改 IPSet dns router
+	o = s_xray:option(TextValue, "dns_ipset_rules", translate("IPSet dns rules setting"), translate("json type"))
+	o.rows = 5
+	o.size = 50
+
 	s_xray_noise = m:section(TypedSection, "xray_noise_packets", translate("Xray Noise Packets"),"<font color='red'>" .. translate("To send noise packets, select \"Noise\" in Xray Settings.") .. "</font>")
 	s_xray_noise.template = "cbi/tblsection"
 	s_xray_noise.sortable = true
@@ -225,7 +235,17 @@ if has_singbox then
 	s.addremove = false
 
 	o = s:option(Flag, "sniff_override_destination", translate("Override the connection destination address"), translate("Override the connection destination address with the sniffed domain."))
-	o.default = 0
+	o.default = 1
+	o.rmempty = false
+
+	-- 自改
+	o = s:option(ListValue, "domain_strategy", translate("domain strategy"), translate("If the option `sniff_override_destination` is selected, routing will be based on the IP address; otherwise, it will not enter IP routing and will instead use the domain name. The optional values are: `prefer_ipv4`, `prefer_ipv6`, `ipv4_only`, and `ipv6_only`. If set, the requested domain name will be resolved to an IP address before routing. If `sniff_override_destination` is effective, its value will serve as a fallback."))
+	o.default = "ipv4_only"
+	o:value("", "")
+	o:value("prefer_ipv4", "prefer_ipv4")
+	o:value("prefer_ipv6", "prefer_ipv6")
+	o:value("ipv4_only", "ipv4_only")
+	o:value("ipv6_only", "ipv6_only")
 	o.rmempty = false
 
 	o = s:option(Value, "geoip_path", translate("Custom geoip Path"))
@@ -263,6 +283,18 @@ if has_singbox then
 			os.remove(geosite_path)
 		end
 	end
+
+	-- 自改
+	---- dns router
+	o = s:option(TextValue, "dns_rules", translate("dns rules setting"), translate("json type"))
+	o.rows = 5
+	o.size = 50
+
+	---- IPSet dns router
+	o = s:option(TextValue, "dns_ipset_rules", translate("IPSet dns rules setting"), translate("json type"))
+	o.rows = 5
+	o.size = 50
+
 end
 
 return m

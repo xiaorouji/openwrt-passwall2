@@ -64,6 +64,7 @@ msgstr "谷歌连接"
 msgid "GitHub Connection"
 msgstr "GitHub连接"
 
+
 msgid "Instagram Connection"
 msgstr "Instagram连接"
 
@@ -1569,6 +1570,33 @@ msgstr "落地节点"
 
 msgid "Only support a layer of proxy."
 msgstr "仅支持一层代理。"
+
+msgid "Cloudflare Connection"
+msgstr "Cloudflare连接"
+
+msgid "dns rules setting"
+msgstr "dns rules设置"
+
+msgid "IPSet dns rules setting"
+msgstr "IPSet dns rules设置"
+
+msgid "domain strategy"
+msgstr "域名策略"
+
+msgid "If the option `sniff_override_destination` is selected, routing will be based on the IP address; otherwise, it will not enter IP routing and will instead use the domain name. The optional values are: `prefer_ipv4`, `prefer_ipv6`, `ipv4_only`, and `ipv6_only`. If set, the requested domain name will be resolved to an IP address before routing. If `sniff_override_destination` is effective, its value will serve as a fallback."
+msgstr "如果设置sniff_override_destination选中后可以根据ip路由,否则不会进入ip路由,而是使用域名.可选值： prefer_ipv4 prefer_ipv6 ipv4_only ipv6_only。如果设置，请求的域名将在路由之前解析为 IP。如果 sniff_override_destination 生效，它的值将作为后备。"
+
+msgid "json type"
+msgstr "json格式"
+
+msgid "Format:'https://xx.com/dns-query,1.1.1.1'"
+msgstr "格式:'https://xx.com/dns-query,1.1.1.1'"
+
+msgid "Execute the replacement ip script"
+msgstr "执行更换ip脚本"
+
+msgid "Check the IP change log"
+msgstr "查看更换ip日志"
 
 msgid "Set the default domain resolution strategy for the sing-box node."
 msgstr "为 sing-box 节点设置默认的域名解析策略。"
