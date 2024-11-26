@@ -488,6 +488,12 @@ local function processData(szType, content, add_mode, add_from)
 		if info.net == 'xhttp' or info.net == 'splithttp' then
 			result.xhttp_host = info.host
 			result.xhttp_path = info.path
+			result.xhttp_mode = params.mode or "auto"
+			result.xhttp_extra = params.extra
+			local Data = params.extra and params.extra ~= "" and jsonParse(params.extra)
+			local address = (Data and Data.extra and Data.extra.downloadSettings and Data.extra.downloadSettings.address)
+			                or (Data and Data.downloadSettings and Data.downloadSettings.address)
+			result.download_address = address and address ~= "" and address or nil
 		end
 		if not info.security then result.security = "auto" end
 		if info.tls == "tls" or info.tls == "1" then
