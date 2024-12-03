@@ -367,6 +367,8 @@ local api = require "luci.passwall2.api"
 			} else if (v_transport === "xhttp") {
 				params += opt.query("host", dom_prefix + "xhttp_host");
 				params += opt.query("path", dom_prefix + "xhttp_path");
+				params += opt.query("mode", dom_prefix + "xhttp_mode");
+				params += opt.query("extra", dom_prefix + "xhttp_extra");
 			}
 			params += "&type=" + v_transport;
 
@@ -1154,6 +1156,8 @@ local api = require "luci.passwall2.api"
 			} else if (queryParam.type === "xhttp" || queryParam.type === "splithttp") {
 				opt.set(dom_prefix + 'xhttp_host', queryParam.host || "");
 				opt.set(dom_prefix + 'xhttp_path', queryParam.path || "");
+				opt.set(dom_prefix + 'xhttp_mode', queryParam.mode || "auto");
+				opt.set(dom_prefix + 'xhttp_extra', queryParam.extra || "");
 			}
 
 			if (m.hash) {
