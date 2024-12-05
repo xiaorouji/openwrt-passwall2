@@ -310,6 +310,7 @@ jobs:
           make package/feeds/passwall_packages/simple-obfs/compile -j1 2>/dev/null
           make package/feeds/passwall_packages/sing-box/compile -j1 2>/dev/null
           make package/feeds/passwall_packages/tuic-client/compile -j1 2>/dev/null
+          make package/feeds/passwall_packages/v2ray-geoview/compile -j1 2>/dev/null
           make package/feeds/passwall_packages/v2ray-plugin/compile -j1 2>/dev/null
 
           echo "status=success" >> $GITHUB_OUTPUT
@@ -340,7 +341,7 @@ jobs:
           echo "**package name**|**package version**" >> release.txt
           echo "-|-" >> release.txt
 
-          pkgs=$(ls feeds/passwall_packages -I v2ray-geodata | grep -E "tcping|xray-core|hysteria|naiveproxy|shadowsocks-rust|shadowsocksr-libev|simple-obfs|sing-box|tuic-client|v2ray-plugin")
+          pkgs=$(ls feeds/passwall_packages -I v2ray-geodata | grep -E "tcping|xray-core|hysteria|naiveproxy|shadowsocks-rust|shadowsocksr-libev|simple-obfs|sing-box|tuic-client|v2ray-geoview|v2ray-plugin")
           for pkg in $pkgs; do
             version=$(awk -F ':=' '/PKG_VERSION:=/{print $2}' feeds/passwall_packages/$pkg/Makefile | sed 's/\r//g')
             [ -z "${version}" ] && version=$(awk -F ':=' '/PKG_SOURCE_DATE:=/{print $2}' feeds/passwall_packages/$pkg/Makefile | sed 's/\r//g')
