@@ -273,6 +273,34 @@ load_acl() {
 					local nftset_whitelist6="passwall2_${sid}_whitelist6"
 					gen_nftset $nftset_whitelist ipv4_addr 3d 3d
 					gen_nftset $nftset_whitelist6 ipv6_addr 3d 3d
+
+					#分流规则的IP列表(使用分流节点时导入)
+					local _USE_SHUNT_NODE=0
+					_NODE_PROTOCOL=$(config_n_get $node protocol)
+					[ "$_NODE_PROTOCOL" = "_shunt" ] && _USE_SHUNT_NODE=1
+					[ "$_USE_SHUNT_NODE" = "1" ] && {
+						local _SHUNT_DEFAULT_NODE=$(config_n_get $NODE default_node _direct)
+						local _GEOIP_CODE=""
+						local _shunt_ids=$(uci show $CONFIG | grep "=shunt_rules" | awk -F '.' '{print $2}' | awk -F '=' '{print $1}')
+						for _shunt_id in $_shunt_ids; do
+							local _SHUNT_RULE_NODE=$(config_n_get $NODE ${_shunt_id} nil)
+							[ "${_SHUNT_RULE_NODE}" == "_default" ] && _SHUNT_RULE_NODE=${_SHUNT_DEFAULT_NODE}
+							[ "${_SHUNT_RULE_NODE}" == "_direct" ] && {
+								insert_nftset $ipset_whitelist "0" $(config_n_get $_shunt_id ip_list | tr -s "\r\n" "\n" | sed -e "/^$/d" | grep -E "(\.((2(5[0-5]|[0-4][0-9]))|[0-1]?[0-9]{1,2})){3}")
+								insert_nftset $ipset_whitelist6 "0" $(config_n_get $_shunt_id ip_list | tr -s "\r\n" "\n" | sed -e "/^$/d" | grep -E "([A-Fa-f0-9]{1,4}::?){1,7}[A-Fa-f0-9]{1,4}")
+								[ "$(config_t_get global_rules enable_geoview)" = "1" ] && {
+									local _geoip_code=$(config_n_get $_shunt_id ip_list | tr -s "\r\n" "\n" | sed -e "/^$/d" | grep -E "^geoip:" | grep -v "^geoip:private" | sed -E 's/^geoip:(.*)/\1/' | sed ':a;N;$!ba;s/\n/,/g')
+									[ -n "$_geoip_code" ] && _GEOIP_CODE="${_GEOIP_CODE:+$_GEOIP_CODE,}$_geoip_code"
+								}
+							}
+						done
+					}
+
+					if [ -n "$_GEOIP_CODE" ] && type geoview &> /dev/null; then
+						insert_nftset $ipset_whitelist "0" $(get_geoip $_GEOIP_CODE ipv4 | grep -E "(\.((2(5[0-5]|[0-4][0-9]))|[0-1]?[0-9]{1,2})){3}")
+						insert_nftset $ipset_whitelist6 "0" $(get_geoip $_GEOIP_CODE ipv6 | grep -E "([A-Fa-f0-9]{1,4}::?){1,7}[A-Fa-f0-9]{1,4}")
+						echolog "  - [$?]解析并加入分流节点 GeoIP 到 IPSET 完成"
+					fi
 				fi
 			}
 
@@ -513,11 +541,10 @@ filter_vps_addr() {
 }
 
 filter_vpsip() {
-	insert_nftset $NFTSET_VPSLIST "-1" $(uci show $CONFIG | grep ".address=" | cut -d "'" -f 2 | grep -E "([0-9]{1,3}[\.]){3}[0-9]{1,3}" | sed -e "/^$/d")
-	insert_nftset $NFTSET_VPSLIST6 "-1" $(uci show $CONFIG | grep ".address=" | cut -d "'" -f 2 | grep -E "([A-Fa-f0-9]{1,4}::?){1,7}[A-Fa-f0-9]{1,4}" | sed -e "/^$/d")
-	insert_nftset $NFTSET_VPSLIST "-1" $(uci show $CONFIG | grep ".download_address=" | cut -d "'" -f 2 | grep -E "([0-9]{1,3}[\.]){3}[0-9]{1,3}" | sed -e "/^$/d")
-	insert_nftset $NFTSET_VPSLIST6 "-1" $(uci show $CONFIG | grep ".download_address=" | cut -d "'" -f 2 | grep -E "([A-Fa-f0-9]{1,4}::?){1,7}[A-Fa-f0-9]{1,4}" | sed -e "/^$/d")
-	echolog "加入所有节点到nftset[$NFTSET_VPSLIST]直连完成"
+	insert_nftset $NFTSET_VPSLIST "-1" $(uci show $CONFIG | grep -E "(.address=|.download_address=)" | cut -d "'" -f 2 | grep -E "([0-9]{1,3}[\.]){3}[0-9]{1,3}" | grep -v "^127\.0\.0\.1$" | sed -e "/^$/d")
+	echolog "  - [$?]加入所有IPv4节点到nftset[$NFTSET_VPSLIST]直连完成"
+	insert_nftset $NFTSET_VPSLIST6 "-1" $(uci show $CONFIG | grep -E "(.address=|.download_address=)" | cut -d "'" -f 2 | grep -E "([A-Fa-f0-9]{1,4}::?){1,7}[A-Fa-f0-9]{1,4}" | sed -e "/^$/d")
+	echolog "  - [$?]加入所有IPv6节点到nftset[$NFTSET_VPSLIST6]直连完成"
 }
 
 filter_node() {
@@ -680,6 +707,34 @@ add_firewall_rule() {
 	local nftset_global_whitelist6="passwall2_global_whitelist6"
 	gen_nftset $nftset_global_whitelist ipv4_addr 0 0
 	gen_nftset $nftset_global_whitelist6 ipv6_addr 0 0
+
+	#分流规则的IP列表(使用分流节点时导入)
+	local USE_SHUNT_NODE=0
+	NODE_PROTOCOL=$(config_n_get $NODE protocol)
+	[ "$NODE_PROTOCOL" = "_shunt" ] && USE_SHUNT_NODE=1
+	[ "$USE_SHUNT_NODE" = "1" ] && {
+		local SHUNT_DEFAULT_NODE=$(config_n_get $NODE default_node _direct)
+		local GEOIP_CODE=""
+		local shunt_ids=$(uci show $CONFIG | grep "=shunt_rules" | awk -F '.' '{print $2}' | awk -F '=' '{print $1}')
+		for shunt_id in $shunt_ids; do
+			local SHUNT_RULE_NODE=$(config_n_get $NODE ${shunt_id} nil)
+			[ "${SHUNT_RULE_NODE}" == "_default" ] && SHUNT_RULE_NODE=${SHUNT_DEFAULT_NODE}
+			[ "${SHUNT_RULE_NODE}" == "_direct" ] && {
+				insert_nftset $ipset_global_whitelist "0" $(config_n_get $shunt_id ip_list | tr -s "\r\n" "\n" | sed -e "/^$/d" | grep -E "(\.((2(5[0-5]|[0-4][0-9]))|[0-1]?[0-9]{1,2})){3}")
+				insert_nftset $ipset_global_whitelist6 "0" $(config_n_get $shunt_id ip_list | tr -s "\r\n" "\n" | sed -e "/^$/d" | grep -E "([A-Fa-f0-9]{1,4}::?){1,7}[A-Fa-f0-9]{1,4}")
+				[ "$(config_t_get global_rules enable_geoview)" = "1" ] && {
+					local geoip_code=$(config_n_get $shunt_id ip_list | tr -s "\r\n" "\n" | sed -e "/^$/d" | grep -E "^geoip:" | grep -v "^geoip:private" | sed -E 's/^geoip:(.*)/\1/' | sed ':a;N;$!ba;s/\n/,/g')
+					[ -n "$geoip_code" ] && GEOIP_CODE="${GEOIP_CODE:+$GEOIP_CODE,}$geoip_code"
+				}
+			}
+		done
+	}
+
+	if [ -n "$GEOIP_CODE" ] && type geoview &> /dev/null; then
+		insert_nftset $ipset_global_whitelist "0" $(get_geoip $GEOIP_CODE ipv4 | grep -E "(\.((2(5[0-5]|[0-4][0-9]))|[0-1]?[0-9]{1,2})){3}")
+		insert_nftset $ipset_global_whitelist6 "0" $(get_geoip $GEOIP_CODE ipv6 | grep -E "([A-Fa-f0-9]{1,4}::?){1,7}[A-Fa-f0-9]{1,4}")
+		echolog "  - [$?]解析并加入分流节点 GeoIP 到 IPSET 完成"
+	fi
 
 	#  过滤所有节点IP
 	filter_vpsip > /dev/null 2>&1 &

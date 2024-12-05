@@ -24,6 +24,7 @@ PKG_CONFIG_DEPENDS:= \
 	CONFIG_PACKAGE_$(PKG_NAME)_INCLUDE_Simple_Obfs \
 	CONFIG_PACKAGE_$(PKG_NAME)_INCLUDE_SingBox \
 	CONFIG_PACKAGE_$(PKG_NAME)_INCLUDE_tuic_client \
+	CONFIG_PACKAGE_$(PKG_NAME)_INCLUDE_V2ray_Geoview \
 	CONFIG_PACKAGE_$(PKG_NAME)_INCLUDE_V2ray_Plugin
 
 LUCI_TITLE:=LuCI support for PassWall 2
@@ -134,6 +135,11 @@ config PACKAGE_$(PKG_NAME)_INCLUDE_tuic_client
 	depends on aarch64||arm||i386||x86_64
 	select PACKAGE_tuic-client
 	default n
+
+config PACKAGE_$(PKG_NAME)_INCLUDE_V2ray_Geoview
+	bool "Include V2ray_Geoview"
+	select PACKAGE_geoview
+	default y if aarch64||arm||i386||x86_64
 
 config PACKAGE_$(PKG_NAME)_INCLUDE_V2ray_Plugin
 	bool "Include V2ray-Plugin (Shadowsocks Plugin)"

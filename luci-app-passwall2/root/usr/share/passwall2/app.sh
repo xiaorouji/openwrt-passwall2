@@ -299,6 +299,23 @@ get_dnsmasq_conf_dir() {
 	}
 }
 
+get_geoip() {
+	local geoip_code="$1"
+	local geoip_type_flag=""
+	local geoip_path="$(config_t_get global_rules v2ray_location_asset)"
+	geoip_path="${geoip_path%*/}/geoip.dat"
+	[ -e "$geoip_path" ] || { echo ""; return; }
+	case "$2" in
+		"ipv4") geoip_type_flag="-ipv6=false" ;;
+		"ipv6") geoip_type_flag="-ipv4=false" ;;
+	esac
+	if type geoview &> /dev/null; then
+		geoview -input "$geoip_path" -list "$geoip_code" $geoip_type_flag -lowmem=true
+	else
+		echo ""
+	fi
+}
+
 run_xray() {
 	local flag node redir_port socks_address socks_port socks_username socks_password http_address http_port http_username http_password
 	local dns_listen_port direct_dns_query_strategy remote_dns_protocol remote_dns_udp_server remote_dns_tcp_server remote_dns_doh remote_dns_client_ip remote_dns_detour remote_fakedns remote_dns_query_strategy dns_cache write_ipset_direct

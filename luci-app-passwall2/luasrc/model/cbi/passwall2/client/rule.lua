@@ -22,6 +22,17 @@ o.default = "https://api.github.com/repos/Loyalsoldier/v2ray-rules-dat/releases/
 o.rmempty = false
 ----
 
+if api.is_finded("geoview") then
+	o = s:option(Flag, "enable_geoview", translate("Enable Geo Data Parsing"))
+	o.default = 0
+	o.rmempty = false
+	o.description = "<ul>"
+		.. "<li>" .. translate("Experimental feature.") .. "</li>"
+		.. "<li>" .. translate("Analyzes and preloads GeoIP/Geosite data to enhance the shunt performance of Sing-box/Xray.") .. "</li>"
+		.. "<li>" .. translate("Note: Increases resource usage.") .. "</li>"
+		.. "</ul>"
+end
+
 s:append(Template(appname .. "/rule/rule_version"))
 
 ---- Auto Update
