@@ -322,9 +322,22 @@ load_acl() {
 						echolog "  - ${msg}不代理所有 UDP"
 					fi
 				}
+				
+				if ([ "$tcp_proxy_mode" != "disable" ] || [ "$udp_proxy_mode" != "disable" ]) && [ -n "$redir_port" ]; then
+					[ -s "${TMP_ACL_PATH}/${sid}/var_redirect_dns_port" ] && {
+						$ipt_n -A PSW2_REDIRECT $(comment "$remarks") -p udp ${_ipt_source} --dport 53 -j REDIRECT --to-ports $(cat ${TMP_ACL_PATH}/${sid}/var_redirect_dns_port)
+						$ip6t_n -A PSW2_REDIRECT $(comment "$remarks") -p udp ${_ipt_source} --dport 53 -j REDIRECT --to-ports $(cat ${TMP_ACL_PATH}/${sid}/var_redirect_dns_port) 2>/dev/null
+						$ipt_n -A PSW2_REDIRECT $(comment "$remarks") -p tcp ${_ipt_source} --dport 53 -j REDIRECT --to-ports $(cat ${TMP_ACL_PATH}/${sid}/var_redirect_dns_port)
+						$ip6t_n -A PSW2_REDIRECT $(comment "$remarks") -p tcp ${_ipt_source} --dport 53 -j REDIRECT --to-ports $(cat ${TMP_ACL_PATH}/${sid}/var_redirect_dns_port) 2>/dev/null
+					}
+				else
+					$ipt_n -A PSW2_REDIRECT $(comment "$remarks") -p udp ${_ipt_source} --dport 53 -j RETURN
+					$ip6t_n -A PSW2_REDIRECT $(comment "$remarks") -p udp ${_ipt_source} --dport 53 -j RETURN 2>/dev/null
+					$ipt_n -A PSW2_REDIRECT $(comment "$remarks") -p tcp ${_ipt_source} --dport 53 -j RETURN
+					$ip6t_n -A PSW2_REDIRECT $(comment "$remarks") -p tcp ${_ipt_source} --dport 53 -j RETURN 2>/dev/null
+				fi
 
 				[ "$tcp_proxy_mode" != "disable" ] && [ -n "$redir_port" ] && {
-					[ -s "${TMP_ACL_PATH}/${sid}/var_redirect_dns_port" ] && $ipt_n -A PSW2_REDIRECT $(comment "$remarks") -p udp ${_ipt_source} --dport 53 -j REDIRECT --to-ports $(cat ${TMP_ACL_PATH}/${sid}/var_redirect_dns_port)
 					msg2="${msg}使用 TCP 节点[$node_remark]"
 					if [ -n "${is_tproxy}" ]; then
 						msg2="${msg2}(TPROXY:${redir_port})"
@@ -414,6 +427,15 @@ load_acl() {
 				echolog "  - ${msg}不代理所有 UDP 端口"
 			fi
 		}
+
+		if ([ "$TCP_PROXY_MODE" != "disable" ] || [ "$UDP_PROXY_MODE" != "disable" ]) && [ "$NODE" != "nil" ]; then
+			[ -s "${TMP_ACL_PATH}/default/var_redirect_dns_port" ] && {
+				$ipt_n -A PSW2_REDIRECT $(comment "默认") -p udp --dport 53 -j REDIRECT --to-ports $(cat ${TMP_ACL_PATH}/default/var_redirect_dns_port)
+				$ip6t_n -A PSW2_REDIRECT $(comment "默认") -p udp --dport 53 -j REDIRECT --to-ports $(cat ${TMP_ACL_PATH}/default/var_redirect_dns_port) 2>/dev/null
+				$ipt_n -A PSW2_REDIRECT $(comment "默认") -p tcp --dport 53 -j REDIRECT --to-ports $(cat ${TMP_ACL_PATH}/default/var_redirect_dns_port)
+				$ip6t_n -A PSW2_REDIRECT $(comment "默认") -p tcp --dport 53 -j REDIRECT --to-ports $(cat ${TMP_ACL_PATH}/default/var_redirect_dns_port) 2>/dev/null
+			}
+		fi
 
 		if [ "$TCP_PROXY_MODE" != "disable" ] && [ "$NODE" != "nil" ]; then
 			msg2="${msg}使用 TCP 节点[$(config_n_get $NODE remarks)]"
@@ -592,11 +614,6 @@ filter_node() {
 	fi
 }
 
-dns_hijack() {
-	$ipt_n -I PSW2 -p udp --dport 53 -j REDIRECT --to-ports 53
-	echolog "强制转发本机DNS端口 UDP/53 的请求[$?]"
-}
-
 add_firewall_rule() {
 	echolog "开始加载防火墙规则..."
 	ipset -! create $IPSET_LANLIST nethash maxelem 1048576
@@ -760,6 +777,9 @@ add_firewall_rule() {
 		$ip6t_n -A PSW2_OUTPUT $(dst $IPSET_VPSLIST6) -j RETURN
 		$ip6t_n -A PSW2_OUTPUT -m mark --mark 0xff -j RETURN
 	}
+	
+	$ip6t_n -N PSW2_REDIRECT
+	$ip6t_n -I PREROUTING 1 -j PSW2_REDIRECT
 
 	$ip6t_m -N PSW2_DIVERT
 	$ip6t_m -A PSW2_DIVERT -j MARK --set-mark 1
@@ -845,6 +865,15 @@ add_firewall_rule() {
 				echolog "  - ${msg}不代理所有 UDP"
 			fi
 		}
+		
+		if [ "$NODE" != "nil" ] && ([ "$TCP_LOCALHOST_PROXY" = "1" ] || [ "$UDP_LOCALHOST_PROXY" = "1" ]); then
+			[ -s "${TMP_ACL_PATH}/default/var_redirect_dns_port" ] && {
+				$ipt_n -A OUTPUT $(comment "PSW2") -p udp -o lo --dport 53 -j REDIRECT --to-ports $(cat ${TMP_ACL_PATH}/default/var_redirect_dns_port)
+				$ip6t_n -A OUTPUT $(comment "PSW2") -p udp -o lo --dport 53 -j REDIRECT --to-ports $(cat ${TMP_ACL_PATH}/default/var_redirect_dns_port) 2>/dev/null
+				$ipt_n -A OUTPUT $(comment "PSW2") -p tcp -o lo --dport 53 -j REDIRECT --to-ports $(cat ${TMP_ACL_PATH}/default/var_redirect_dns_port)
+				$ip6t_n -A OUTPUT $(comment "PSW2") -p tcp -o lo --dport 53 -j REDIRECT --to-ports $(cat ${TMP_ACL_PATH}/default/var_redirect_dns_port) 2>/dev/null
+			}
+		fi
 	
 		# 加载路由器自身代理 TCP
 		if [ "$NODE" != "nil" ] && [ "$TCP_LOCALHOST_PROXY" = "1" ]; then
