@@ -299,6 +299,7 @@ jobs:
         id: compile
         run: |
           cd sdk
+          make package/feeds/passwall_packages/chinadns-ng/compile -j1 2>/dev/null
           make package/feeds/passwall_packages/tcping/compile -j1 2>/dev/null
           make package/feeds/passwall_packages/xray-core/compile -j1 2>/dev/null
           make package/feeds/passwall_packages/v2ray-geodata/compile -j1 2>/dev/null
@@ -341,7 +342,7 @@ jobs:
           echo "**package name**|**package version**" >> release.txt
           echo "-|-" >> release.txt
 
-          pkgs=$(ls feeds/passwall_packages -I v2ray-geodata | grep -E "tcping|xray-core|hysteria|naiveproxy|shadowsocks-rust|shadowsocksr-libev|simple-obfs|sing-box|tuic-client|v2ray-geoview|v2ray-plugin")
+          pkgs=$(ls feeds/passwall_packages -I v2ray-geodata | grep -E "chinadns-ng|tcping|xray-core|hysteria|naiveproxy|shadowsocks-rust|shadowsocksr-libev|simple-obfs|sing-box|tuic-client|v2ray-geoview|v2ray-plugin")
           for pkg in $pkgs; do
             version=$(awk -F ':=' '/PKG_VERSION:=/{print $2}' feeds/passwall_packages/$pkg/Makefile | sed 's/\r//g')
             [ -z "${version}" ] && version=$(awk -F ':=' '/PKG_SOURCE_DATE:=/{print $2}' feeds/passwall_packages/$pkg/Makefile | sed 's/\r//g')
