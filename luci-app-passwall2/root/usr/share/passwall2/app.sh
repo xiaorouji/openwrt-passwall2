@@ -302,6 +302,28 @@ get_geoip() {
 	fi
 }
 
+get_singbox_geoip() {
+	local geoip_code="$1"
+	local geoip_path=$(config_t_get global_singbox geoip_path)
+	[ -e "$geoip_path" ] || { echo ""; return; }
+	local has_geoip_tools=$($(first_type $(config_t_get global_app singbox_file) sing-box) geoip | grep "GeoIP tools")
+	if [ -n "${has_geoip_tools}" ]; then
+		[ -f "${geoip_path}" ] && local geoip_md5=$(md5sum ${geoip_path} | awk '{print $1}')
+		local output_file="${TMP_PATH2}/geoip-${geoip_md5}-${geoip_code}.json"
+		[ ! -f ${output_file} ] && $(first_type $(config_t_get global_app singbox_file) sing-box) geoip -f "${geoip_path}" export "${geoip_code}" -o "${output_file}"
+		case "$2" in
+			ipv4)
+				cat ${output_file} | grep -E "([0-9]{1,3}[\.]){3}[0-9]{1,3}" | awk -F '"' '{print $2}' | sed -e "/^$/d"
+			;;
+			ipv6)
+				cat ${output_file} | grep -E "([A-Fa-f0-9]{1,4}::?){1,7}[A-Fa-f0-9]{1,4}" | awk -F '"' '{print $2}' | sed -e "/^$/d"
+			;;
+		esac
+	else
+		echo ""
+	fi
+}
+
 run_xray() {
 	local flag node redir_port socks_address socks_port socks_username socks_password http_address http_port http_username http_password
 	local dns_listen_port direct_dns_query_strategy remote_dns_protocol remote_dns_udp_server remote_dns_tcp_server remote_dns_doh remote_dns_client_ip remote_dns_detour remote_fakedns remote_dns_query_strategy dns_cache write_ipset_direct

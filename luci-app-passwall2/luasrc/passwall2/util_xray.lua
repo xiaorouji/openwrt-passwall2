@@ -1405,6 +1405,11 @@ function gen_config(var)
 				string.gsub(direct_ipset, '[^' .. "," .. ']+', function(w)
 					sys.call("ipset -q -F " .. w)
 				end)
+				local ipset_prefix_name = "passwall2_" .. node_id .. "_"
+				local ipset_list = sys.exec("ipset list | grep 'Name: ' | grep '" .. ipset_prefix_name .. "' | awk '{print $2}'")
+				string.gsub(ipset_list, '[^' .. "\r\n" .. ']+', function(w)
+					sys.call("ipset -q -F " .. w)
+				end)
 			end
 			if direct_nftset then
 				string.gsub(direct_nftset, '[^' .. "," .. ']+', function(w)
@@ -1416,6 +1421,13 @@ function gen_config(var)
 						local set_name = split[4]
 						sys.call(string.format("nft flush set %s %s %s 2>/dev/null", family, table_name, set_name))
 					end
+				end)
+				local family = "inet"
+				local table_name = "passwall2"
+				local nftset_prefix_name = "passwall2_" .. node_id .. "_"
+				local nftset_list = sys.exec("nft -a list sets | grep -E '" .. nftset_prefix_name .. "' | awk -F 'set ' '{print $2}' | awk '{print $1}'")
+				string.gsub(nftset_list, '[^' .. "\r\n" .. ']+', function(w)
+					sys.call(string.format("nft flush set %s %s %s 2>/dev/null", family, table_name, w))
 				end)
 			end
 		end
