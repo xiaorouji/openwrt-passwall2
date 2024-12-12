@@ -757,6 +757,7 @@ run_global() {
 
 	GLOBAL_DNSMASQ_PORT=$(get_new_port 11400)
 	run_copy_dnsmasq flag="default" listen_port=$GLOBAL_DNSMASQ_PORT tun_dns="${TUN_DNS}"
+	DNS_REDIRECT_PORT=${GLOBAL_DNSMASQ_PORT}
 }
 
 start_socks() {

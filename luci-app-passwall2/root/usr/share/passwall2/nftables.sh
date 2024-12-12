@@ -347,6 +347,8 @@ load_acl() {
 			node_remark=$(config_n_get $NODE remarks)
 			[ -s "${TMP_ACL_PATH}/${sid}/var_node" ] && node=$(cat ${TMP_ACL_PATH}/${sid}/var_node)
 			[ -s "${TMP_ACL_PATH}/${sid}/var_port" ] && redir_port=$(cat ${TMP_ACL_PATH}/${sid}/var_port)
+			[ -s "${TMP_ACL_PATH}/${sid}/var_redirect_dns_port" ] && dns_redirect_port=$(cat ${TMP_ACL_PATH}/${sid}/var_redirect_dns_port)
+			[ "$node" = "default" ] && dns_redirect_port=${DNS_REDIRECT_PORT}
 			[ -n "$node" ] && [ "$node" != "default" ] && node_remark=$(config_n_get $node remarks)
 
 			write_ipset_direct=${write_ipset_direct:-1}
@@ -429,11 +431,11 @@ load_acl() {
 				}
 
 				if ([ "$tcp_proxy_mode" != "disable" ] || [ "$udp_proxy_mode" != "disable" ]) && [ -n "$redir_port" ]; then
-					[ -s "${TMP_ACL_PATH}/${sid}/var_redirect_dns_port" ] && {
-						nft "add rule $NFTABLE_NAME PSW2_REDIRECT ip protocol udp ${_ipt_source} udp dport 53 counter redirect to :$(cat ${TMP_ACL_PATH}/${sid}/var_redirect_dns_port) comment \"$remarks\""
-						nft "add rule $NFTABLE_NAME PSW2_REDIRECT ip protocol tcp ${_ipt_source} tcp dport 53 counter redirect to :$(cat ${TMP_ACL_PATH}/${sid}/var_redirect_dns_port) comment \"$remarks\""
-						nft "add rule $NFTABLE_NAME PSW2_REDIRECT meta l4proto udp ${_ipt_source} udp dport 53 counter redirect to :$(cat ${TMP_ACL_PATH}/${sid}/var_redirect_dns_port) comment \"$remarks\""
-						nft "add rule $NFTABLE_NAME PSW2_REDIRECT meta l4proto tcp ${_ipt_source} tcp dport 53 counter redirect to :$(cat ${TMP_ACL_PATH}/${sid}/var_redirect_dns_port) comment \"$remarks\""
+					[ -n "$dns_redirect_port" ] && {
+						nft "add rule $NFTABLE_NAME PSW2_REDIRECT ip protocol udp ${_ipt_source} udp dport 53 counter redirect to :$dns_redirect_port comment \"$remarks\""
+						nft "add rule $NFTABLE_NAME PSW2_REDIRECT ip protocol tcp ${_ipt_source} tcp dport 53 counter redirect to :$dns_redirect_port comment \"$remarks\""
+						nft "add rule $NFTABLE_NAME PSW2_REDIRECT meta l4proto udp ${_ipt_source} udp dport 53 counter redirect to :$dns_redirect_port comment \"$remarks\""
+						nft "add rule $NFTABLE_NAME PSW2_REDIRECT meta l4proto tcp ${_ipt_source} tcp dport 53 counter redirect to :$dns_redirect_port comment \"$remarks\""
 					}
 				else
 					nft "add rule $NFTABLE_NAME PSW2_REDIRECT ip protocol udp ${_ipt_source} udp dport 53 counter return comment \"$remarks\""
@@ -536,11 +538,11 @@ load_acl() {
 		}
 
 		if ([ "$TCP_PROXY_MODE" != "disable" ] || [ "$UDP_PROXY_MODE" != "disable" ]) && [ "$NODE" != "nil" ]; then
-			[ -s "${TMP_ACL_PATH}/default/var_redirect_dns_port" ] && {
-				nft "add rule $NFTABLE_NAME PSW2_REDIRECT ip protocol udp udp dport 53 counter redirect to :$(cat ${TMP_ACL_PATH}/default/var_redirect_dns_port) comment \"默认\""
-				nft "add rule $NFTABLE_NAME PSW2_REDIRECT ip protocol tcp tcp dport 53 counter redirect to :$(cat ${TMP_ACL_PATH}/default/var_redirect_dns_port) comment \"默认\""
-				nft "add rule $NFTABLE_NAME PSW2_REDIRECT meta l4proto udp udp dport 53 counter redirect to :$(cat ${TMP_ACL_PATH}/default/var_redirect_dns_port) comment \"默认\""
-				nft "add rule $NFTABLE_NAME PSW2_REDIRECT meta l4proto tcp tcp dport 53 counter redirect to :$(cat ${TMP_ACL_PATH}/default/var_redirect_dns_port) comment \"默认\""
+			[ -n "$DNS_REDIRECT_PORT" ] && {
+				nft "add rule $NFTABLE_NAME PSW2_REDIRECT ip protocol udp udp dport 53 counter redirect to :$DNS_REDIRECT_PORT comment \"默认\""
+				nft "add rule $NFTABLE_NAME PSW2_REDIRECT ip protocol tcp tcp dport 53 counter redirect to :$DNS_REDIRECT_PORT comment \"默认\""
+				nft "add rule $NFTABLE_NAME PSW2_REDIRECT meta l4proto udp udp dport 53 counter redirect to :$DNS_REDIRECT_PORT comment \"默认\""
+				nft "add rule $NFTABLE_NAME PSW2_REDIRECT meta l4proto tcp tcp dport 53 counter redirect to :$DNS_REDIRECT_PORT comment \"默认\""
 			}
 		fi
 
@@ -961,11 +963,11 @@ add_firewall_rule() {
 		}
 
 		if [ "$NODE" != "nil" ] && ([ "$TCP_LOCALHOST_PROXY" = "1" ] || [ "$UDP_LOCALHOST_PROXY" = "1" ]); then
-			[ -s "${TMP_ACL_PATH}/default/var_redirect_dns_port" ] && {
-				nft "add rule $NFTABLE_NAME nat_output ip protocol udp oif lo udp dport 53 counter redirect to :$(cat ${TMP_ACL_PATH}/default/var_redirect_dns_port) comment \"PSW2\""
-				nft "add rule $NFTABLE_NAME nat_output ip protocol tcp oif lo tcp dport 53 counter redirect to :$(cat ${TMP_ACL_PATH}/default/var_redirect_dns_port) comment \"PSW2\""
-				nft "add rule $NFTABLE_NAME nat_output meta l4proto udp oif lo udp dport 53 counter redirect to :$(cat ${TMP_ACL_PATH}/default/var_redirect_dns_port) comment \"PSW2\""
-				nft "add rule $NFTABLE_NAME nat_output meta l4proto tcp oif lo tcp dport 53 counter redirect to :$(cat ${TMP_ACL_PATH}/default/var_redirect_dns_port) comment \"PSW2\""
+			[ -n "$DNS_REDIRECT_PORT" ] && {
+				nft "add rule $NFTABLE_NAME nat_output ip protocol udp oif lo udp dport 53 counter redirect to :$DNS_REDIRECT_PORT comment \"PSW2\""
+				nft "add rule $NFTABLE_NAME nat_output ip protocol tcp oif lo tcp dport 53 counter redirect to :$DNS_REDIRECT_PORT comment \"PSW2\""
+				nft "add rule $NFTABLE_NAME nat_output meta l4proto udp oif lo udp dport 53 counter redirect to :$DNS_REDIRECT_PORT comment \"PSW2\""
+				nft "add rule $NFTABLE_NAME nat_output meta l4proto tcp oif lo tcp dport 53 counter redirect to :$DNS_REDIRECT_PORT comment \"PSW2\""
 			}
 		fi
 

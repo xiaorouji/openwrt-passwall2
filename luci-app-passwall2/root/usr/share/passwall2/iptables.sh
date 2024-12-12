@@ -292,6 +292,8 @@ load_acl() {
 			node_remark=$(config_n_get $NODE remarks)
 			[ -s "${TMP_ACL_PATH}/${sid}/var_node" ] && node=$(cat ${TMP_ACL_PATH}/${sid}/var_node)
 			[ -s "${TMP_ACL_PATH}/${sid}/var_port" ] && redir_port=$(cat ${TMP_ACL_PATH}/${sid}/var_port)
+			[ -s "${TMP_ACL_PATH}/${sid}/var_redirect_dns_port" ] && dns_redirect_port=$(cat ${TMP_ACL_PATH}/${sid}/var_redirect_dns_port)
+			[ "$node" = "default" ] && dns_redirect_port=${DNS_REDIRECT_PORT}
 			[ -n "$node" ] && [ "$node" != "default" ] && node_remark=$(config_n_get $node remarks)
 
 			write_ipset_direct=${write_ipset_direct:-1}
@@ -384,11 +386,11 @@ load_acl() {
 				}
 				
 				if ([ "$tcp_proxy_mode" != "disable" ] || [ "$udp_proxy_mode" != "disable" ]) && [ -n "$redir_port" ]; then
-					[ -s "${TMP_ACL_PATH}/${sid}/var_redirect_dns_port" ] && {
-						$ipt_n -A PSW2_REDIRECT $(comment "$remarks") -p udp ${_ipt_source} --dport 53 -j REDIRECT --to-ports $(cat ${TMP_ACL_PATH}/${sid}/var_redirect_dns_port)
-						$ip6t_n -A PSW2_REDIRECT $(comment "$remarks") -p udp ${_ipt_source} --dport 53 -j REDIRECT --to-ports $(cat ${TMP_ACL_PATH}/${sid}/var_redirect_dns_port) 2>/dev/null
-						$ipt_n -A PSW2_REDIRECT $(comment "$remarks") -p tcp ${_ipt_source} --dport 53 -j REDIRECT --to-ports $(cat ${TMP_ACL_PATH}/${sid}/var_redirect_dns_port)
-						$ip6t_n -A PSW2_REDIRECT $(comment "$remarks") -p tcp ${_ipt_source} --dport 53 -j REDIRECT --to-ports $(cat ${TMP_ACL_PATH}/${sid}/var_redirect_dns_port) 2>/dev/null
+					[ -n "$dns_redirect_port" ] && {
+						$ipt_n -A PSW2_REDIRECT $(comment "$remarks") -p udp ${_ipt_source} --dport 53 -j REDIRECT --to-ports $dns_redirect_port
+						$ip6t_n -A PSW2_REDIRECT $(comment "$remarks") -p udp ${_ipt_source} --dport 53 -j REDIRECT --to-ports $dns_redirect_port 2>/dev/null
+						$ipt_n -A PSW2_REDIRECT $(comment "$remarks") -p tcp ${_ipt_source} --dport 53 -j REDIRECT --to-ports $dns_redirect_port
+						$ip6t_n -A PSW2_REDIRECT $(comment "$remarks") -p tcp ${_ipt_source} --dport 53 -j REDIRECT --to-ports $dns_redirect_port 2>/dev/null
 					}
 				else
 					$ipt_n -A PSW2_REDIRECT $(comment "$remarks") -p udp ${_ipt_source} --dport 53 -j RETURN
@@ -489,11 +491,11 @@ load_acl() {
 		}
 
 		if ([ "$TCP_PROXY_MODE" != "disable" ] || [ "$UDP_PROXY_MODE" != "disable" ]) && [ "$NODE" != "nil" ]; then
-			[ -s "${TMP_ACL_PATH}/default/var_redirect_dns_port" ] && {
-				$ipt_n -A PSW2_REDIRECT $(comment "默认") -p udp --dport 53 -j REDIRECT --to-ports $(cat ${TMP_ACL_PATH}/default/var_redirect_dns_port)
-				$ip6t_n -A PSW2_REDIRECT $(comment "默认") -p udp --dport 53 -j REDIRECT --to-ports $(cat ${TMP_ACL_PATH}/default/var_redirect_dns_port) 2>/dev/null
-				$ipt_n -A PSW2_REDIRECT $(comment "默认") -p tcp --dport 53 -j REDIRECT --to-ports $(cat ${TMP_ACL_PATH}/default/var_redirect_dns_port)
-				$ip6t_n -A PSW2_REDIRECT $(comment "默认") -p tcp --dport 53 -j REDIRECT --to-ports $(cat ${TMP_ACL_PATH}/default/var_redirect_dns_port) 2>/dev/null
+			[ -n "$DNS_REDIRECT_PORT" ] && {
+				$ipt_n -A PSW2_REDIRECT $(comment "默认") -p udp --dport 53 -j REDIRECT --to-ports $DNS_REDIRECT_PORT
+				$ip6t_n -A PSW2_REDIRECT $(comment "默认") -p udp --dport 53 -j REDIRECT --to-ports $DNS_REDIRECT_PORT 2>/dev/null
+				$ipt_n -A PSW2_REDIRECT $(comment "默认") -p tcp --dport 53 -j REDIRECT --to-ports $DNS_REDIRECT_PORT
+				$ip6t_n -A PSW2_REDIRECT $(comment "默认") -p tcp --dport 53 -j REDIRECT --to-ports $DNS_REDIRECT_PORT 2>/dev/null
 			}
 		fi
 
@@ -902,11 +904,11 @@ add_firewall_rule() {
 		}
 		
 		if [ "$NODE" != "nil" ] && ([ "$TCP_LOCALHOST_PROXY" = "1" ] || [ "$UDP_LOCALHOST_PROXY" = "1" ]); then
-			[ -s "${TMP_ACL_PATH}/default/var_redirect_dns_port" ] && {
-				$ipt_n -A OUTPUT $(comment "PSW2") -p udp -o lo --dport 53 -j REDIRECT --to-ports $(cat ${TMP_ACL_PATH}/default/var_redirect_dns_port)
-				$ip6t_n -A OUTPUT $(comment "PSW2") -p udp -o lo --dport 53 -j REDIRECT --to-ports $(cat ${TMP_ACL_PATH}/default/var_redirect_dns_port) 2>/dev/null
-				$ipt_n -A OUTPUT $(comment "PSW2") -p tcp -o lo --dport 53 -j REDIRECT --to-ports $(cat ${TMP_ACL_PATH}/default/var_redirect_dns_port)
-				$ip6t_n -A OUTPUT $(comment "PSW2") -p tcp -o lo --dport 53 -j REDIRECT --to-ports $(cat ${TMP_ACL_PATH}/default/var_redirect_dns_port) 2>/dev/null
+			[ -n "$DNS_REDIRECT_PORT" ] && {
+				$ipt_n -A OUTPUT $(comment "PSW2") -p udp -o lo --dport 53 -j REDIRECT --to-ports $DNS_REDIRECT_PORT
+				$ip6t_n -A OUTPUT $(comment "PSW2") -p udp -o lo --dport 53 -j REDIRECT --to-ports $DNS_REDIRECT_PORT 2>/dev/null
+				$ipt_n -A OUTPUT $(comment "PSW2") -p tcp -o lo --dport 53 -j REDIRECT --to-ports $DNS_REDIRECT_PORT
+				$ip6t_n -A OUTPUT $(comment "PSW2") -p tcp -o lo --dport 53 -j REDIRECT --to-ports $DNS_REDIRECT_PORT 2>/dev/null
 			}
 		fi
 	
