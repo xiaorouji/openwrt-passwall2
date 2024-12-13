@@ -1180,7 +1180,7 @@ function gen_config(var)
 		end
 
 		if remote_dns_tcp_server then
-			_remote_dns.address = "tcp://" .. remote_dns_tcp_server
+			_remote_dns.address = "tcp://" .. remote_dns_tcp_server .. ":" .. tonumber(remote_dns_tcp_port) or 53
 			_remote_dns.port = tonumber(remote_dns_tcp_port) or 53
 			_remote_dns_proto = "tcp"
 			_remote_dns_ip = remote_dns_tcp_server
@@ -1740,7 +1740,7 @@ function gen_dns_config(var)
 			end
 	
 			if remote_dns_tcp_server then
-				_remote_dns.address = "tcp://" .. remote_dns_tcp_server
+				_remote_dns.address = "tcp://" .. remote_dns_tcp_server .. ":" .. tonumber(remote_dns_tcp_port) or 53
 				_remote_dns.port = tonumber(remote_dns_tcp_port) or 53
 				
 				other_type_dns_proto = "tcp"
