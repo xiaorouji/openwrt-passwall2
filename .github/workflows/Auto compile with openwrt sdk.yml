@@ -184,6 +184,9 @@ jobs:
           - platform: aarch64_cortex-a72
             url_sdk: https://downloads.openwrt.org/releases/23.05.5/targets/mvebu/cortexa72/openwrt-sdk-23.05.5-mvebu-cortexa72_gcc-12.3.0_musl.Linux-x86_64.tar.xz
 
+          - platform: arm_cortex-a5_vfpv4
+            url_sdk: https://downloads.openwrt.org/releases/23.05.5/targets/at91/sama5/openwrt-sdk-23.05.5-at91-sama5_gcc-12.3.0_musl_eabi.Linux-x86_64.tar.xz
+
           - platform: arm_cortex-a7
             url_sdk: https://downloads.openwrt.org/releases/23.05.5/targets/mediatek/mt7629/openwrt-sdk-23.05.5-mediatek-mt7629_gcc-12.3.0_musl_eabi.Linux-x86_64.tar.xz
 
