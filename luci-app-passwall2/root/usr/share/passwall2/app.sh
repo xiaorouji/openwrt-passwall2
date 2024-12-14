@@ -990,12 +990,10 @@ run_copy_dnsmasq() {
 	mkdir -p $dnsmasq_conf_path
 	[ -s "/tmp/etc/dnsmasq.conf.${DEFAULT_DNSMASQ_CFGID}" ] && {
 		cp -r /tmp/etc/dnsmasq.conf.${DEFAULT_DNSMASQ_CFGID} $dnsmasq_conf
+		sed -i "/passwall2/d" $dnsmasq_conf
 		sed -i "/ubus/d" $dnsmasq_conf
 		sed -i "/dhcp/d" $dnsmasq_conf
 		sed -i "/port=/d" $dnsmasq_conf
-		sed -i "/conf-dir/d" $dnsmasq_conf
-		sed -i "/no-poll/d" $dnsmasq_conf
-		sed -i "/no-resolv/d" $dnsmasq_conf
 		sed -i "/server=/d" $dnsmasq_conf
 	}
 	local set_type="ipset"
