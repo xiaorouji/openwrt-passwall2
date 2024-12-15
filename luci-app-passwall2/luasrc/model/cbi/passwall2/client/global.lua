@@ -325,6 +325,10 @@ o.remove = function(self, section)
 	end
 end
 
+o = s:taboption("DNS", Flag, "dns_redirect", translate("DNS Redirect"), translate("Force special DNS server to need proxy devices."))
+o.default = "1"
+o.rmempty = false
+
 o = s:taboption("DNS", Button, "clear_ipset", translate("Clear IPSet"), translate("Try this feature if the rule modification does not take effect."))
 o.inputstyle = "remove"
 function o.write(e, e)

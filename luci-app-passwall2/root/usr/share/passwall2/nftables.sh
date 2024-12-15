@@ -434,10 +434,10 @@ load_acl() {
 
 				if ([ "$tcp_proxy_mode" != "disable" ] || [ "$udp_proxy_mode" != "disable" ]) && [ -n "$redir_port" ]; then
 					[ -n "$dns_redirect_port" ] && {
-						nft "add rule $NFTABLE_NAME PSW2_DNS ip protocol udp ${_ipt_source} udp dport 53 ip daddr @$NFTSET_LOCALLIST counter redirect to :$dns_redirect_port comment \"$remarks\""
-						nft "add rule $NFTABLE_NAME PSW2_DNS ip protocol tcp ${_ipt_source} tcp dport 53 ip daddr @$NFTSET_LOCALLIST counter redirect to :$dns_redirect_port comment \"$remarks\""
-						nft "add rule $NFTABLE_NAME PSW2_DNS meta l4proto udp ${_ipt_source} udp dport 53 ip6 daddr @$NFTSET_LOCALLIST6 counter redirect to :$dns_redirect_port comment \"$remarks\""
-						nft "add rule $NFTABLE_NAME PSW2_DNS meta l4proto tcp ${_ipt_source} tcp dport 53 ip6 daddr @$NFTSET_LOCALLIST6 counter redirect to :$dns_redirect_port comment \"$remarks\""
+						nft "add rule $NFTABLE_NAME PSW2_DNS ip protocol udp ${_ipt_source} udp dport 53 counter redirect to :$dns_redirect_port comment \"$remarks\""
+						nft "add rule $NFTABLE_NAME PSW2_DNS ip protocol tcp ${_ipt_source} tcp dport 53 counter redirect to :$dns_redirect_port comment \"$remarks\""
+						nft "add rule $NFTABLE_NAME PSW2_DNS meta l4proto udp ${_ipt_source} udp dport 53 counter redirect to :$dns_redirect_port comment \"$remarks\""
+						nft "add rule $NFTABLE_NAME PSW2_DNS meta l4proto tcp ${_ipt_source} tcp dport 53 counter redirect to :$dns_redirect_port comment \"$remarks\""
 					}
 				else
 					nft "add rule $NFTABLE_NAME PSW2_DNS ip protocol udp ${_ipt_source} udp dport 53 counter return comment \"$remarks\""
@@ -541,11 +541,10 @@ load_acl() {
 
 		if ([ "$TCP_PROXY_MODE" != "disable" ] || [ "$UDP_PROXY_MODE" != "disable" ]) && [ "$NODE" != "nil" ]; then
 			[ -n "$DNS_REDIRECT_PORT" ] && {
-				#Only hijack when dest address is local IP
-				nft "add rule $NFTABLE_NAME PSW2_DNS ip protocol udp udp dport 53 ip daddr @$NFTSET_LOCALLIST counter redirect to :$DNS_REDIRECT_PORT comment \"默认\""
-				nft "add rule $NFTABLE_NAME PSW2_DNS ip protocol tcp tcp dport 53 ip daddr @$NFTSET_LOCALLIST counter redirect to :$DNS_REDIRECT_PORT comment \"默认\""
-				nft "add rule $NFTABLE_NAME PSW2_DNS meta l4proto udp udp dport 53 ip6 daddr @$NFTSET_LOCALLIST6 counter redirect to :$DNS_REDIRECT_PORT comment \"默认\""
-				nft "add rule $NFTABLE_NAME PSW2_DNS meta l4proto tcp tcp dport 53 ip6 daddr @$NFTSET_LOCALLIST6 counter redirect to :$DNS_REDIRECT_PORT comment \"默认\""
+				nft "add rule $NFTABLE_NAME PSW2_DNS ip protocol udp udp dport 53 counter redirect to :$DNS_REDIRECT_PORT comment \"默认\""
+				nft "add rule $NFTABLE_NAME PSW2_DNS ip protocol tcp tcp dport 53 counter redirect to :$DNS_REDIRECT_PORT comment \"默认\""
+				nft "add rule $NFTABLE_NAME PSW2_DNS meta l4proto udp udp dport 53 counter redirect to :$DNS_REDIRECT_PORT comment \"默认\""
+				nft "add rule $NFTABLE_NAME PSW2_DNS meta l4proto tcp tcp dport 53 counter redirect to :$DNS_REDIRECT_PORT comment \"默认\""
 			}
 		fi
 
@@ -816,7 +815,13 @@ add_firewall_rule() {
 
 	nft "add chain $NFTABLE_NAME PSW2_DNS"
 	nft "flush chain $NFTABLE_NAME PSW2_DNS"
-	nft "insert rule $NFTABLE_NAME dstnat jump PSW2_DNS"
+	if [ $(config_t_get global dns_redirect "1") = "0" ]; then
+		#Only hijack when dest address is local IP
+		nft "insert rule $NFTABLE_NAME dstnat ip daddr @${NFTSET_LOCALLIST} jump PSW2_DNS"
+		nft "insert rule $NFTABLE_NAME dstnat ip6 daddr @${NFTSET_LOCALLIST6} jump PSW2_DNS"
+	else
+		nft "insert rule $NFTABLE_NAME dstnat jump PSW2_DNS"
+	fi
 
 	# for ipv4 ipv6 tproxy mark
 	nft "add chain $NFTABLE_NAME PSW2_RULE"
@@ -972,7 +977,6 @@ add_firewall_rule() {
 
 		if [ "$NODE" != "nil" ] && ([ "$TCP_LOCALHOST_PROXY" = "1" ] || [ "$UDP_LOCALHOST_PROXY" = "1" ]); then
 			[ -n "$DNS_REDIRECT_PORT" ] && {
-				#Only hijack when dest address is local IP
 				nft "add rule $NFTABLE_NAME nat_output ip protocol udp oif lo udp dport 53 counter redirect to :$DNS_REDIRECT_PORT comment \"PSW2\""
 				nft "add rule $NFTABLE_NAME nat_output ip protocol tcp oif lo tcp dport 53 counter redirect to :$DNS_REDIRECT_PORT comment \"PSW2\""
 				nft "add rule $NFTABLE_NAME nat_output meta l4proto udp oif lo udp dport 53 counter redirect to :$DNS_REDIRECT_PORT comment \"PSW2\""

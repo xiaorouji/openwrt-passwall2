@@ -388,13 +388,10 @@ load_acl() {
 				}
 				
 				if ([ "$tcp_proxy_mode" != "disable" ] || [ "$udp_proxy_mode" != "disable" ]) && [ -n "$redir_port" ]; then
-					[ -n "$dns_redirect_port" ] && {
-						#Only hijack when dest address is local IP
-						$ipt_n -A PSW2_DNS $(comment "$remarks") -p udp ${_ipt_source} $(dst $IPSET_LOCALLIST) --dport 53 -j REDIRECT --to-ports $dns_redirect_port
-						$ip6t_n -A PSW2_DNS $(comment "$remarks") -p udp ${_ipt_source} $(dst $IPSET_LOCALLIST6) --dport 53 -j REDIRECT --to-ports $dns_redirect_port 2>/dev/null
-						$ipt_n -A PSW2_DNS $(comment "$remarks") -p tcp ${_ipt_source} $(dst $IPSET_LOCALLIST) --dport 53 -j REDIRECT --to-ports $dns_redirect_port
-						$ip6t_n -A PSW2_DNS $(comment "$remarks") -p tcp ${_ipt_source} $(dst $IPSET_LOCALLIST6) --dport 53 -j REDIRECT --to-ports $dns_redirect_port 2>/dev/null
-					}
+					$ipt_n -A PSW2_DNS $(comment "$remarks") -p udp ${_ipt_source} --dport 53 -j REDIRECT --to-ports $dns_redirect_port
+					$ip6t_n -A PSW2_DNS $(comment "$remarks") -p udp ${_ipt_source} --dport 53 -j REDIRECT --to-ports $dns_redirect_port 2>/dev/null
+					$ipt_n -A PSW2_DNS $(comment "$remarks") -p tcp ${_ipt_source} --dport 53 -j REDIRECT --to-ports $dns_redirect_port
+					$ip6t_n -A PSW2_DNS $(comment "$remarks") -p tcp ${_ipt_source} --dport 53 -j REDIRECT --to-ports $dns_redirect_port 2>/dev/null
 				else
 					$ipt_n -A PSW2_DNS $(comment "$remarks") -p udp ${_ipt_source} --dport 53 -j RETURN
 					$ip6t_n -A PSW2_DNS $(comment "$remarks") -p udp ${_ipt_source} --dport 53 -j RETURN 2>/dev/null
@@ -495,11 +492,10 @@ load_acl() {
 
 		if ([ "$TCP_PROXY_MODE" != "disable" ] || [ "$UDP_PROXY_MODE" != "disable" ]) && [ "$NODE" != "nil" ]; then
 			[ -n "$DNS_REDIRECT_PORT" ] && {
-				#Only hijack when dest address is local IP
-				$ipt_n -A PSW2_DNS $(comment "默认") -p udp $(dst $IPSET_LOCALLIST) --dport 53 -j REDIRECT --to-ports $DNS_REDIRECT_PORT
-				$ip6t_n -A PSW2_DNS $(comment "默认") -p udp $(dst $IPSET_LOCALLIST6) --dport 53 -j REDIRECT --to-ports $DNS_REDIRECT_PORT 2>/dev/null
-				$ipt_n -A PSW2_DNS $(comment "默认") -p tcp $(dst $IPSET_LOCALLIST) --dport 53 -j REDIRECT --to-ports $DNS_REDIRECT_PORT
-				$ip6t_n -A PSW2_DNS $(comment "默认") -p tcp $(dst $IPSET_LOCALLIST6) --dport 53 -j REDIRECT --to-ports $DNS_REDIRECT_PORT 2>/dev/null
+				$ipt_n -A PSW2_DNS $(comment "默认") -p udp --dport 53 -j REDIRECT --to-ports $DNS_REDIRECT_PORT
+				$ip6t_n -A PSW2_DNS $(comment "默认") -p udp --dport 53 -j REDIRECT --to-ports $DNS_REDIRECT_PORT 2>/dev/null
+				$ipt_n -A PSW2_DNS $(comment "默认") -p tcp --dport 53 -j REDIRECT --to-ports $DNS_REDIRECT_PORT
+				$ip6t_n -A PSW2_DNS $(comment "默认") -p tcp --dport 53 -j REDIRECT --to-ports $DNS_REDIRECT_PORT 2>/dev/null
 			}
 		fi
 
@@ -777,7 +773,12 @@ add_firewall_rule() {
 	$ipt_n -A PSW2_OUTPUT -m mark --mark 0xff -j RETURN
 
 	$ipt_n -N PSW2_DNS
-	$ipt_n -I PREROUTING 1 -j PSW2_DNS
+	if [ $(config_t_get global dns_redirect "1") = "0" ]; then
+		#Only hijack when dest address is local IP
+		$ipt_n -I PREROUTING $(dst $IPSET_LOCALLIST) -j PSW2_DNS
+	else
+		$ipt_n -I PREROUTING -j PSW2_DNS
+	fi
 
 	$ipt_m -N PSW2_DIVERT
 	$ipt_m -A PSW2_DIVERT -j MARK --set-mark 1
@@ -829,7 +830,12 @@ add_firewall_rule() {
 	}
 	
 	$ip6t_n -N PSW2_DNS
-	$ip6t_n -I PREROUTING 1 -j PSW2_DNS
+	if [ $(config_t_get global dns_redirect "1") = "0" ]; then
+		#Only hijack when dest address is local IP
+		$ip6t_n -I PREROUTING $(dst $IPSET_LOCALLIST6) -j PSW2_DNS
+	else
+		$ip6t_n -I PREROUTING -j PSW2_DNS
+	fi
 
 	$ip6t_m -N PSW2_DIVERT
 	$ip6t_m -A PSW2_DIVERT -j MARK --set-mark 1

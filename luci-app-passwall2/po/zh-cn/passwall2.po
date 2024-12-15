@@ -172,6 +172,12 @@ msgstr "直连 DNS 解析结果写入到 IPSet"
 msgid "Perform the matching direct domain name rules into IP to IPSet/NFTSet, and then connect directly (not entering the core). Maybe conflict with some special circumstances."
 msgstr "将匹配到的直连规则的域名解析IP写入到 IPSet/NFTSet，然后直连（不进入内核）。可能和某些特殊情况冲突。"
 
+msgid "DNS Redirect"
+msgstr "DNS 重定向"
+
+msgid "Force special DNS server to need proxy devices."
+msgstr "强制需要代理的设备使用专用 DNS 服务器。"
+
 msgid "Clear IPSet"
 msgstr "清空 IPSet"
 
