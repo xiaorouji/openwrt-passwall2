@@ -1079,8 +1079,7 @@ acl_app() {
 		local ipt_tmp msg msg2
 		redir_port=11200
 		dns_port=11300
-		dnsmasq_port=11400
-		[ -n "${GLOBAL_DNSMASQ_PORT}" ] && dnsmasq_port=$(get_new_port $GLOBAL_DNSMASQ_PORT)
+		dnsmasq_port=${GLOBAL_DNSMASQ_PORT:-11400}
 		for item in $items; do
 			index=$(expr $index + 1)
 			local enabled sid remarks sources node direct_dns_query_strategy remote_dns_protocol remote_dns remote_dns_doh remote_dns_client_ip remote_dns_detour remote_fakedns remote_dns_query_strategy interface use_interface

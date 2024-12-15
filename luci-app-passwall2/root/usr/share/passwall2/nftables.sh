@@ -3,9 +3,11 @@
 DIR="$(cd "$(dirname "$0")" && pwd)"
 MY_PATH=$DIR/nftables.sh
 NFTABLE_NAME="inet passwall2"
+NFTSET_LOCALLIST="passwall2_locallist"
 NFTSET_LANLIST="passwall2_lanlist"
 NFTSET_VPSLIST="passwall2_vpslist"
 
+NFTSET_LOCALLIST6="passwall2_locallist6"
 NFTSET_LANLIST6="passwall2_lanlist6"
 NFTSET_VPSLIST6="passwall2_vpslist6"
 
@@ -432,10 +434,10 @@ load_acl() {
 
 				if ([ "$tcp_proxy_mode" != "disable" ] || [ "$udp_proxy_mode" != "disable" ]) && [ -n "$redir_port" ]; then
 					[ -n "$dns_redirect_port" ] && {
-						nft "add rule $NFTABLE_NAME PSW2_DNS ip protocol udp ${_ipt_source} udp dport 53 counter redirect to :$dns_redirect_port comment \"$remarks\""
-						nft "add rule $NFTABLE_NAME PSW2_DNS ip protocol tcp ${_ipt_source} tcp dport 53 counter redirect to :$dns_redirect_port comment \"$remarks\""
-						nft "add rule $NFTABLE_NAME PSW2_DNS meta l4proto udp ${_ipt_source} udp dport 53 counter redirect to :$dns_redirect_port comment \"$remarks\""
-						nft "add rule $NFTABLE_NAME PSW2_DNS meta l4proto tcp ${_ipt_source} tcp dport 53 counter redirect to :$dns_redirect_port comment \"$remarks\""
+						nft "add rule $NFTABLE_NAME PSW2_DNS ip protocol udp ${_ipt_source} udp dport 53 ip daddr @$NFTSET_LOCALLIST counter redirect to :$dns_redirect_port comment \"$remarks\""
+						nft "add rule $NFTABLE_NAME PSW2_DNS ip protocol tcp ${_ipt_source} tcp dport 53 ip daddr @$NFTSET_LOCALLIST counter redirect to :$dns_redirect_port comment \"$remarks\""
+						nft "add rule $NFTABLE_NAME PSW2_DNS meta l4proto udp ${_ipt_source} udp dport 53 ip6 daddr @$NFTSET_LOCALLIST6 counter redirect to :$dns_redirect_port comment \"$remarks\""
+						nft "add rule $NFTABLE_NAME PSW2_DNS meta l4proto tcp ${_ipt_source} tcp dport 53 ip6 daddr @$NFTSET_LOCALLIST6 counter redirect to :$dns_redirect_port comment \"$remarks\""
 					}
 				else
 					nft "add rule $NFTABLE_NAME PSW2_DNS ip protocol udp ${_ipt_source} udp dport 53 counter return comment \"$remarks\""
@@ -539,10 +541,11 @@ load_acl() {
 
 		if ([ "$TCP_PROXY_MODE" != "disable" ] || [ "$UDP_PROXY_MODE" != "disable" ]) && [ "$NODE" != "nil" ]; then
 			[ -n "$DNS_REDIRECT_PORT" ] && {
-				nft "add rule $NFTABLE_NAME PSW2_DNS ip protocol udp udp dport 53 counter redirect to :$DNS_REDIRECT_PORT comment \"默认\""
-				nft "add rule $NFTABLE_NAME PSW2_DNS ip protocol tcp tcp dport 53 counter redirect to :$DNS_REDIRECT_PORT comment \"默认\""
-				nft "add rule $NFTABLE_NAME PSW2_DNS meta l4proto udp udp dport 53 counter redirect to :$DNS_REDIRECT_PORT comment \"默认\""
-				nft "add rule $NFTABLE_NAME PSW2_DNS meta l4proto tcp tcp dport 53 counter redirect to :$DNS_REDIRECT_PORT comment \"默认\""
+				#Only hijack when dest address is local IP
+				nft "add rule $NFTABLE_NAME PSW2_DNS ip protocol udp udp dport 53 ip daddr @$NFTSET_LOCALLIST counter redirect to :$DNS_REDIRECT_PORT comment \"默认\""
+				nft "add rule $NFTABLE_NAME PSW2_DNS ip protocol tcp tcp dport 53 ip daddr @$NFTSET_LOCALLIST counter redirect to :$DNS_REDIRECT_PORT comment \"默认\""
+				nft "add rule $NFTABLE_NAME PSW2_DNS meta l4proto udp udp dport 53 ip6 daddr @$NFTSET_LOCALLIST6 counter redirect to :$DNS_REDIRECT_PORT comment \"默认\""
+				nft "add rule $NFTABLE_NAME PSW2_DNS meta l4proto tcp tcp dport 53 ip6 daddr @$NFTSET_LOCALLIST6 counter redirect to :$DNS_REDIRECT_PORT comment \"默认\""
 			}
 		fi
 
@@ -738,11 +741,16 @@ filter_node() {
 add_firewall_rule() {
 	echolog "开始加载防火墙规则..."
 	gen_nft_tables
+	gen_nftset $NFTSET_LOCALLIST ipv4_addr 0 "-1"
 	gen_nftset $NFTSET_LANLIST ipv4_addr 0 "-1" $(gen_lanlist)
 	gen_nftset $NFTSET_VPSLIST ipv4_addr 0 0
 
+	gen_nftset $NFTSET_LOCALLIST6 ipv6_addr 0 "-1"
 	gen_nftset $NFTSET_LANLIST6 ipv6_addr 0 "-1" $(gen_lanlist_6)
 	gen_nftset $NFTSET_VPSLIST6 ipv6_addr 0 0
+
+	insert_nftset $NFTSET_LOCALLIST "-1" $(ip address show | grep -w "inet" | awk '{print $2}' | awk -F '/' '{print $1}' | sed -e "s/ /\n/g")
+	insert_nftset $NFTSET_LOCALLIST6 "-1" $(ip address show | grep -w "inet6" | awk '{print $2}' | awk -F '/' '{print $1}' | sed -e "s/ /\n/g")
 
 	# 忽略特殊IP段
 	local lan_ifname lan_ip
@@ -964,6 +972,7 @@ add_firewall_rule() {
 
 		if [ "$NODE" != "nil" ] && ([ "$TCP_LOCALHOST_PROXY" = "1" ] || [ "$UDP_LOCALHOST_PROXY" = "1" ]); then
 			[ -n "$DNS_REDIRECT_PORT" ] && {
+				#Only hijack when dest address is local IP
 				nft "add rule $NFTABLE_NAME nat_output ip protocol udp oif lo udp dport 53 counter redirect to :$DNS_REDIRECT_PORT comment \"PSW2\""
 				nft "add rule $NFTABLE_NAME nat_output ip protocol tcp oif lo tcp dport 53 counter redirect to :$DNS_REDIRECT_PORT comment \"PSW2\""
 				nft "add rule $NFTABLE_NAME nat_output meta l4proto udp oif lo udp dport 53 counter redirect to :$DNS_REDIRECT_PORT comment \"PSW2\""
@@ -1086,9 +1095,11 @@ del_firewall_rule() {
 	ip -6 rule del fwmark 1 table 100 2>/dev/null
 	ip -6 route del local ::/0 dev lo table 100 2>/dev/null
 
+	destroy_nftset $NFTSET_LOCALLIST
 	destroy_nftset $NFTSET_LANLIST
 	destroy_nftset $NFTSET_VPSLIST
 
+	destroy_nftset $NFTSET_LOCALLIST6
 	destroy_nftset $NFTSET_LANLIST6
 	destroy_nftset $NFTSET_VPSLIST6
 
