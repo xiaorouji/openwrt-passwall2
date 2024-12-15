@@ -1083,7 +1083,7 @@ local api = require "luci.passwall2.api"
 				}
 			}
 
-			opt.set(dom_prefix + 'encryption', queryParam.encryption);
+			opt.set(dom_prefix + 'encryption', queryParam.encryption || "none");
 			if (queryParam.security) {
 				if (queryParam.security == "tls") {
 					opt.set(dom_prefix + 'tls', true);
