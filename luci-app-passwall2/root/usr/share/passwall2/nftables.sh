@@ -347,9 +347,9 @@ load_acl() {
 			[ "$udp_redir_ports" = "default" ] && udp_redir_ports=$UDP_REDIR_PORTS
 
 			node_remark=$(config_n_get $NODE remarks)
-			[ -s "${TMP_ACL_PATH}/${sid}/var_node" ] && node=$(cat ${TMP_ACL_PATH}/${sid}/var_node)
-			[ -s "${TMP_ACL_PATH}/${sid}/var_port" ] && redir_port=$(cat ${TMP_ACL_PATH}/${sid}/var_port)
-			[ -s "${TMP_ACL_PATH}/${sid}/var_redirect_dns_port" ] && dns_redirect_port=$(cat ${TMP_ACL_PATH}/${sid}/var_redirect_dns_port)
+			[ -n $(get_cache_var "ACL_${sid}_node") ] && node=$(get_cache_var "ACL_${sid}_node")
+			[ -n $(get_cache_var "ACL_${sid}_redir_port") ] && redir_port=$(get_cache_var "ACL_${sid}_redir_port")
+			[ -n $(get_cache_var "ACL_${sid}_dns_port") ] && dns_redirect_port=$(get_cache_var "ACL_${sid}_dns_port")
 			[ "$node" = "default" ] && dns_redirect_port=${DNS_REDIRECT_PORT}
 			[ -n "$node" ] && [ "$node" != "default" ] && node_remark=$(config_n_get $node remarks)
 
@@ -634,107 +634,46 @@ filter_vpsip() {
 	echolog "  - [$?]加入所有IPv6节点到nftset[$NFTSET_VPSLIST6]直连完成"
 }
 
+filter_server_port() {
+	local address=${1}
+	local port=${2}
+	local stream=${3}
+	stream=$(echo ${3} | tr 'A-Z' 'a-z')
+	local _is_tproxy
+	_is_tproxy=${is_tproxy}
+	[ "$stream" == "udp" ] && _is_tproxy="TPROXY"
+
+	for _ipt in 4 6; do
+		[ "$_ipt" == "4" ] && _ip_type=ip
+		[ "$_ipt" == "6" ] && _ip_type=ip6
+		nft "list chain $NFTABLE_NAME $nft_output_chain" 2>/dev/null | grep -q "${address}:${port}"
+		if [ $? -ne 0 ]; then
+			nft "insert rule $NFTABLE_NAME $nft_output_chain meta l4proto $stream $_ip_type daddr $address $stream dport $port return comment \"${address}:${port}\"" 2>/dev/null
+		fi
+	done
+}
+
 filter_node() {
-	local proxy_node=${1}
-	local stream=$(echo ${2} | tr 'A-Z' 'a-z')
-	local proxy_port=${3}
-
-	filter_rules() {
-		local node=${1}
-		local stream=${2}
-		local _proxy=${3}
-		local _port=${4}
-		local _is_tproxy msg msg2
-
-		if [ -n "$node" ] && [ "$node" != "nil" ]; then
-			local type=$(echo $(config_n_get $node type) | tr 'A-Z' 'a-z')
-			local address=$(config_n_get $node address)
-			local port=$(config_n_get $node port)
-			[ -z "$address" ] && [ -z "$port" ] && {
-				echolog "  - 节点配置不正常，略过"
-				return 1
-			}
-			_is_tproxy=${is_tproxy}
-			[ "$stream" == "udp" ] && _is_tproxy="TPROXY"
-			if [ -n "${_is_tproxy}" ]; then
-				msg="TPROXY"
-			else
-				msg="REDIRECT"
-			fi
-		else
-			echolog "  - 节点配置不正常，略过"
+	local node=${1}
+	local stream=${2}
+	if [ -n "$node" ] && [ "$node" != "nil" ]; then
+		local address=$(config_n_get $node address)
+		local port=$(config_n_get $node port)
+		[ -z "$address" ] && [ -z "$port" ] && {
 			return 1
-		fi
-
-		local ADD_INDEX=$FORCE_INDEX
-		for _ipt in 4 6; do
-			[ "$_ipt" == "4" ] && _ip_type=ip && _set_name=$NFTSET_VPSLIST
-			[ "$_ipt" == "6" ] && _ip_type=ip6 && _set_name=$NFTSET_VPSLIST6
-			nft "list chain $NFTABLE_NAME $nft_output_chain" 2>/dev/null | grep -q "${address}:${port}"
-			if [ $? -ne 0 ]; then
-				local dst_rule="jump PSW2_RULE"
-				msg2="按规则路由(${msg})"
-				[ -n "${is_tproxy}" ] || {
-					dst_rule=$(REDIRECT $_port)
-					msg2="套娃使用(${msg}:${port} -> ${_port})"
-				}
-				[ -n "$_proxy" ] && [ "$_proxy" == "1" ] && [ -n "$_port" ] || {
-					ADD_INDEX=$(RULE_LAST_INDEX "$NFTABLE_NAME" $nft_output_chain $_set_name $FORCE_INDEX)
-					dst_rule="return"
-					msg2="直连代理"
-				}
-				nft "insert rule $NFTABLE_NAME $nft_output_chain position $ADD_INDEX meta l4proto $stream $_ip_type daddr $address $stream dport $port $dst_rule comment \"${address}:${port}\"" 2>/dev/null
-			else
-				msg2="已配置过的节点，"
-			fi
-		done
-		msg="[$?]$(echo ${2} | tr 'a-z' 'A-Z')${msg2}使用链${ADD_INDEX}，节点（${type}）：${address}:${port}"
-		#echolog "  - ${msg}"
-	}
-
-	local proxy_protocol=$(config_n_get $proxy_node protocol)
-	local proxy_type=$(echo $(config_n_get $proxy_node type nil) | tr 'A-Z' 'a-z')
-	[ "$proxy_type" == "nil" ] && echolog "  - 节点配置不正常，略过！：${proxy_node}" && return 1
-	if [ "$proxy_protocol" == "_balancing" ]; then
-		#echolog "  - 多节点负载均衡（${proxy_type}）..."
-		proxy_node=$(config_n_get $proxy_node balancing_node)
-		for _node in $proxy_node; do
-			filter_rules "$_node" "$stream"
-		done
-	elif [ "$proxy_protocol" == "_shunt" ]; then
-		#echolog "  - 按请求目的地址分流（${proxy_type}）..."
-		local preproxy_enabled=$(config_n_get $proxy_node preproxy_enabled 0)
-		[ "$preproxy_enabled" == "1" ] && {
-			local preproxy_node=$(config_n_get $proxy_node main_node nil)
-			[ "$preproxy_node" != "nil" ] && {
-				local preproxy_node_address=$(config_n_get $preproxy_node address)
-				if [ -n "$preproxy_node_address" ]; then
-					filter_rules $preproxy_node $stream
-				else
-					preproxy_enabled=0
-				fi
-			}
 		}
-		local default_node=$(config_n_get $proxy_node default_node _direct)
-		if [ "$default_node" != "_direct" ] && [ "$default_node" != "_blackhole" ]; then
-			local default_proxy_tag=$(config_n_get $proxy_node default_proxy_tag nil)
-			[ "$default_proxy_tag" == "main" ] && [ "$preproxy_enabled" == "0" ] && default_proxy_tag="nil"
-			[ "$default_proxy_tag" == "nil" ] && filter_rules $default_node $stream
-		fi
-		local shunt_ids=$(uci show $CONFIG | grep "=shunt_rules" | awk -F '.' '{print $2}' | awk -F '=' '{print $1}')
-		for shunt_id in $shunt_ids; do
-			local shunt_node=$(config_n_get $proxy_node "${shunt_id}" nil)
-			[ "$shunt_node" == "nil" -o "$shunt_node" == "_default" -o "$shunt_node" == "_direct" -o "$shunt_node" == "_blackhole" ] && continue
-			local shunt_node_address=$(config_n_get $shunt_node address)
-			[ -z "$shunt_node_address" ] && continue
-			local shunt_proxy_tag=$(config_n_get $proxy_node "${shunt_id}_proxy_tag" nil)
-			[ "$shunt_proxy_tag" == "main" ] && [ "$preproxy_enabled" == "0" ] && shunt_proxy_tag="nil"
-			[ "$shunt_proxy_tag" == "nil" ] && filter_rules $shunt_node $stream
-		done
-	else
-		#echolog "  - 普通节点（${proxy_type}）..."
-		filter_rules "$proxy_node" "$stream"
+		filter_server_port $address $port $stream
+		filter_server_port $address $port $stream
 	fi
+}
+
+filter_direct_node_list() {
+	[ ! -s "$TMP_PATH/direct_node_list" ] && return
+	for _node_id in $(cat $TMP_PATH/direct_node_list | awk '!seen[$0]++'); do
+		filter_node "$_node_id" TCP
+		filter_node "$_node_id" UDP
+		unset _node_id
+	done
 }
 
 add_firewall_rule() {
@@ -922,33 +861,10 @@ add_firewall_rule() {
 		ip -6 rule add fwmark 1 table 100
 		ip -6 route add local ::/0 dev lo table 100
 	}
-	
-	# 过滤Socks节点
-	[ "$SOCKS_ENABLED" = "1" ] && {
-		local ids=$(uci show $CONFIG | grep "=socks" | awk -F '.' '{print $2}' | awk -F '=' '{print $1}')
-		#echolog "分析 Socks 服务所使用节点..."
-		local id enabled node port msg num
-		for id in $ids; do
-			enabled=$(config_n_get $id enabled 0)
-			[ "$enabled" == "1" ] || continue
-			node=$(config_n_get $id node nil)
-			port=$(config_n_get $id port 0)
-			msg="Socks 服务 [:${port}]"
-			if [ "$node" == "nil" ] || [ "$port" == "0" ]; then
-				msg="${msg} 未配置完全，略过"
-			else
-				filter_node $node TCP > /dev/null 2>&1 &
-				filter_node $node UDP > /dev/null 2>&1 &
-			fi
-			#echolog "  - ${msg}"
-		done
-	}
+
+	filter_direct_node_list
 
 	[ "$ENABLED_DEFAULT_ACL" == 1 ] && {
-		# 过滤节点
-		filter_node $NODE TCP > /dev/null 2>&1 &
-		filter_node $NODE UDP > /dev/null 2>&1 &
-
 		TCP_LOCALHOST_PROXY=$LOCALHOST_PROXY
 		UDP_LOCALHOST_PROXY=$LOCALHOST_PROXY
 		
@@ -1026,10 +942,12 @@ add_firewall_rule() {
 				nft "add rule $NFTABLE_NAME PSW2_MANGLE_V6 meta l4proto tcp iif lo counter return comment \"本机\""
 			}
 
-			for iface in $(ls ${TMP_IFACE_PATH}); do
-				nft "insert rule $NFTABLE_NAME $nft_output_chain ip protocol tcp oif $iface counter return"
-				nft "insert rule $NFTABLE_NAME PSW2_OUTPUT_MANGLE_V6 ip protocol tcp oif $iface counter return"
-			done
+			[ -d "${TMP_IFACE_PATH}" ] && {
+				for iface in $(ls ${TMP_IFACE_PATH}); do
+					nft "insert rule $NFTABLE_NAME $nft_output_chain ip protocol tcp oif $iface counter return"
+					nft "insert rule $NFTABLE_NAME PSW2_OUTPUT_MANGLE_V6 ip protocol tcp oif $iface counter return"
+				done
+			}
 		fi
 
 		# 加载路由器自身代理 UDP
@@ -1049,10 +967,12 @@ add_firewall_rule() {
 				nft "add rule $NFTABLE_NAME PSW2_MANGLE_V6 meta l4proto udp iif lo counter return comment \"本机\""
 			fi
 
-			for iface in $(ls ${TMP_IFACE_PATH}); do
-				nft "insert rule $NFTABLE_NAME $nft_output_chain ip protocol udp oif $iface counter return"
-				nft "insert rule $NFTABLE_NAME PSW2_OUTPUT_MANGLE_V6 ip protocol udp oif $iface counter return"
-			done
+			[ -d "${TMP_IFACE_PATH}" ] && {
+				for iface in $(ls ${TMP_IFACE_PATH}); do
+					nft "insert rule $NFTABLE_NAME $nft_output_chain ip protocol udp oif $iface counter return"
+					nft "insert rule $NFTABLE_NAME PSW2_OUTPUT_MANGLE_V6 ip protocol udp oif $iface counter return"
+				done
+			}
 		fi
 
 		nft "add rule $NFTABLE_NAME mangle_output oif lo counter return comment \"PSW2_OUTPUT_MANGLE\""
@@ -1065,16 +985,6 @@ add_firewall_rule() {
 	#  加载ACLS
 	load_acl
 
-	[ -n "${is_tproxy}" -o -n "${udp_flag}" ] && {
-		bridge_nf_ipt=$(sysctl -e -n net.bridge.bridge-nf-call-iptables)
-		echo -n $bridge_nf_ipt > $TMP_PATH/bridge_nf_ipt
-		sysctl -w net.bridge.bridge-nf-call-iptables=0 >/dev/null 2>&1
-		[ "$PROXY_IPV6" == "1" ] && {
-			bridge_nf_ip6t=$(sysctl -e -n net.bridge.bridge-nf-call-ip6tables)
-			echo -n $bridge_nf_ip6t > $TMP_PATH/bridge_nf_ip6t
-			sysctl -w net.bridge.bridge-nf-call-ip6tables=0 >/dev/null 2>&1
-		}
-	}
 	echolog "防火墙规则加载完成！"
 }
 
@@ -1207,6 +1117,9 @@ get_wan_ip)
 	;;
 get_wan6_ip)
 	get_wan6_ip
+	;;
+filter_direct_node_list)
+	filter_direct_node_list
 	;;
 stop)
 	stop

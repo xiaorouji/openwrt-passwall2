@@ -8,7 +8,6 @@ CONFIG=passwall2
 TMP_PATH=/tmp/etc/$CONFIG
 TMP_BIN_PATH=$TMP_PATH/bin
 TMP_SCRIPT_FUNC_PATH=$TMP_PATH/script_func
-TMP_ID_PATH=$TMP_PATH/id
 TMP_ROUTE_PATH=$TMP_PATH/route
 TMP_ACL_PATH=$TMP_PATH/acl
 TMP_IFACE_PATH=$TMP_PATH/iface
@@ -322,6 +321,19 @@ get_singbox_geoip() {
 	else
 		echo ""
 	fi
+}
+
+set_cache_var() {
+	local key="${1}"
+	shift 1
+	local val="$@"
+	[ -n "${key}" ] && [ -n "${val}" ] && echo "${key}=\"${val}\"" >> $TMP_PATH/var
+}
+get_cache_var() {
+	local key="${1}"
+	[ -n "${key}" ] && [ -s "$TMP_PATH/var" ] && {
+		echo $(cat $TMP_PATH/var | grep "^${key}=" | awk -F '=' '{print $2}' | tail -n 1 | awk -F'"' '{print $2}')
+	}
 }
 
 run_xray() {
@@ -654,6 +666,8 @@ run_socks() {
 		fi
 	}
 	unset http_flag
+
+	[ "${server_host}" != "127.0.0.1" ] && [ "$type" != "sing-box" ] && [ "$type" != "xray" ] && echo "${node}" >> $TMP_PATH/direct_node_list
 }
 
 socks_node_switch() {
@@ -680,7 +694,9 @@ socks_node_switch() {
 		local http_config_file="HTTP2SOCKS_${flag}.json"
 		LOG_FILE="/dev/null"
 		run_socks flag=$flag node=$new_node bind=$bind socks_port=$port config_file=$config_file http_port=$http_port http_config_file=$http_config_file log_file=$log_file
-		echo $new_node > $TMP_ID_PATH/socks_${flag}
+		set_cache_var "socks_${flag}" "$new_node"
+		local USE_TABLES=$(get_cache_var "USE_TABLES")
+		[ -n "$USE_TABLES" ] && source $APP_PATH/${USE_TABLES}.sh filter_direct_node_list
 	}
 }
 
@@ -689,7 +705,7 @@ run_global() {
 	TYPE=$(echo $(config_n_get $NODE type nil) | tr 'A-Z' 'a-z')
 	[ "$TYPE" = "nil" ] && return 1
 	mkdir -p $TMP_ACL_PATH/default
-	echo $NODE > $TMP_ACL_PATH/default/global.id
+	set_cache_var "GLOBAL_node" "$NODE"
 
 	if [ $PROXY_IPV6 == "1" ]; then
 		echolog "开启实验性IPv6透明代理(TProxy)，请确认您的节点及类型支持IPv6！"
@@ -737,7 +753,7 @@ run_global() {
 	node_socks_bind="127.0.0.1"
 	[ "${node_socks_bind_local}" != "1" ] && node_socks_bind="0.0.0.0"
 	V2RAY_ARGS="${V2RAY_ARGS} socks_address=${node_socks_bind} socks_port=${node_socks_port}"
-	echo "127.0.0.1:$node_socks_port" > $TMP_ACL_PATH/default/SOCKS_server
+	set_cache_var "GLOBAL_SOCKS_server" "127.0.0.1:$node_socks_port"
 
 	node_http_port=$(config_t_get global node_http_port 0)
 	[ "$node_http_port" != "0" ] && V2RAY_ARGS="${V2RAY_ARGS} http_port=${node_http_port}"
@@ -781,7 +797,7 @@ start_socks() {
 				local http_port=$(config_n_get $id http_port 0)
 				local http_config_file="HTTP2SOCKS_${id}.json"
 				run_socks flag=$id node=$node bind=$bind socks_port=$port config_file=$config_file http_port=$http_port http_config_file=$http_config_file log_file=$log_file
-				echo $node > $TMP_ID_PATH/socks_${id}
+				set_cache_var "socks_${id}" "$node"
 
 				#自动切换逻辑
 				local enable_autoswitch=$(config_n_get $id enable_autoswitch 0)
@@ -947,7 +963,7 @@ delete_ip2route() {
 
 start_haproxy() {
 	[ "$(config_t_get global_haproxy balancing_enable 0)" != "1" ] && return
-	haproxy_path=${TMP_PATH}/haproxy
+	haproxy_path=$TMP_PATH/haproxy
 	haproxy_conf="config.cfg"
 	lua $APP_PATH/haproxy.lua -path ${haproxy_path} -conf ${haproxy_conf} -dns ${LOCAL_DNS}
 	ln_run "$(first_type haproxy)" haproxy "/dev/null" -f "${haproxy_path}/${haproxy_conf}"
@@ -1013,7 +1029,7 @@ run_copy_dnsmasq() {
 	node_servers=$(uci show "${CONFIG}" | grep -E "(.address=|.download_address=)" | cut -d "'" -f 2)
 	hosts_foreach "node_servers" host_from_url | grep '[a-zA-Z]$' | sort -u | grep -v "engage.cloudflareclient.com" | gen_dnsmasq_items settype="${set_type}" setnames="${setflag_4}passwall2_vpslist,${setflag_6}passwall2_vpslist6" dnss="${LOCAL_DNS:-${AUTO_DNS}}" outf="${dnsmasq_conf_path}/10-vpslist_host.conf" ipsetoutf="${dnsmasq_conf_path}/ipset.conf"
 	ln_run "$(first_type dnsmasq)" "dnsmasq_${flag}" "/dev/null" -C $dnsmasq_conf -x $TMP_ACL_PATH/$flag/dnsmasq.pid
-	echo "${listen_port}" > $TMP_ACL_PATH/$flag/var_redirect_dns_port
+	set_cache_var "ACL_${flag}_dns_port" "${listen_port}"
 }
 
 run_ipset_chinadns_ng() {
@@ -1157,10 +1173,10 @@ acl_app() {
 							filter_node $node TCP > /dev/null 2>&1 &
 							filter_node $node UDP > /dev/null 2>&1 &
 						fi
-						echo "${node}" > $TMP_ACL_PATH/$sid/var_node
+						set_cache_var "ACL_${sid}_node" "${node}"
 					}
 				fi
-				echo "${redir_port}" > $TMP_ACL_PATH/$sid/var_port
+				set_cache_var "ACL_${sid}_redir_port" "${redir_port}"
 			}
 			unset enabled sid remarks sources interface node direct_dns_query_strategy remote_dns_protocol remote_dns remote_dns_doh remote_dns_client_ip remote_dns_detour remote_fakedns remote_dns_query_strategy 
 			unset _ip _mac _iprange _ipset _ip_or_mac source_list config_file
@@ -1219,13 +1235,14 @@ start() {
 	fi
 	[ "$ENABLED_DEFAULT_ACL" == 1 ] && run_global
 	[ -n "$USE_TABLES" ] && source $APP_PATH/${USE_TABLES}.sh start
+	set_cache_var "USE_TABLES" "$USE_TABLES"
 	if [ "$ENABLED_DEFAULT_ACL" == 1 ] || [ "$ENABLED_ACLS" == 1 ]; then
 		bridge_nf_ipt=$(sysctl -e -n net.bridge.bridge-nf-call-iptables)
-		echo -n $bridge_nf_ipt > $TMP_PATH/bridge_nf_ipt
+		set_cache_var "origin_bridge_nf_ipt" "$bridge_nf_ipt"
 		sysctl -w net.bridge.bridge-nf-call-iptables=0 >/dev/null 2>&1
 		[ "$PROXY_IPV6" == "1" ] && {
 			bridge_nf_ip6t=$(sysctl -e -n net.bridge.bridge-nf-call-ip6tables)
-			echo -n $bridge_nf_ip6t > $TMP_PATH/bridge_nf_ip6t
+			set_cache_var "origin_bridge_nf_ip6t" "$bridge_nf_ip6t"
 			sysctl -w net.bridge.bridge-nf-call-ip6tables=0 >/dev/null 2>&1
 		}
 	fi
@@ -1244,9 +1261,11 @@ stop() {
 	unset V2RAY_LOCATION_ASSET
 	unset XRAY_LOCATION_ASSET
 	stop_crontab
-	[ -s "$TMP_PATH/bridge_nf_ipt" ] && sysctl -w net.bridge.bridge-nf-call-iptables=$(cat $TMP_PATH/bridge_nf_ipt) >/dev/null 2>&1
-	[ -s "$TMP_PATH/bridge_nf_ip6t" ] && sysctl -w net.bridge.bridge-nf-call-ip6tables=$(cat $TMP_PATH/bridge_nf_ip6t) >/dev/null 2>&1
-	rm -rf ${TMP_PATH}
+	origin_bridge_nf_ipt=$(get_cache_var "origin_bridge_nf_ipt")
+	[ -n "${origin_bridge_nf_ipt}" ] && sysctl -w net.bridge.bridge-nf-call-iptables=${origin_bridge_nf_ipt} >/dev/null 2>&1
+	origin_bridge_nf_ip6t=$(get_cache_var "origin_bridge_nf_ip6t")
+	[ -n "${origin_bridge_nf_ip6t}" ] && sysctl -w net.bridge.bridge-nf-call-ip6tables=${origin_bridge_nf_ip6t} >/dev/null 2>&1
+	rm -rf $TMP_PATH
 	rm -rf /tmp/lock/${CONFIG}_socks_auto_switch*
 	echolog "清空并关闭相关程序和缓存完成。"
 	exit 0
@@ -1299,7 +1318,7 @@ SINGBOX_BIN=$(first_type $(config_t_get global_app singbox_file) sing-box)
 
 export V2RAY_LOCATION_ASSET=$(config_t_get global_rules v2ray_location_asset "/usr/share/v2ray/")
 export XRAY_LOCATION_ASSET=$V2RAY_LOCATION_ASSET
-mkdir -p /tmp/etc $TMP_PATH $TMP_BIN_PATH $TMP_SCRIPT_FUNC_PATH $TMP_ID_PATH $TMP_ROUTE_PATH $TMP_ACL_PATH $TMP_IFACE_PATH $TMP_PATH2
+mkdir -p /tmp/etc $TMP_PATH $TMP_BIN_PATH $TMP_SCRIPT_FUNC_PATH $TMP_ROUTE_PATH $TMP_ACL_PATH $TMP_PATH2
 
 arg1=$1
 shift
@@ -1318,6 +1337,12 @@ socks_node_switch)
 	;;
 echolog)
 	echolog $@
+	;;
+get_cache_var)
+	get_cache_var $@
+	;;
+set_cache_var)
+	set_cache_var $@
 	;;
 stop)
 	stop

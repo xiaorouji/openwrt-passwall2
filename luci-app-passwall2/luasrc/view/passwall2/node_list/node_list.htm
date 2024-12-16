@@ -223,22 +223,18 @@ table td, .table .td {
 	function get_now_use_node() {
 		XHR.get('<%=api.url("get_now_use_node")%>', null,
 			function(x, result) {
-				var id = result["TCP"];
+				var id = result["global"];
 				if (id) {
 					var dom = document.getElementById("cbi-passwall2-" + id);
 					if (dom) {
 						dom.classList.add("_now_use");
-						dom.title = "当前TCP节点";
-						//var v = "<a style='color: red'>当前TCP节点：</a>" + document.getElementById("cbid.passwall2." + id + ".remarks").value;
+						dom.title = "当前节点";
+						//var v = "<a style='color: red'>当前节点：</a>" + document.getElementById("cbid.passwall2." + id + ".remarks").value;
 						//document.getElementById("cbi-passwall2-" + id + "-remarks").innerHTML = v;
-					}
-				}
-				id = result["UDP"];
-				if (id) {
-					var dom = document.getElementById("cbi-passwall2-" + id);
-					if (dom) {
-						dom.classList.add("_now_use");
-						dom.title = "当前UDP节点";
+						var tds = dom.getElementsByTagName("td")
+						for (var j = 0; j < tds.length; j++) {
+							tds[j].classList.add("_now_use");
+						}
 					}
 				}
 			}
@@ -305,9 +301,7 @@ table td, .table .td {
 			);
 		}
 	}
-	
-	get_now_use_node();
-	
+
 	/* 自动Ping */
 	if (auto_detection_time == "icmp" || auto_detection_time == "tcping") {
 		var nodes = [];
@@ -427,7 +421,9 @@ table td, .table .td {
 			console.error(err);
 		}
 	}
-	
+
+	get_now_use_node();
+
 	if (true) {
 		var str = "";
 		for (var add_from in node_list) {

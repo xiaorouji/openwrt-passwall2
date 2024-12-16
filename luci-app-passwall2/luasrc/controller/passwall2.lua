@@ -158,9 +158,9 @@ end
 
 function get_now_use_node()
 	local e = {}
-	local data, code, msg = nixio.fs.readfile("/tmp/etc/passwall2/acl/default/global.id")
-	if data then
-		e["global"] = util.trim(data)
+	local node = api.get_cache_var("GLOBAL_node")
+	if node then
+		e["global"] = node
 	end
 	luci.http.prepare_content("application/json")
 	luci.http.write_json(e)
