@@ -328,7 +328,7 @@ function clear_all_nodes()
 		uci:delete(appname, t[".name"])
 	end)
 	uci:foreach(appname, "acl_rule", function(t)
-		uci:set(appname, t[".name"], "node", "default")
+		uci:set(appname, t[".name"], "node", "nil")
 	end)
 	uci:foreach(appname, "nodes", function(node)
 		uci:delete(appname, node['.name'])
@@ -363,7 +363,17 @@ function delete_select_nodes()
 		end)
 		uci:foreach(appname, "acl_rule", function(t)
 			if t["node"] == w then
-				uci:set(appname, t[".name"], "node", "default")
+				uci:set(appname, t[".name"], "node", "nil")
+			end
+		end)
+		uci:foreach(appname, "nodes", function(t)
+			if t["preproxy_node"] == w then
+				uci:delete(appname, t[".name"], "preproxy_node")
+				uci:delete(appname, t[".name"], "chain_proxy")
+			end
+			if t["to_node"] == w then
+				uci:delete(appname, t[".name"], "to_node")
+				uci:delete(appname, t[".name"], "chain_proxy")
 			end
 		end)
 		uci:delete(appname, w)
