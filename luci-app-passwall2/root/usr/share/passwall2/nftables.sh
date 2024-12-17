@@ -862,8 +862,6 @@ add_firewall_rule() {
 		ip -6 route add local ::/0 dev lo table 100
 	}
 
-	filter_direct_node_list
-
 	[ "$ENABLED_DEFAULT_ACL" == 1 ] && {
 		TCP_LOCALHOST_PROXY=$LOCALHOST_PROXY
 		UDP_LOCALHOST_PROXY=$LOCALHOST_PROXY
@@ -984,6 +982,8 @@ add_firewall_rule() {
 
 	#  加载ACLS
 	load_acl
+
+	filter_direct_node_list
 
 	echolog "防火墙规则加载完成！"
 }

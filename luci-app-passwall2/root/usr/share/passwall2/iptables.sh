@@ -806,8 +806,6 @@ add_firewall_rule() {
 	ip -6 rule add fwmark 1 table 100
 	ip -6 route add local ::/0 dev lo table 100
 
-	filter_direct_node_list
-
 	[ "$ENABLED_DEFAULT_ACL" == 1 ] && {
 		local ipt_tmp=$ipt_n
 		[ -n "${is_tproxy}" ] && ipt_tmp=$ipt_m
@@ -934,6 +932,8 @@ add_firewall_rule() {
 
 	#  加载ACLS
 	load_acl
+
+	filter_direct_node_list
 
 	echolog "防火墙规则加载完成！"
 }
