@@ -80,13 +80,13 @@ o.rmempty = false
 
 ---- Node
 o = s:taboption("Main", ListValue, "node", "<a style='color: red'>" .. translate("Node") .. "</a>")
-o:value("nil", translate("Close"))
+o:value("", translate("Close"))
 
 -- 分流
 if (has_singbox or has_xray) and #nodes_table > 0 then
 	local function get_cfgvalue(shunt_node_id, option)
 		return function(self, section)
-			return m:get(shunt_node_id, option) or "nil"
+			return m:get(shunt_node_id, option)
 		end
 	end
 	local function get_write(shunt_node_id, option)
@@ -149,8 +149,8 @@ if (has_singbox or has_xray) and #nodes_table > 0 then
 					o.cfgvalue = get_cfgvalue(v.id, id)
 					o.write = get_write(v.id, id)
 					o:depends("node", v.id)
-					o.default = "nil"
-					o:value("nil", translate("Close"))
+					o.default = ""
+					o:value("", translate("Close"))
 					o:value("_default", translate("Default"))
 					o:value("_direct", translate("Direct Connection"))
 					o:value("_blackhole", translate("Blackhole"))
@@ -158,9 +158,9 @@ if (has_singbox or has_xray) and #nodes_table > 0 then
 					local pt = s:taboption("Main", ListValue, vid .. "-".. id .. "_proxy_tag", string.format('* <a style="color:red">%s</a>', e.remarks .. " " .. translate("Preproxy")))
 					pt.cfgvalue = get_cfgvalue(v.id, id .. "_proxy_tag")
 					pt.write = get_write(v.id, id .. "_proxy_tag")
-					pt:value("nil", translate("Close"))
+					pt.default = ""
+					pt:value("", translate("Close"))
 					pt:value("main", translate("Preproxy Node"))
-					pt.default = "nil"
 					for k1, v1 in pairs(socks_list) do
 						o:value(v1.id, v1.remark)
 					end
@@ -202,7 +202,7 @@ if (has_singbox or has_xray) and #nodes_table > 0 then
 			o = s:taboption("Main", ListValue, vid .. "-" .. id, string.format('* <a style="color:red">%s</a>', translate("Default Preproxy")), translate("When using, localhost will connect this node first and then use this node to connect the default node."))
 			o.cfgvalue = get_cfgvalue(v.id, id)
 			o.write = get_write(v.id, id)
-			o:value("nil", translate("Close"))
+			o:value("", translate("Close"))
 			o:value("main", translate("Preproxy Node"))
 			for k1, v1 in pairs(normal_list) do
 				if v1.protocol ~= "_balancing" then
@@ -216,7 +216,7 @@ if (has_singbox or has_xray) and #nodes_table > 0 then
 		tips.cfgvalue = function(t, n)
 			return string.format('<a style="color: red">%s</a>', translate("There are no available nodes, please add or subscribe nodes first."))
 		end
-		tips:depends({ node = "nil", ["!reverse"] = true })
+		tips:depends({ node = "", ["!reverse"] = true })
 		for k, v in pairs(shunt_list) do
 			tips:depends("node", v.id)
 		end
@@ -240,7 +240,7 @@ node_socks_port.datatype = "port"
 
 node_socks_bind_local = s:taboption("Main", Flag, "node_socks_bind_local", translate("Node") .. " Socks " .. translate("Bind Local"), translate("When selected, it can only be accessed localhost."))
 node_socks_bind_local.default = "1"
-node_socks_bind_local:depends({ node = "nil", ["!reverse"] = true })
+node_socks_bind_local:depends({ node = "", ["!reverse"] = true })
 
 s:tab("DNS", translate("DNS"))
 
@@ -317,7 +317,7 @@ o.wrap = "off"
 o:depends({ __hide = true })
 o.remove = function(self, section)
 	local node_value = s.fields["node"]:formvalue(global_cfgid)
-	if node_value ~= "nil" then
+	if node_value then
 		local node_t = m:get(node_value) or {}
 		if node_t.type == "Xray" then
 			AbstractValue.remove(self, section)

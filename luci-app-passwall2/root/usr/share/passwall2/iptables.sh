@@ -209,8 +209,8 @@ gen_shunt_list() {
 		[ "$default_node" = "_direct" ] && default_outbound="direct"
 		local shunt_ids=$(uci show $CONFIG | grep "=shunt_rules" | awk -F '.' '{print $2}' | awk -F '=' '{print $1}')
 		for shunt_id in $shunt_ids; do
-			local shunt_node=$(config_n_get ${node} "${shunt_id}" nil)
-			[ "$shunt_node" != "nil" ] && {
+			local shunt_node=$(config_n_get ${node} "${shunt_id}")
+			[ -n "$shunt_node" ] && {
 				local ipset_v4="passwall2_${node}_${shunt_id}"
 				local ipset_v6="passwall2_${node}_${shunt_id}6"
 				ipset -! create $ipset_v4 nethash maxelem 1048576
@@ -244,7 +244,7 @@ gen_shunt_list() {
 			_SHUNT_LIST4="${_SHUNT_LIST4} ${_set_name4}:direct"
 			_SHUNT_LIST6="${_SHUNT_LIST6} ${_set_name6}:direct"
 		}
-		[ "$default_node" != "nil" ] && {
+		[ -n "$default_node" ] && {
 			local ipset_v4="passwall2_${node}_default"
 			local ipset_v6="passwall2_${node}_default6"
 			ipset -! create $ipset_v4 nethash maxelem 1048576
@@ -492,7 +492,7 @@ load_acl() {
 			fi
 		}
 
-		if ([ "$TCP_PROXY_MODE" != "disable" ] || [ "$UDP_PROXY_MODE" != "disable" ]) && [ "$NODE" != "nil" ]; then
+		if ([ "$TCP_PROXY_MODE" != "disable" ] || [ "$UDP_PROXY_MODE" != "disable" ]) && [ -n "$NODE" ]; then
 			[ -n "$DNS_REDIRECT_PORT" ] && {
 				$ipt_n -A PSW2_DNS $(comment "默认") -p udp --dport 53 -j REDIRECT --to-ports $DNS_REDIRECT_PORT
 				$ip6t_n -A PSW2_DNS $(comment "默认") -p udp --dport 53 -j REDIRECT --to-ports $DNS_REDIRECT_PORT 2>/dev/null
@@ -501,7 +501,7 @@ load_acl() {
 			}
 		fi
 
-		if [ "$TCP_PROXY_MODE" != "disable" ] && [ "$NODE" != "nil" ]; then
+		if [ "$TCP_PROXY_MODE" != "disable" ] && [ -n "$NODE" ]; then
 			msg2="${msg}使用 TCP 节点[$(config_n_get $NODE remarks)]"
 			if [ -n "${is_tproxy}" ]; then
 				msg2="${msg2}(TPROXY:${REDIR_PORT})"
@@ -538,7 +538,7 @@ load_acl() {
 			echolog "${msg2}"
 		fi
 
-		if [ "$UDP_PROXY_MODE" != "disable" ] && [ "$NODE" != "nil" ]; then
+		if [ "$UDP_PROXY_MODE" != "disable" ] && [ -n "$NODE" ]; then
 			msg2="${msg}使用 UDP 节点[$(config_n_get $NODE remarks)](TPROXY:${REDIR_PORT})"
 
 			$ipt_m -A PSW2 $(comment "默认") -p udp -d $FAKE_IP -j PSW2_RULE
@@ -597,7 +597,7 @@ filter_server_port() {
 filter_node() {
 	local node=${1}
 	local stream=${2}
-	if [ -n "$node" ] && [ "$node" != "nil" ]; then
+	if [ -n "$node" ]; then
 		local address=$(config_n_get $node address)
 		local port=$(config_n_get $node port)
 		[ -z "$address" ] && [ -z "$port" ] && {
@@ -838,7 +838,7 @@ add_firewall_rule() {
 			fi
 		}
 		
-		if [ "$NODE" != "nil" ] && ([ "$TCP_LOCALHOST_PROXY" = "1" ] || [ "$UDP_LOCALHOST_PROXY" = "1" ]); then
+		if [ -n "$NODE" ] && ([ "$TCP_LOCALHOST_PROXY" = "1" ] || [ "$UDP_LOCALHOST_PROXY" = "1" ]); then
 			[ -n "$DNS_REDIRECT_PORT" ] && {
 				$ipt_n -A OUTPUT $(comment "PSW2") -p udp -o lo --dport 53 -j REDIRECT --to-ports $DNS_REDIRECT_PORT
 				$ip6t_n -A OUTPUT $(comment "PSW2") -p udp -o lo --dport 53 -j REDIRECT --to-ports $DNS_REDIRECT_PORT 2>/dev/null
@@ -848,7 +848,7 @@ add_firewall_rule() {
 		fi
 	
 		# 加载路由器自身代理 TCP
-		if [ "$NODE" != "nil" ] && [ "$TCP_LOCALHOST_PROXY" = "1" ]; then
+		if [ -n "$NODE" ] && [ "$TCP_LOCALHOST_PROXY" = "1" ]; then
 			[ "$accept_icmp" = "1" ] && {
 				$ipt_n -A OUTPUT -p icmp -j PSW2_OUTPUT
 				$ipt_n -A PSW2_OUTPUT -p icmp -d $FAKE_IP $(REDIRECT)
@@ -897,7 +897,7 @@ add_firewall_rule() {
 		fi
 
 		# 加载路由器自身代理 UDP
-		if [ "$NODE" != "nil" ] && [ "$UDP_LOCALHOST_PROXY" = "1" ]; then
+		if [ -n "$NODE" ] && [ "$UDP_LOCALHOST_PROXY" = "1" ]; then
 			$ipt_m -A PSW2_OUTPUT -p udp -d $FAKE_IP -j PSW2_RULE
 			add_shunt_t_rule "${SHUNT_LIST4}" "$ipt_m -A PSW2_OUTPUT -p udp $(factor $UDP_REDIR_PORTS "-m multiport --dport")" "-j PSW2_RULE"
 			$ipt_m -A PSW2_OUTPUT -p udp $(factor $UDP_REDIR_PORTS "-m multiport --dport") -j PSW2_RULE

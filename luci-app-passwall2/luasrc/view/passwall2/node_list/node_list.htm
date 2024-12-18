@@ -4,8 +4,8 @@ local uci = api.uci
 
 local default_node_type = ""
 local shunt_rule_list = {}
-local node = api.uci_get_type("global", "node", "nil")
-if node ~= "nil" then
+local node = api.uci_get_type("global", "node")
+if node then
 	local node_type = api.uci_get_type_id(node, "type")
 	local node_protocol = api.uci_get_type_id(node, "protocol")
 	if node_type == "Xray" and node_protocol == "_shunt" then

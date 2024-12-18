@@ -278,7 +278,7 @@ ln_run() {
 lua_api() {
 	local func=${1}
 	[ -z "${func}" ] && {
-		echo "nil"
+		echo ""
 		return
 	}
 	echo $(lua -e "local api = require 'luci.passwall2.api' print(api.${func})")
@@ -705,9 +705,9 @@ socks_node_switch() {
 }
 
 run_global() {
-	[ "$NODE" = "nil" ] && return 1
-	TYPE=$(echo $(config_n_get $NODE type nil) | tr 'A-Z' 'a-z')
-	[ "$TYPE" = "nil" ] && return 1
+	[ -z "$NODE" ] && return 1
+	TYPE=$(echo $(config_n_get $NODE type) | tr 'A-Z' 'a-z')
+	[ -z "$TYPE" ] && return 1
 	mkdir -p $TMP_ACL_PATH/default
 
 	if [ $PROXY_IPV6 == "1" ]; then
@@ -790,8 +790,8 @@ start_socks() {
 			for id in $ids; do
 				local enabled=$(config_n_get $id enabled 0)
 				[ "$enabled" == "0" ] && continue
-				local node=$(config_n_get $id node nil)
-				[ "$node" == "nil" ] && continue
+				local node=$(config_n_get $id node)
+				[ -z "$node" ] && continue
 				local bind_local=$(config_n_get $id bind_local 0)
 				local bind="0.0.0.0"
 				[ "$bind_local" = "1" ] && bind="127.0.0.1"
@@ -1165,7 +1165,7 @@ acl_app() {
 						echolog "  - 全局节点未启用，跳过【${remarks}】"
 					fi
 				else
-					[ "$(config_get_type $node nil)" = "nodes" ] && {
+					[ "$(config_get_type $node)" = "nodes" ] && {
 						if [ -n "${GLOBAL_node}" ] && [ "$node" = "${GLOBAL_node}" ]; then
 							set_cache_var "ACL_${sid}_node" "${GLOBAL_node}"
 							set_cache_var "ACL_${sid}_redir_port" "${GLOBAL_redir_port}"
@@ -1292,9 +1292,9 @@ stop() {
 }
 
 ENABLED=$(config_t_get global enabled 0)
-NODE=$(config_t_get global node nil)
+NODE=$(config_t_get global node)
 [ "$ENABLED" == 1 ] && {
-	[ "$NODE" != "nil" ] && [ "$(config_get_type $NODE nil)" != "nil" ] && ENABLED_DEFAULT_ACL=1
+	[ -n "$NODE" ] && [ "$(config_get_type $NODE)" == "nodes" ] && ENABLED_DEFAULT_ACL=1
 }
 ENABLED_ACLS=$(config_t_get global acl_enable 0)
 [ "$ENABLED_ACLS" == 1 ] && {

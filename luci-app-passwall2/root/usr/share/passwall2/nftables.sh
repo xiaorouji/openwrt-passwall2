@@ -263,8 +263,8 @@ gen_shunt_list() {
 		[ "$default_node" = "_direct" ] && default_outbound="direct"
 		local shunt_ids=$(uci show $CONFIG | grep "=shunt_rules" | awk -F '.' '{print $2}' | awk -F '=' '{print $1}')
 		for shunt_id in $shunt_ids; do
-			local shunt_node=$(config_n_get ${node} "${shunt_id}" nil)
-			[ "$shunt_node" != "nil" ] && {
+			local shunt_node=$(config_n_get ${node} "${shunt_id}")
+			[ -n "$shunt_node" ] && {
 				local nftset_v4="passwall2_${node}_${shunt_id}"
 				local nftset_v6="passwall2_${node}_${shunt_id}6"
 				gen_nftset $nftset_v4 ipv4_addr 0 0
@@ -297,7 +297,7 @@ gen_shunt_list() {
 			_SHUNT_LIST4="${_SHUNT_LIST4} ${_set_name4}:direct"
 			_SHUNT_LIST6="${_SHUNT_LIST6} ${_set_name6}:direct"
 		}
-		[ "$default_node" != "nil" ] && {
+		[ -n "$default_node" ] && {
 			local nftset_v4="passwall2_${node}_default"
 			local nftset_v6="passwall2_${node}_default6"
 			gen_nftset $nftset_v4 ipv4_addr 0 0
@@ -541,7 +541,7 @@ load_acl() {
 			fi
 		}
 
-		if ([ "$TCP_PROXY_MODE" != "disable" ] || [ "$UDP_PROXY_MODE" != "disable" ]) && [ "$NODE" != "nil" ]; then
+		if ([ "$TCP_PROXY_MODE" != "disable" ] || [ "$UDP_PROXY_MODE" != "disable" ]) && [ -n "$NODE" ]; then
 			[ -n "$DNS_REDIRECT_PORT" ] && {
 				nft "add rule $NFTABLE_NAME PSW2_DNS ip protocol udp udp dport 53 counter redirect to :$DNS_REDIRECT_PORT comment \"默认\""
 				nft "add rule $NFTABLE_NAME PSW2_DNS ip protocol tcp tcp dport 53 counter redirect to :$DNS_REDIRECT_PORT comment \"默认\""
@@ -550,7 +550,7 @@ load_acl() {
 			}
 		fi
 
-		if [ "$TCP_PROXY_MODE" != "disable" ] && [ "$NODE" != "nil" ]; then
+		if [ "$TCP_PROXY_MODE" != "disable" ] && [ -n "$NODE" ]; then
 			msg2="${msg}使用 TCP 节点[$(config_n_get $NODE remarks)]"
 			if [ -n "${is_tproxy}" ]; then
 				msg2="${msg2}(TPROXY:${REDIR_PORT})"
@@ -591,7 +591,7 @@ load_acl() {
 			echolog "${msg2}"
 		fi
 
-		if [ "$UDP_PROXY_MODE" != "disable" ] && [ "$NODE" != "nil" ]; then
+		if [ "$UDP_PROXY_MODE" != "disable" ] && [ -n "$NODE" ]; then
 			msg2="${msg}使用 UDP 节点[$(config_n_get $NODE remarks)](TPROXY:${REDIR_PORT})"
 
 			nft "add rule $NFTABLE_NAME PSW2_MANGLE ip protocol udp ip daddr $FAKE_IP counter jump PSW2_RULE comment \"默认\""
@@ -658,7 +658,7 @@ filter_server_port() {
 filter_node() {
 	local node=${1}
 	local stream=${2}
-	if [ -n "$node" ] && [ "$node" != "nil" ]; then
+	if [ -n "$node" ]; then
 		local address=$(config_n_get $node address)
 		local port=$(config_n_get $node port)
 		[ -z "$address" ] && [ -z "$port" ] && {
@@ -891,7 +891,7 @@ add_firewall_rule() {
 			fi
 		}
 
-		if [ "$NODE" != "nil" ] && ([ "$TCP_LOCALHOST_PROXY" = "1" ] || [ "$UDP_LOCALHOST_PROXY" = "1" ]); then
+		if [ -n "$NODE" ] && ([ "$TCP_LOCALHOST_PROXY" = "1" ] || [ "$UDP_LOCALHOST_PROXY" = "1" ]); then
 			[ -n "$DNS_REDIRECT_PORT" ] && {
 				nft "add rule $NFTABLE_NAME nat_output ip protocol udp oif lo udp dport 53 counter redirect to :$DNS_REDIRECT_PORT comment \"PSW2\""
 				nft "add rule $NFTABLE_NAME nat_output ip protocol tcp oif lo tcp dport 53 counter redirect to :$DNS_REDIRECT_PORT comment \"PSW2\""
@@ -901,7 +901,7 @@ add_firewall_rule() {
 		fi
 
 		# 加载路由器自身代理 TCP
-		if [ "$NODE" != "nil" ] && [ "$TCP_LOCALHOST_PROXY" = "1" ]; then
+		if [ -n "$NODE" ] && [ "$TCP_LOCALHOST_PROXY" = "1" ]; then
 			[ "$accept_icmp" = "1" ] && {
 				nft "add rule $NFTABLE_NAME PSW2_ICMP_REDIRECT oif lo ip protocol icmp ip daddr $FAKE_IP counter redirect"
 				add_shunt_t_rule "${SHUNT_LIST4}" "nft add rule $NFTABLE_NAME PSW2_ICMP_REDIRECT oif lo ip protocol icmp ip daddr" "counter redirect"
@@ -951,7 +951,7 @@ add_firewall_rule() {
 		fi
 
 		# 加载路由器自身代理 UDP
-		if [ "$NODE" != "nil" ] && [ "$UDP_LOCALHOST_PROXY" = "1" ]; then
+		if [ -n "$NODE" ] && [ "$UDP_LOCALHOST_PROXY" = "1" ]; then
 			nft "add rule $NFTABLE_NAME PSW2_OUTPUT_MANGLE ip protocol udp ip daddr $FAKE_IP counter jump PSW2_RULE"
 			add_shunt_t_rule "${SHUNT_LIST4}" "nft add rule $NFTABLE_NAME PSW2_OUTPUT_MANGLE ip protocol udp $(factor $UDP_REDIR_PORTS "udp dport") ip daddr" "counter jump PSW2_RULE"
 			nft "add rule $NFTABLE_NAME PSW2_OUTPUT_MANGLE ip protocol udp $(factor $UDP_REDIR_PORTS "udp dport") counter jump PSW2_RULE"

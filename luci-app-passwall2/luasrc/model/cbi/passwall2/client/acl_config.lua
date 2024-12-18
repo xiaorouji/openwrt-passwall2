@@ -192,7 +192,7 @@ end
 local GLOBAL_ENABLED = uci:get(appname, "@global[0]", "enabled")
 local NODE = uci:get(appname, "@global[0]", "node")
 o = s:option(ListValue, "node", "<a style='color: red'>" .. translate("Node") .. "</a>")
-if GLOBAL_ENABLED == "1" and NODE ~= "nil" then
+if GLOBAL_ENABLED == "1" and NODE then
 	o:value("", translate("Use global config") .. "(" .. api.get_node_name(NODE) .. ")")
 end
 o:depends({ _hide_node_option = "1",  ['!reverse'] = true })
@@ -201,7 +201,7 @@ o = s:option(DummyValue, "_hide_dns_option", "")
 o.template = "passwall2/cbi/hidevalue"
 o.value = "1"
 o:depends({ node = "" })
-if GLOBAL_ENABLED == "1" and NODE ~= "nil" then
+if GLOBAL_ENABLED == "1" and NODE then
 	o:depends({ node = NODE })
 end
 
@@ -312,7 +312,7 @@ o.wrap = "off"
 o:depends({ __hide = true })
 o.remove = function(self, section)
 	local node_value = s.fields["node"]:formvalue(arg[1])
-	if node_value ~= "nil" then
+	if node_value then
 		local node_t = m:get(node_value) or {}
 		if node_t.type == "Xray" then
 			AbstractValue.remove(self, section)

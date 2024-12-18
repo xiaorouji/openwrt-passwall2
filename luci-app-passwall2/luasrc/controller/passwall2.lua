@@ -319,7 +319,7 @@ end
 
 function clear_all_nodes()
 	uci:set(appname, '@global[0]', "enabled", "0")
-	uci:set(appname, '@global[0]', "node", "nil")
+	uci:delete(appname, '@global[0]', "node")
 	uci:foreach(appname, "socks", function(t)
 		uci:delete(appname, t[".name"])
 		uci:set_list(appname, t[".name"], "autoswitch_backup_node", {})
@@ -328,7 +328,7 @@ function clear_all_nodes()
 		uci:delete(appname, t[".name"])
 	end)
 	uci:foreach(appname, "acl_rule", function(t)
-		uci:set(appname, t[".name"], "node", "nil")
+		uci:delete(appname, t[".name"], "node")
 	end)
 	uci:foreach(appname, "nodes", function(node)
 		uci:delete(appname, node['.name'])
@@ -341,8 +341,8 @@ end
 function delete_select_nodes()
 	local ids = luci.http.formvalue("ids")
 	string.gsub(ids, '[^' .. "," .. ']+', function(w)
-		if (uci:get(appname, "@global[0]", "node") or "nil") == w then
-			uci:set(appname, '@global[0]', "node", "nil")
+		if (uci:get(appname, "@global[0]", "node") or "") == w then
+			uci:delete(appname, '@global[0]', "node")
 		end
 		uci:foreach(appname, "socks", function(t)
 			if t["node"] == w then
@@ -363,7 +363,7 @@ function delete_select_nodes()
 		end)
 		uci:foreach(appname, "acl_rule", function(t)
 			if t["node"] == w then
-				uci:set(appname, t[".name"], "node", "nil")
+				uci:delete(appname, t[".name"], "node")
 			end
 		end)
 		uci:foreach(appname, "nodes", function(t)
