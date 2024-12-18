@@ -442,6 +442,8 @@ run_xray() {
 
 	lua $UTIL_XRAY gen_config -node $node -redir_port $redir_port -tcp_proxy_way $tcp_proxy_way -loglevel $loglevel ${_extra_param} > $config_file
 	ln_run "$(first_type $(config_t_get global_app ${type}_file) ${type})" ${type} $log_file run -c "$config_file"
+
+	[ -n "${redir_port}" ] && set_cache_var "node_${node}_redir_port" "${redir_port}"
 }
 
 run_singbox() {
@@ -541,6 +543,8 @@ run_singbox() {
 
 	lua $UTIL_SINGBOX gen_config -node $node -redir_port $redir_port -tcp_proxy_way $tcp_proxy_way ${_extra_param} > $config_file
 	ln_run "$(first_type $(config_t_get global_app singbox_file) sing-box)" "sing-box" "${log_file}" run -c "$config_file"
+
+	[ -n "${redir_port}" ] && set_cache_var "node_${node}_redir_port" "${redir_port}"
 }
 
 run_socks() {
@@ -705,7 +709,6 @@ run_global() {
 	TYPE=$(echo $(config_n_get $NODE type nil) | tr 'A-Z' 'a-z')
 	[ "$TYPE" = "nil" ] && return 1
 	mkdir -p $TMP_ACL_PATH/default
-	set_cache_var "GLOBAL_node" "$NODE"
 
 	if [ $PROXY_IPV6 == "1" ]; then
 		echolog "开启实验性IPv6透明代理(TProxy)，请确认您的节点及类型支持IPv6！"
@@ -774,6 +777,9 @@ run_global() {
 	GLOBAL_DNSMASQ_PORT=$(get_new_port 11400)
 	run_copy_dnsmasq flag="default" listen_port=$GLOBAL_DNSMASQ_PORT tun_dns="${TUN_DNS}"
 	DNS_REDIRECT_PORT=${GLOBAL_DNSMASQ_PORT}
+
+	set_cache_var "ACL_GLOBAL_node" "$NODE"
+	set_cache_var "ACL_GLOBAL_redir_port" "$REDIR_PORT"
 }
 
 start_socks() {
@@ -1098,7 +1104,7 @@ acl_app() {
 		dnsmasq_port=${GLOBAL_DNSMASQ_PORT:-11400}
 		for item in $items; do
 			index=$(expr $index + 1)
-			local enabled sid remarks sources node direct_dns_query_strategy remote_dns_protocol remote_dns remote_dns_doh remote_dns_client_ip remote_dns_detour remote_fakedns remote_dns_query_strategy interface use_interface
+			local enabled sid remarks sources interface tcp_no_redir_ports udp_no_redir_ports node direct_dns_query_strategy write_ipset_direct remote_dns_protocol remote_dns remote_dns_doh remote_dns_client_ip remote_dns_detour remote_fakedns remote_dns_query_strategy
 			local _ip _mac _iprange _ipset _ip_or_mac source_list config_file
 			sid=$(uci -q show "${CONFIG}.${item}" | grep "=acl_rule" | awk -F '=' '{print $1}' | awk -F '.' '{print $2}')
 			eval $(uci -q show "${CONFIG}.${item}" | cut -d'.' -sf 3-)
@@ -1127,30 +1133,46 @@ acl_app() {
 			mkdir -p $TMP_ACL_PATH/$sid
 			[ ! -z "${source_list}" ] && echo -e "${source_list}" | sed '/^$/d' > $TMP_ACL_PATH/$sid/source_list
 
-			tcp_proxy_mode="global"
-			udp_proxy_mode="global"
 			node=${node:-default}
-			direct_dns_query_strategy=${direct_dns_query_strategy:-UseIP}
-			remote_dns_protocol=${remote_dns_protocol:-tcp}
-			remote_dns=${remote_dns:-1.1.1.1}
-			[ "$remote_dns_protocol" = "doh" ] && remote_dns=${remote_dns_doh:-https://1.1.1.1/dns-query}
-			remote_dns_detour=${remote_dns_detour:-remote}
-			remote_fakedns=${remote_fakedns:-0}
-			remote_dns_query_strategy=${remote_dns_query_strategy:-UseIPv4}
+			tcp_no_redir_ports=${tcp_no_redir_ports:-default}
+			udp_no_redir_ports=${udp_no_redir_ports:-default}
+			[ "$tcp_no_redir_ports" = "default" ] && tcp_no_redir_ports=$TCP_NO_REDIR_PORTS
+			[ "$udp_no_redir_ports" = "default" ] && udp_no_redir_ports=$UDP_NO_REDIR_PORTS
+			[ "$tcp_no_redir_ports" == "1:65535" ] && [ "$udp_no_redir_ports" == "1:65535" ] && unset node
 
-			write_ipset_direct=${write_ipset_direct:-1}
+			[ -n "$node" ] && {
+				tcp_proxy_mode="global"
+				udp_proxy_mode="global"
+				direct_dns_query_strategy=${direct_dns_query_strategy:-UseIP}
+				write_ipset_direct=${write_ipset_direct:-1}
+				remote_dns_protocol=${remote_dns_protocol:-tcp}
+				remote_dns=${remote_dns:-1.1.1.1}
+				[ "$remote_dns_protocol" = "doh" ] && remote_dns=${remote_dns_doh:-https://1.1.1.1/dns-query}
+				remote_dns_detour=${remote_dns_detour:-remote}
+				remote_fakedns=${remote_fakedns:-0}
+				remote_dns_query_strategy=${remote_dns_query_strategy:-UseIPv4}
 
-			[ "$node" != "nil" ] && {
+				local GLOBAL_node=$(get_cache_var "ACL_GLOBAL_node")
+				[ -n "${GLOBAL_node}" ] && GLOBAL_redir_port=$(get_cache_var "ACL_GLOBAL_redir_port")
+
 				if [ "$node" = "default" ]; then
-					node=$NODE
-					redir_port=$REDIR_PORT
+					if [ -n "${GLOBAL_node}" ]; then
+						set_cache_var "ACL_${sid}_node" "${GLOBAL_node}"
+						set_cache_var "ACL_${sid}_redir_port" "${GLOBAL_redir_port}"
+						set_cache_var "ACL_${sid}_dns_port" "${GLOBAL_DNSMASQ_PORT}"
+						set_cache_var "ACL_${sid}_default" "1"
+					else
+						echolog "  - 全局节点未启用，跳过【${remarks}】"
+					fi
 				else
 					[ "$(config_get_type $node nil)" = "nodes" ] && {
-						if [ "$node" = "$NODE" ]; then
-							redir_port=$REDIR_PORT
+						if [ -n "${GLOBAL_node}" ] && [ "$node" = "${GLOBAL_node}" ]; then
+							set_cache_var "ACL_${sid}_node" "${GLOBAL_node}"
+							set_cache_var "ACL_${sid}_redir_port" "${GLOBAL_redir_port}"
+							set_cache_var "ACL_${sid}_dns_port" "${GLOBAL_DNSMASQ_PORT}"
+							set_cache_var "ACL_${sid}_default" "1"
 						else
 							redir_port=$(get_new_port $(expr $redir_port + 1))
-							eval node_${node}_redir_port=$redir_port
 
 							local type=$(echo $(config_n_get $node type) | tr 'A-Z' 'a-z')
 							if [ -n "${type}" ]; then
@@ -1169,16 +1191,14 @@ acl_app() {
 							fi
 							dnsmasq_port=$(get_new_port $(expr $dnsmasq_port + 1))
 							run_copy_dnsmasq flag="$sid" listen_port=$dnsmasq_port tun_dns="127.0.0.1#${dns_port}"
-							eval node_${node}_$(echo -n "${tcp_proxy_mode}${remote_dns}" | md5sum | cut -d " " -f1)=${dnsmasq_port}
-							filter_node $node TCP > /dev/null 2>&1 &
-							filter_node $node UDP > /dev/null 2>&1 &
+
+							set_cache_var "ACL_${sid}_node" "$node"
+							set_cache_var "ACL_${sid}_redir_port" "$redir_port"
 						fi
-						set_cache_var "ACL_${sid}_node" "${node}"
 					}
 				fi
-				set_cache_var "ACL_${sid}_redir_port" "${redir_port}"
 			}
-			unset enabled sid remarks sources interface node direct_dns_query_strategy remote_dns_protocol remote_dns remote_dns_doh remote_dns_client_ip remote_dns_detour remote_fakedns remote_dns_query_strategy 
+			unset enabled sid remarks sources interface tcp_no_redir_ports udp_no_redir_ports node direct_dns_query_strategy write_ipset_direct remote_dns_protocol remote_dns remote_dns_doh remote_dns_client_ip remote_dns_detour remote_fakedns remote_dns_query_strategy 
 			unset _ip _mac _iprange _ipset _ip_or_mac source_list config_file
 		done
 		unset redir_port dns_port dnsmasq_port

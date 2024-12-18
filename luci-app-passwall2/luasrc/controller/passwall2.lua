@@ -158,7 +158,7 @@ end
 
 function get_now_use_node()
 	local e = {}
-	local node = api.get_cache_var("GLOBAL_node")
+	local node = api.get_cache_var("ACL_GLOBAL_node")
 	if node then
 		e["global"] = node
 	end

@@ -276,8 +276,8 @@ add_shunt_t_rule() {
 
 load_acl() {
 	[ "$ENABLED_ACLS" == 1 ] && {
-		acl_app
 		echolog "访问控制："
+		acl_app
 		for sid in $(ls -F ${TMP_ACL_PATH} | grep '/$' | awk -F '/' '{print $1}' | grep -v 'default'); do
 			eval $(uci -q show "${CONFIG}.${sid}" | cut -d'.' -sf 3-)
 
@@ -285,24 +285,26 @@ load_acl() {
 			udp_no_redir_ports=${udp_no_redir_ports:-default}
 			tcp_proxy_mode="global"
 			udp_proxy_mode="global"
+			tcp_redir_ports=${tcp_redir_ports:-default}
+			udp_redir_ports=${udp_redir_ports:-default}
 			node=${node:-default}
 			[ "$tcp_no_redir_ports" = "default" ] && tcp_no_redir_ports=$TCP_NO_REDIR_PORTS
 			[ "$udp_no_redir_ports" = "default" ] && udp_no_redir_ports=$UDP_NO_REDIR_PORTS
 			[ "$tcp_redir_ports" = "default" ] && tcp_redir_ports=$TCP_REDIR_PORTS
 			[ "$udp_redir_ports" = "default" ] && udp_redir_ports=$UDP_REDIR_PORTS
 
-			node_remark=$(config_n_get $NODE remarks)
 			[ -n "$(get_cache_var "ACL_${sid}_node")" ] && node=$(get_cache_var "ACL_${sid}_node")
 			[ -n "$(get_cache_var "ACL_${sid}_redir_port")" ] && redir_port=$(get_cache_var "ACL_${sid}_redir_port")
 			[ -n "$(get_cache_var "ACL_${sid}_dns_port")" ] && dns_redirect_port=$(get_cache_var "ACL_${sid}_dns_port")
-			[ "$node" = "default" ] && dns_redirect_port=${DNS_REDIRECT_PORT}
-			[ -n "$node" ] && [ "$node" != "default" ] && node_remark=$(config_n_get $node remarks)
+			[ -n "$node" ] && node_remark=$(config_n_get $node remarks)
 
 			write_ipset_direct=${write_ipset_direct:-1}
 			[ "${write_ipset_direct}" = "1" ] && {
-				if [ "$node" = "default" ]; then
+				if [ -n "$(get_cache_var "ACL_${sid}_default")" ]; then
 					local ipset_whitelist=${ipset_global_whitelist}
 					local ipset_whitelist6=${ipset_global_whitelist6}
+					shunt_list4=${SHUNT_LIST4}
+					shunt_list6=${SHUNT_LIST6}
 				else
 					local ipset_whitelist="passwall2_${sid}_whitelist"
 					local ipset_whitelist6="passwall2_${sid}_whitelist6"
@@ -387,7 +389,7 @@ load_acl() {
 					fi
 				}
 				
-				if ([ "$tcp_proxy_mode" != "disable" ] || [ "$udp_proxy_mode" != "disable" ]) && [ -n "$redir_port" ]; then
+				if ([ "$tcp_proxy_mode" != "disable" ] || [ "$udp_proxy_mode" != "disable" ]) && [ -n "$dns_redirect_port" ]; then
 					$ipt_n -A PSW2_DNS $(comment "$remarks") -p udp ${_ipt_source} --dport 53 -j REDIRECT --to-ports $dns_redirect_port
 					$ip6t_n -A PSW2_DNS $(comment "$remarks") -p udp ${_ipt_source} --dport 53 -j REDIRECT --to-ports $dns_redirect_port 2>/dev/null
 					$ipt_n -A PSW2_DNS $(comment "$remarks") -p tcp ${_ipt_source} --dport 53 -j REDIRECT --to-ports $dns_redirect_port
