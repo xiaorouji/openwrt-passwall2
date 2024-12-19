@@ -207,6 +207,28 @@ function repeat_exist(table, value)
 	return false
 end
 
+function remove(...)
+	for index, value in ipairs({...}) do
+		if value and #value > 0 and value ~= "/" then
+			sys.call(string.format("rm -rf %s", value))
+		end
+	end
+end
+
+function is_install(package)
+	if package and #package > 0 then
+		local file_path = "/usr/lib/opkg/info"
+		local file_ext = ".control"
+		local has = sys.call("[ -d " .. file_path .. " ]")
+		if has == 0 then
+			file_path = "/lib/apk/packages"
+			file_ext = ".list"
+		end
+		return sys.call(string.format('[ -s "%s/%s%s" ]', file_path, package, file_ext)) == 0
+	end
+	return false
+end
+
 function get_args(arg)
 	local var = {}
 	for i, arg_k in pairs(arg) do

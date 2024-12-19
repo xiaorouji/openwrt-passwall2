@@ -991,37 +991,8 @@ start_haproxy() {
 	[ "$(config_t_get global_haproxy balancing_enable 0)" != "1" ] && return
 	haproxy_path=$TMP_PATH/haproxy
 	haproxy_conf="config.cfg"
-	lua $APP_PATH/haproxy.lua -path ${haproxy_path} -conf ${haproxy_conf} -dns ${LOCAL_DNS}
+	lua $APP_PATH/haproxy.lua -path ${haproxy_path} -conf ${haproxy_conf} -dns ${LOCAL_DNS:-${AUTO_DNS}}
 	ln_run "$(first_type haproxy)" haproxy "/dev/null" -f "${haproxy_path}/${haproxy_conf}"
-}
-
-run_ipset_dns_server() {
-	if [ -n "$(first_type chinadns-ng)" ]; then
-		run_ipset_chinadns_ng $@
-	else
-		run_ipset_dnsmasq $@
-	fi
-}
-
-gen_dnsmasq_items() {
-	local dnss settype setnames outf ipsetoutf
-	eval_set_val $@
-	
-	awk -v dnss="${dnss}" -v settype="${settype}" -v setnames="${setnames}" -v outf="${outf}" -v ipsetoutf="${ipsetoutf}" '
-		BEGIN {
-			if(outf == "") outf="/dev/stdout";
-			if(ipsetoutf == "") ipsetoutf=outf;
-			split(dnss, dns, ","); setdns=length(dns)>0; setlist=length(setnames)>0;
-			if(setdns) for(i in dns) if(length(dns[i])==0) delete dns[i];
-			fail=1;
-		}
-		! /^$/&&!/^#/ {
-			fail=0
-			if(setdns) for(i in dns) printf("server=/.%s/%s\n", $0, dns[i]) >>outf;
-			if(setlist) printf("%s=/.%s/%s\n", settype, $0, setnames) >>ipsetoutf;
-		}
-		END {fflush(outf); close(outf); fflush(ipsetoutf); close(ipsetoutf); exit(fail);}
-	'
 }
 
 run_copy_dnsmasq() {
@@ -1030,32 +1001,21 @@ run_copy_dnsmasq() {
 	local dnsmasq_conf=$TMP_ACL_PATH/$flag/dnsmasq.conf
 	local dnsmasq_conf_path=$TMP_ACL_PATH/$flag/dnsmasq.d
 	mkdir -p $dnsmasq_conf_path
-	[ -s "/tmp/etc/dnsmasq.conf.${DEFAULT_DNSMASQ_CFGID}" ] && {
-		cp -r /tmp/etc/dnsmasq.conf.${DEFAULT_DNSMASQ_CFGID} $dnsmasq_conf
-		sed -i "/passwall2/d" $dnsmasq_conf
-		sed -i "/ubus/d" $dnsmasq_conf
-		sed -i "/dhcp/d" $dnsmasq_conf
-		sed -i "/port=/d" $dnsmasq_conf
-		sed -i "/server=/d" $dnsmasq_conf
-	}
-	local set_type="ipset"
-	[ "${nftflag}" = "1" ] && {
-		set_type="nftset"
-		local setflag_4="4#inet#passwall2#"
-		local setflag_6="6#inet#passwall2#"
-	}
-	cat <<-EOF >> $dnsmasq_conf
-		port=${listen_port}
-		conf-dir=${dnsmasq_conf_path}
-		server=${tun_dns}
-		no-poll
-		no-resolv
-	EOF
-	awk '!seen[$0]++' $dnsmasq_conf > /tmp/dnsmasq.tmp && mv /tmp/dnsmasq.tmp $dnsmasq_conf
-	node_servers=$(uci show "${CONFIG}" | grep -E "(.address=|.download_address=)" | cut -d "'" -f 2)
-	hosts_foreach "node_servers" host_from_url | grep '[a-zA-Z]$' | sort -u | grep -v "engage.cloudflareclient.com" | gen_dnsmasq_items settype="${set_type}" setnames="${setflag_4}passwall2_vpslist,${setflag_6}passwall2_vpslist6" dnss="${LOCAL_DNS:-${AUTO_DNS}}" outf="${dnsmasq_conf_path}/10-vpslist_host.conf" ipsetoutf="${dnsmasq_conf_path}/ipset.conf"
+	lua $APP_PATH/helper_dnsmasq.lua copy_instance -LISTEN_PORT ${listen_port} -DNSMASQ_CONF ${dnsmasq_conf}
+	lua $APP_PATH/helper_dnsmasq.lua add_rule -FLAG "${flag}" -TMP_DNSMASQ_PATH ${dnsmasq_conf_path} -DNSMASQ_CONF_FILE ${dnsmasq_conf} \
+		-DEFAULT_DNS ${AUTO_DNS} -LOCAL_DNS ${LOCAL_DNS:-${AUTO_DNS}} -TUN_DNS ${tun_dns} \
+		-NFTFLAG ${nftflag:-0} \
+		-NO_LOGIC_LOG ${NO_LOGIC_LOG:-0}
 	ln_run "$(first_type dnsmasq)" "dnsmasq_${flag}" "/dev/null" -C $dnsmasq_conf -x $TMP_ACL_PATH/$flag/dnsmasq.pid
 	set_cache_var "ACL_${flag}_dns_port" "${listen_port}"
+}
+
+run_ipset_dns_server() {
+	if [ -n "$(first_type chinadns-ng)" ]; then
+		run_ipset_chinadns_ng $@
+	else
+		run_ipset_dnsmasq $@
+	fi
 }
 
 run_ipset_chinadns_ng() {
