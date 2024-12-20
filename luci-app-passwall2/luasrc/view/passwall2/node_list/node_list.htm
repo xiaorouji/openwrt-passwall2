@@ -43,7 +43,7 @@ table td, .table .td {
 }
 
 ._now_use {
-	background: #94e1ff !important;
+	color: red !important;
 }
 
 .ping a:hover{
@@ -227,13 +227,12 @@ table td, .table .td {
 				if (id) {
 					var dom = document.getElementById("cbi-passwall2-" + id);
 					if (dom) {
-						dom.classList.add("_now_use");
-						dom.title = "当前节点";
+						dom.title = "当前使用的节点";
 						//var v = "<a style='color: red'>当前节点：</a>" + document.getElementById("cbid.passwall2." + id + ".remarks").value;
 						//document.getElementById("cbi-passwall2-" + id + "-remarks").innerHTML = v;
-						var tds = dom.getElementsByTagName("td")
-						for (var j = 0; j < tds.length; j++) {
-							tds[j].classList.add("_now_use");
+						var dom_remarks = document.getElementById("cbi-passwall2-" + id + "-remarks");
+						if (dom_remarks) {
+							dom_remarks.classList.add("_now_use");
 						}
 					}
 				}
