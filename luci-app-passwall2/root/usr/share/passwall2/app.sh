@@ -380,9 +380,9 @@ run_xray() {
 				set_flag=$(echo ${flag} | awk -F '_' '{print $2}')
 			}
 			if [ "${nftflag}" = "1" ]; then
-				local direct_nftset="4#inet#passwall2#passwall2_${set_flag}_whitelist,6#inet#passwall2#passwall2_${set_flag}_whitelist6"
+				local direct_nftset="4#inet#passwall2#passwall2_${set_flag}_white,6#inet#passwall2#passwall2_${set_flag}_white6"
 			else
-				local direct_ipset="passwall2_${set_flag}_whitelist,passwall2_${set_flag}_whitelist6"
+				local direct_ipset="passwall2_${set_flag}_white,passwall2_${set_flag}_white6"
 			fi
 			run_ipset_dns_server listen_port=${direct_dnsmasq_listen_port} server_dns=${AUTO_DNS} ipset="${direct_ipset}" nftset="${direct_nftset}" config_file=${direct_ipset_conf}
 			DIRECT_DNS_UDP_PORT=${direct_dnsmasq_listen_port}
@@ -494,9 +494,9 @@ run_singbox() {
 				set_flag=$(echo ${flag} | awk -F '_' '{print $2}')
 			}
 			if [ "${nftflag}" = "1" ]; then
-				local direct_nftset="4#inet#passwall2#passwall2_${set_flag}_whitelist,6#inet#passwall2#passwall2_${set_flag}_whitelist6"
+				local direct_nftset="4#inet#passwall2#passwall2_${set_flag}_white,6#inet#passwall2#passwall2_${set_flag}_white6"
 			else
-				local direct_ipset="passwall2_${set_flag}_whitelist,passwall2_${set_flag}_whitelist6"
+				local direct_ipset="passwall2_${set_flag}_white,passwall2_${set_flag}_white6"
 			fi
 			run_ipset_dns_server listen_port=${direct_dnsmasq_listen_port} server_dns=${AUTO_DNS} ipset="${direct_ipset}" nftset="${direct_nftset}" config_file=${direct_ipset_conf}
 			DIRECT_DNS_UDP_PORT=${direct_dnsmasq_listen_port}
@@ -1055,11 +1055,11 @@ run_ipset_chinadns_ng() {
 	
 	[ -n "${ipset}" ] && {
 		set_names=$ipset
-		vps_set_names="passwall2_vpslist,passwall2_vpslist6"
+		vps_set_names="passwall2_vps,passwall2_vps6"
 	}
 	[ -n "${nftset}" ] && {
 		set_names=$(echo ${nftset} | awk -F, '{printf "%s,%s", substr($1,3), substr($2,3)}' | sed 's/#/@/g')
-		vps_set_names="inet@passwall2@passwall2_vpslist,inet@passwall2@passwall2_vpslist6"
+		vps_set_names="inet@passwall2@passwall2_vps,inet@passwall2@passwall2_vps6"
 	}
 	cat <<-EOF > $config_file
 		bind-addr 127.0.0.1
