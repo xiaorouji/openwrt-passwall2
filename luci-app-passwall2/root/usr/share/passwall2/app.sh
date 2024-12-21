@@ -12,6 +12,7 @@ TMP_ROUTE_PATH=$TMP_PATH/route
 TMP_ACL_PATH=$TMP_PATH/acl
 TMP_IFACE_PATH=$TMP_PATH/iface
 TMP_PATH2=/tmp/etc/${CONFIG}_tmp
+GLOBAL_ACL_PATH=${TMP_ACL_PATH}/default
 LOG_FILE=/tmp/log/$CONFIG.log
 APP_PATH=/usr/share/$CONFIG
 RULES_PATH=/usr/share/${CONFIG}/rules
@@ -373,7 +374,7 @@ run_xray() {
 		[ "${write_ipset_direct}" = "1" ] && {
 			direct_dnsmasq_listen_port=$(get_new_port $(expr $dns_listen_port + 1) udp)
 			local set_flag="${flag}"
-			local direct_ipset_conf=${TMP_ACL_PATH}/default/dns_${flag}_direct.conf
+			local direct_ipset_conf=${GLOBAL_ACL_PATH}/dns_${flag}_direct.conf
 			[ -n "$(echo ${flag} | grep '^acl')" ] && {
 				direct_ipset_conf=${TMP_ACL_PATH}/${sid}/dns_${flag}_direct.conf
 				set_flag=$(echo ${flag} | awk -F '_' '{print $2}')
@@ -487,7 +488,7 @@ run_singbox() {
 		[ "${write_ipset_direct}" = "1" ] && {
 			direct_dnsmasq_listen_port=$(get_new_port $(expr $dns_listen_port + 1) udp)
 			local set_flag="${flag}"
-			local direct_ipset_conf=${TMP_ACL_PATH}/default/dns_${flag}_direct.conf
+			local direct_ipset_conf=${GLOBAL_ACL_PATH}/dns_${flag}_direct.conf
 			[ -n "$(echo ${flag} | grep '^acl')" ] && {
 				direct_ipset_conf=${TMP_ACL_PATH}/${sid}/dns_${flag}_direct.conf
 				set_flag=$(echo ${flag} | awk -F '_' '{print $2}')
@@ -708,7 +709,7 @@ run_global() {
 	[ -z "$NODE" ] && return 1
 	TYPE=$(echo $(config_n_get $NODE type) | tr 'A-Z' 'a-z')
 	[ -z "$TYPE" ] && return 1
-	mkdir -p $TMP_ACL_PATH/default
+	mkdir -p ${GLOBAL_ACL_PATH}
 
 	if [ $PROXY_IPV6 == "1" ]; then
 		echolog "开启实验性IPv6透明代理(TProxy)，请确认您的节点及类型支持IPv6！"
@@ -746,8 +747,8 @@ run_global() {
 	msg="${msg}）"
 	echolog ${msg}
 
-	V2RAY_CONFIG=$TMP_ACL_PATH/default/global.json
-	V2RAY_LOG=$TMP_ACL_PATH/default/global.log
+	V2RAY_CONFIG=${GLOBAL_ACL_PATH}/global.json
+	V2RAY_LOG=${GLOBAL_ACL_PATH}/global.log
 	[ "$(config_t_get global log_node 1)" != "1" ] && V2RAY_LOG="/dev/null"
 	V2RAY_ARGS="${V2RAY_ARGS} log_file=${V2RAY_LOG} config_file=${V2RAY_CONFIG}"
 
@@ -782,7 +783,9 @@ run_global() {
 		[ "1" = "0" ] && {
 			DIRECT_DNSMASQ_PORT=$(get_new_port 11400)
 			DIRECT_DNSMASQ_CONF=${GLOBAL_ACL_PATH}/direct_dnsmasq.conf
-			lua $APP_PATH/helper_dnsmasq.lua copy_instance -LISTEN_PORT ${DIRECT_DNSMASQ_PORT} -DNSMASQ_CONF ${DIRECT_DNSMASQ_CONF}
+			DIRECT_DNSMASQ_CONF_PATH=${GLOBAL_ACL_PATH}/direct_dnsmasq.d
+			mkdir -p ${DIRECT_DNSMASQ_CONF_PATH}
+			lua $APP_PATH/helper_dnsmasq.lua copy_instance -LISTEN_PORT ${DIRECT_DNSMASQ_PORT} -DNSMASQ_CONF ${DIRECT_DNSMASQ_CONF} -TMP_DNSMASQ_PATH ${DIRECT_DNSMASQ_CONF_PATH}
 			ln_run "$(first_type dnsmasq)" "dnsmasq_direct" "/dev/null" -C ${DIRECT_DNSMASQ_CONF} -x ${GLOBAL_ACL_PATH}/direct_dnsmasq.pid
 			set_cache_var "DIRECT_DNSMASQ_PORT" "${DIRECT_DNSMASQ_PORT}"
 		}
@@ -1354,19 +1357,17 @@ DEFAULT_DNS=$(uci show dhcp.@dnsmasq[0] | grep "\.server=" | awk -F '=' '{print 
 AUTO_DNS=${DEFAULT_DNS:-119.29.29.29}
 
 DNSMASQ_CONF_DIR=/tmp/dnsmasq.d
-TMP_DNSMASQ_PATH=${DNSMASQ_CONF_DIR}/${CONFIG}
 DEFAULT_DNSMASQ_CFGID="$(uci -q show "dhcp.@dnsmasq[0]" | awk 'NR==1 {split($0, conf, /[.=]/); print conf[2]}')"
 if [ -f "/tmp/etc/dnsmasq.conf.$DEFAULT_DNSMASQ_CFGID" ]; then
 	DNSMASQ_CONF_DIR="$(awk -F '=' '/^conf-dir=/ {print $2}' "/tmp/etc/dnsmasq.conf.$DEFAULT_DNSMASQ_CFGID")"
 	if [ -n "$DNSMASQ_CONF_DIR" ]; then
 		DNSMASQ_CONF_DIR=${DNSMASQ_CONF_DIR%*/}
-		TMP_DNSMASQ_PATH=${DNSMASQ_CONF_DIR}/${CONFIG}
 	else
 		DNSMASQ_CONF_DIR="/tmp/dnsmasq.d"
 	fi
 fi
 GLOBAL_DNSMASQ_CONF=${DNSMASQ_CONF_DIR}/dnsmasq-${CONFIG}.conf
-GLOBAL_DNSMASQ_CONF_PATH=${TMP_DNSMASQ_PATH}
+GLOBAL_DNSMASQ_CONF_PATH=${GLOBAL_ACL_PATH}/dnsmasq.d
 
 PROXY_IPV6=$(config_t_get global_forwarding ipv6_tproxy 0)
 
