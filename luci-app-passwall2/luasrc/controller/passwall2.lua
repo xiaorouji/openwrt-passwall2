@@ -7,6 +7,7 @@ local uci = api.uci				-- in funtion index()
 local http = require "luci.http"
 local util = require "luci.util"
 local i18n = require "luci.i18n"
+local fs = api.fs
 
 function index()
 	if not nixio.fs.access("/etc/config/passwall2") then
@@ -45,7 +46,7 @@ function index()
 	entry({"admin", "services", appname, "socks_config"}, cbi(appname .. "/client/socks_config")).leaf = true
 	entry({"admin", "services", appname, "acl"}, cbi(appname .. "/client/acl"), _("Access control"), 98).leaf = true
 	entry({"admin", "services", appname, "acl_config"}, cbi(appname .. "/client/acl_config")).leaf = true
-	entry({"admin", "services", appname, "log"}, form(appname .. "/client/log"), _("Watch Logs"), 999).leaf = true
+	entry({"admin", "services", appname, "log"}, form(appname .. "/client/log"), _("Log Maint"), 999).leaf = true
 
 	--[[ Server ]]
 	entry({"admin", "services", appname, "server"}, cbi(appname .. "/server/index"), _("Server-Side"), 99).leaf = true
@@ -84,6 +85,9 @@ function index()
 		entry({"admin", "services", appname, "check_" .. com}, call("com_check", com)).leaf = true
 		entry({"admin", "services", appname, "update_" .. com}, call("com_update", com)).leaf = true
 	end
+
+	--[[Backup]]
+	entry({"admin", "services", appname, "backup"}, call("create_backup")).leaf = true
 end
 
 local function http_write_json(content)
@@ -437,4 +441,19 @@ function com_update(comname)
 	http_write_json(json)
 end
 
+function create_backup()
+	local backup_files = {
+		"/etc/config/passwall2",
+		"/etc/config/passwall2_server",
+		"/usr/share/passwall2/domains_excluded"
+	}
+	local tar_file = "/tmp/passwall2-backup.tar.gz"
+	fs.remove(tar_file)
+	local cmd = "tar -czf " .. tar_file .. " " .. table.concat(backup_files, " ")
+	api.sys.call(cmd)
+	http.header("Content-Disposition", "attachment; filename=passwall2-backup.tar.gz")
+	http.prepare_content("application/octet-stream")
+	http.write(fs.readfile(tar_file))
+	fs.remove(tar_file)
+end
 

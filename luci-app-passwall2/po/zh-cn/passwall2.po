@@ -46,9 +46,6 @@ msgstr "规则列表"
 msgid "Access control"
 msgstr "访问控制"
 
-msgid "Watch Logs"
-msgstr "查看日志"
-
 msgid "Node Config"
 msgstr "节点配置"
 
@@ -199,17 +196,11 @@ msgstr "客户端DNS和默认网关必须指向本路由器。"
 msgid "If you have a wrong DNS process, the consequences are at your own risk!"
 msgstr "如果你自行配置了错误的DNS流程，后果自负！"
 
-msgid "Restore the default configuration method. Input example in the address bar:"
-msgstr "恢复默认配置方法，地址栏输入例："
-
 msgid "Hide menu method, input example in the address bar:"
 msgstr "隐藏菜单方法，地址栏输入例："
 
 msgid "After the hidden to the display, input example in the address bar:"
 msgstr "当你隐藏后想再次显示，地址栏输入例："
-
-msgid "Are you sure to reset?"
-msgstr "你确定要恢复吗？"
 
 msgid "Are you sure to hide?"
 msgstr "你确定要隐藏吗？"
@@ -234,9 +225,6 @@ msgstr "对于移动设备,可通过重新接入网络的方式清除。比如�
 
 msgid "Please make sure your device's network settings point both the DNS server and default gateway to this router, to ensure DNS queries are properly routed."
 msgstr "请确认您设备的网络设置,客户端DNS服务器和默认网关应均指向本路由器,以确保DNS查询正确路由。"
-
-msgid "Restore to default configuration:"
-msgstr "恢复默认配置："
 
 msgid "Browser access:"
 msgstr "浏览器访问："
@@ -1617,3 +1605,45 @@ msgstr "仅 IPv4"
 
 msgid "IPv6 Only"
 msgstr "仅 IPv6"
+
+msgid "Log Maint"
+msgstr "日志维护"
+
+msgid "Backup and Restore"
+msgstr "备份还原"
+
+msgid "Backup or Restore Client and Server Configurations."
+msgstr "备份或还原客户端及服务端配置。"
+
+msgid "Note: Restoring configurations across different versions may cause compatibility issues."
+msgstr "注意：不同版本间的配置恢复可能会导致兼容性问题。"
+
+msgid "Create Backup File"
+msgstr "创建备份文件"
+
+msgid "Restore Backup File"
+msgstr "恢复备份文件"
+
+msgid "DL Backup"
+msgstr "下载备份"
+
+msgid "RST Backup"
+msgstr "恢复备份"
+
+msgid "UL Restore"
+msgstr "上传恢复"
+
+msgid "CLOSE WIN"
+msgstr "关闭窗口"
+
+msgid "Restore to default configuration"
+msgstr "恢复默认配置"
+
+msgid "Do Reset"
+msgstr "执行重置"
+
+msgid "Do you want to restore the client to default settings?"
+msgstr "是否要恢复客户端默认配置？"
+
+msgid "Are you sure you want to restore the client to default settings?"
+msgstr "是否真的要恢复客户端默认配置？"
