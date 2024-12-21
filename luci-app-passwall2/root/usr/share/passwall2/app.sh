@@ -794,7 +794,7 @@ run_global() {
 			-DEFAULT_DNS ${AUTO_DNS} -LOCAL_DNS ${LOCAL_DNS:-${AUTO_DNS}} -TUN_DNS ${TUN_DNS} \
 			-NFTFLAG ${nftflag:-0} \
 			-NO_LOGIC_LOG ${NO_LOGIC_LOG:-0}
-		/etc/init.d/dnsmasq restart >/dev/null 2>&1
+		lua $APP_PATH/helper_dnsmasq.lua logic_restart -LOG 1
 	else
 		#Run a copy dnsmasq instance, DNS hijack for that need proxy devices.
 		GLOBAL_DNSMASQ_PORT=$(get_new_port 11400)
@@ -1256,7 +1256,7 @@ start() {
 			uci -q commit ${CONFIG}
 			uci -q set dhcp.@dnsmasq[0].dns_redirect='0'
 			uci -q commit dhcp
-			/etc/init.d/dnsmasq restart >/dev/null 2>&1
+			lua $APP_PATH/helper_dnsmasq.lua restart -LOG 0
 		}
 	fi
 	[ "$ENABLED_DEFAULT_ACL" == 1 ] && run_global
