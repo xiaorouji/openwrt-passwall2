@@ -1670,7 +1670,6 @@ end
 function gen_dns_config(var)
 	local dns_listen_port = var["-dns_listen_port"]
 	local dns_out_tag = var["-dns_out_tag"]
-	local dns_client_ip = var["-dns_client_ip"]
 	local direct_dns_udp_server = var["-direct_dns_udp_server"]
 	local direct_dns_udp_port = var["-direct_dns_udp_port"]
 	local direct_dns_tcp_server = var["-direct_dns_tcp_server"]
@@ -1690,6 +1689,7 @@ function gen_dns_config(var)
 	local remote_dns_doh_port = var["-remote_dns_doh_port"]
 	local remote_dns_query_strategy = var["-remote_dns_query_strategy"]
 	local remote_dns_detour = var["-remote_dns_detour"]
+	local remote_dns_client_ip = var["-remote_dns_client_ip"]
 	local remote_dns_outbound_socks_address = var["-remote_dns_outbound_socks_address"]
 	local remote_dns_outbound_socks_port = var["-remote_dns_outbound_socks_port"]
 	local dns_cache = var["-dns_cache"]
@@ -1713,7 +1713,7 @@ function gen_dns_config(var)
 			disableFallback = true,
 			disableFallbackIfMatch = true,
 			servers = {},
-			clientIp = (dns_client_ip and dns_client_ip ~= "") and dns_client_ip or nil,
+			clientIp = (remote_dns_client_ip and remote_dns_client_ip ~= "") and remote_dns_client_ip or nil,
 		}
 	
 		local other_type_dns_proto, other_type_dns_server, other_type_dns_port

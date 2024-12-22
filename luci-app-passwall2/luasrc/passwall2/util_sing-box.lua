@@ -764,6 +764,7 @@ function gen_config(var)
 	local remote_dns_detour = var["-remote_dns_detour"]
 	local remote_dns_query_strategy = var["-remote_dns_query_strategy"]
 	local remote_dns_fake = var["-remote_dns_fake"]
+	local remote_dns_client_ip = var["-remote_dns_client_ip"]
 	local dns_cache = var["-dns_cache"]
 	local tags = var["-tags"]
 
@@ -1255,6 +1256,7 @@ function gen_config(var)
 			strategy = remote_strategy,
 			address_resolver = "direct",
 			detour = COMMON.default_outbound_tag,
+			client_subnet = (remote_dns_client_ip and remote_dns_client_ip ~= "") and remote_dns_client_ip or nil,
 		}
 
 		if remote_dns_detour == "direct" then
@@ -1376,6 +1378,7 @@ function gen_config(var)
 							}
 							fakedns_dns_rule.server = fakedns_tag
 							fakedns_dns_rule.disable_cache = true
+							fakedns_dns_rule.client_subnet = nil
 							table.insert(dns.rules, fakedns_dns_rule)
 						end
 					end
@@ -1581,6 +1584,7 @@ function gen_dns_config(var)
 	local remote_dns_doh_ip = var["-remote_dns_doh_ip"]
 	local remote_dns_doh_port = var["-remote_dns_doh_port"]
 	local remote_dns_detour = var["-remote_dns_detour"]
+	local remote_dns_client_ip = var["-remote_dns_client_ip"]
 	local remote_dns_outbound_socks_address = var["-remote_dns_outbound_socks_address"]
 	local remote_dns_outbound_socks_port = var["-remote_dns_outbound_socks_port"]
 	local dns_cache = var["-dns_cache"]
@@ -1667,6 +1671,7 @@ function gen_dns_config(var)
 				address_strategy = "prefer_ipv6",
 				strategy = (dns_query_strategy and dns_query_strategy ~= "UseIP") and "ipv4_only" or "prefer_ipv6",
 				detour = out_tag,
+				client_subnet = (remote_dns_client_ip and remote_dns_client_ip ~= "") and remote_dns_client_ip or nil,
 			}
 	
 			if direct_dns_udp_server then
