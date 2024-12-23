@@ -447,11 +447,13 @@ function create_backup()
 		"/etc/config/passwall2_server",
 		"/usr/share/passwall2/domains_excluded"
 	}
-	local tar_file = "/tmp/passwall2-backup.tar.gz"
+	local date = os.date("%Y%m%d")
+	local tar_file = "/tmp/passwall2-" .. date .. "-backup.tar.gz"
 	fs.remove(tar_file)
 	local cmd = "tar -czf " .. tar_file .. " " .. table.concat(backup_files, " ")
 	api.sys.call(cmd)
-	http.header("Content-Disposition", "attachment; filename=passwall2-backup.tar.gz")
+	http.header("Content-Disposition", "attachment; filename=passwall2-" .. date .. "-backup.tar.gz")
+	http.header("X-Backup-Filename", "passwall2-" .. date .. "-backup.tar.gz")
 	http.prepare_content("application/octet-stream")
 	http.write(fs.readfile(tar_file))
 	fs.remove(tar_file)
