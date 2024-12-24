@@ -940,7 +940,7 @@ add_firewall_rule() {
 	#  加载ACLS
 	load_acl
 
-	filter_direct_node_list
+	filter_direct_node_list > /dev/null 2>&1 &
 
 	echolog "防火墙规则加载完成！"
 }
