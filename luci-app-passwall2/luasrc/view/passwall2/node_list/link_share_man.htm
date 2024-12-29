@@ -1,13 +1,25 @@
 <%+cbi/valueheader%>
 <%
 local api = require "luci.passwall2.api"
+local appname = 'passwall2'
+local uci = api.libuci
+local ss_type = uci:get(appname, "@global_subscribe[0]", "ss_type") or "shadowsocks-libev"
+local trojan_type = uci:get(appname, "@global_subscribe[0]", "trojan_type") or "xray"
+local vmess_type = uci:get(appname, "@global_subscribe[0]", "vmess_type") or "xray"
+local vless_type = uci:get(appname, "@global_subscribe[0]", "vless_type") or "xray"
+local hysteria2_type = uci:get(appname, "@global_subscribe[0]", "hysteria2_type") or "hysteria2"
 -%>
 <script src="<%=resource%>/qrcode.min.js"></script>
 <script type="text/javascript">//<![CDATA[
 	let has_singbox = "<%=api.finded_com("singbox")%>"
 	let has_xray = "<%=api.finded_com("xray")%>"
 	let has_hysteria2 = "<%=api.finded_com("hysteria")%>"
-	
+	let ss_type = "<%=ss_type%>"
+	let trojan_type = "<%=trojan_type%>"
+	let vmess_type = "<%=vmess_type%>"
+	let vless_type = "<%=vless_type%>"
+	let hysteria2_type = "<%=hysteria2_type%>"
+
 	function padright(str, cnt, pad) {
 		return str + Array(cnt + 1).join(pad);
 	}
@@ -701,7 +713,7 @@ local api = require "luci.passwall2.api"
 			}
 			if (sipIndex !== -1) {
 				// SIP002
-				var userInfo = b64decsafe(url0.substr(0, sipIndex));
+				var userInfo = b64decsafe(decodeURIComponent(url0.substr(0, sipIndex)));
 				var temp = url0.substr(sipIndex + 1).replace('/?', '?').split('?');
 				var serverInfo = temp[0].split(":");
 				var server = serverInfo[0];
@@ -728,18 +740,20 @@ local api = require "luci.passwall2.api"
 					method = userInfo.substr(0, userInfoSplitIndex);
 					password = userInfo.substr(userInfoSplitIndex + 1);
 				}
-				if (has_singbox) {
+				if (ss_type == "sing-box" && has_singbox) {
 					dom_prefix = "singbox_"
 					opt.set('type', "sing-box");
 					opt.set(dom_prefix + 'protocol', "shadowsocks");
-				} else if (has_xray) {
+				} else if (ss_type == "xray" && has_xray) {
 					dom_prefix = "xray_"
 					opt.set('type', "Xray");
 					opt.set(dom_prefix + 'protocol', "shadowsocks");
+					method = method.toLowerCase() === "chacha20-ietf-poly1305" ? "chacha20-poly1305" : method;
 				} else {
 					if (["2022-blake3-aes-128-gcm", "2022-blake3-aes-256-gcm", "2022-blake3-chacha20-poly1305"].includes(method)) {
 						dom_prefix = "ssrust_"
 						opt.set('type', "SS-Rust");
+						method = method.toLowerCase() === "chacha20-poly1305" ? "chacha20-ietf-poly1305" : method;
 					} else {
 						dom_prefix = "ss_"
 						opt.set('type', "SS");
@@ -860,12 +874,12 @@ local api = require "luci.passwall2.api"
 				var team = sstr.split('@');
 				var part1 = team[0].split(':');
 				var part2 = team[1].split(':');
-				
-				if (has_singbox) {
+
+				if (ss_type == "sing-box" && has_singbox) {
 					dom_prefix = "singbox_"
 					opt.set('type', "sing-box");
 					opt.set(dom_prefix + 'protocol', "shadowsocks");
-				} else if (has_xray) {
+				} else if (ss_type == "xray" && has_xray) {
 					dom_prefix = "xray_"
 					opt.set('type', "Xray");
 					opt.set(dom_prefix + 'protocol', "shadowsocks");
@@ -887,6 +901,15 @@ local api = require "luci.passwall2.api"
 			}
 		}
 		if (ssu[0] === "trojan") {
+			if (trojan_type == "sing-box" && has_singbox) {
+				dom_prefix = "singbox_"
+				opt.set('type', "sing-box");
+				opt.set(dom_prefix + 'protocol', "trojan");
+			} else {
+				dom_prefix = "xray_"
+				opt.set('type', "Xray");
+				opt.set(dom_prefix + 'protocol', "trojan");
+			}
 			var m = parseNodeUrl(ssrurl);
 			var password = m.passwd;
 			if (password === "") {
@@ -904,15 +927,7 @@ local api = require "luci.passwall2.api"
 					queryParam[decodeURIComponent(params[0]).toLowerCase()] = decodeURIComponent(params[1] || '');
 				}
 			}
-			if (has_singbox) {
-				dom_prefix = "singbox_"
-				opt.set('type', "sing-box");
-			} else if (has_xray) {
-				dom_prefix = "xray_"
-				opt.set('type', "Xray");
-			}
 			opt.set(dom_prefix + 'mux', queryParam.mux === '1');
-			opt.set(dom_prefix + 'protocol', "trojan");
 			opt.set(dom_prefix + 'address', m.hostname);
 			opt.set(dom_prefix + 'port', m.port || "443");
 			opt.set(dom_prefix + 'password', decodeURIComponent(password));
@@ -1001,17 +1016,16 @@ local api = require "luci.passwall2.api"
 			}
 		}
 		if (ssu[0] === "vmess") {
-			var sstr = b64DecodeUnicode(ssu[1]);
-			var ploc = sstr.indexOf("/?");
-			if (has_singbox) {
+			if (vmess_type == "sing-box" && has_singbox) {
 				dom_prefix = "singbox_"
 				opt.set('type', "sing-box");
-			}
-			if (has_xray) {
+			} else {
 				dom_prefix = "xray_"
 				opt.set('type', "Xray");
 			}
 			opt.set(dom_prefix + 'protocol', "vmess");
+			var sstr = b64DecodeUnicode(ssu[1]);
+			var ploc = sstr.indexOf("/?");
 			var url0, param = "";
 			if (ploc > 0) {
 				url0 = sstr.substr(0, ploc);
@@ -1092,11 +1106,10 @@ local api = require "luci.passwall2.api"
 			}
 		}
 		if (ssu[0] === "vless") {
-			if (has_singbox) {
+			if (vless_type == "sing-box" && has_singbox) {
 				dom_prefix = "singbox_"
 				opt.set('type', "sing-box");
-			}
-			if (has_xray) {
+			} else {
 				dom_prefix = "xray_"
 				opt.set('type', "Xray");
 			}
@@ -1245,17 +1258,16 @@ local api = require "luci.passwall2.api"
 					queryParam[decodeURIComponent(params[0])] = decodeURIComponent(params[1] || '');
 				}
 			}
-			if (has_singbox) {
-				dom_prefix = "singbox_"
+			if (hysteria2_type == "sing-box" && has_singbox) {
 				opt.set('type', "sing-box");
+				dom_prefix = "singbox_"
 				opt.set(dom_prefix + 'protocol', "hysteria2");
 				opt.set(dom_prefix + 'hysteria2_auth_password', decodeURIComponent(password));
 				if (queryParam["obfs-password"]) {
 					opt.set(dom_prefix + 'hysteria2_obfs_type', "salamander");
 					opt.set(dom_prefix + 'hysteria2_obfs_password', queryParam["obfs-password"]);
 				}
-			}
-			if (has_hysteria2) {
+			} else if (has_hysteria2) {
 				opt.set('type', "Hysteria2");
 				dom_prefix = "hysteria2_"
 				opt.set(dom_prefix + 'auth_password', decodeURIComponent(password));
