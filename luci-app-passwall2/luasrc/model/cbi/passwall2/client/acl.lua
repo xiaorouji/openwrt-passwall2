@@ -1,7 +1,6 @@
 local api = require "luci.passwall2.api"
 local appname = api.appname
 local sys = api.sys
-local has_chnlist = api.fs.access("/usr/share/passwall2/rules/chnlist")
 
 m = Map(appname)
 api.set_apply_on_parse(m)

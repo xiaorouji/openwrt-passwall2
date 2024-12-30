@@ -1,6 +1,5 @@
 local api = require "luci.passwall2.api"
 local appname = api.appname
-local uci = api.uci
 local datatypes = api.datatypes
 local has_singbox = api.finded_com("singbox")
 local has_xray = api.finded_com("xray")
@@ -33,7 +32,7 @@ for k, v in pairs(nodes_table) do
 end
 
 local socks_list = {}
-uci:foreach(appname, "socks", function(s)
+m.uci:foreach(appname, "socks", function(s)
 	if s.enabled == "1" and s.node then
 		socks_list[#socks_list + 1] = {
 			id = "Socks_" .. s[".name"],
@@ -66,9 +65,8 @@ end
 
 m:append(Template(appname .. "/global/status"))
 
-local global_cfgid = uci:get_all(appname, "@global[0]")[".name"]
-
-s = m:section(TypedSection, "global")
+local global_cfgid = m:get("@global[0]")[".name"]
+s = m:section(NamedSection, global_cfgid)
 s.anonymous = true
 s.addremove = false
 
@@ -150,7 +148,7 @@ if (has_singbox or has_xray) and #nodes_table > 0 then
 				type:depends({ __hide = true }) --不存在的依赖，即始终隐藏
 			end
 
-			uci:foreach(appname, "shunt_rules", function(e)
+			m.uci:foreach(appname, "shunt_rules", function(e)
 				local id = e[".name"]
 				local node_option = vid .. "-" .. id .. "_node"
 				if id and e.remarks then
@@ -400,7 +398,7 @@ o.rmempty = false
 o = s2:option(ListValue, "node", translate("Socks Node"))
 
 local n = 1
-uci:foreach(appname, "socks", function(s)
+m.uci:foreach(appname, "socks", function(s)
 	if s[".name"] == section then
 		return false
 	end

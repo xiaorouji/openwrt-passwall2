@@ -1,7 +1,7 @@
 local api = require "luci.passwall2.api"
 local appname = api.appname
-local sys = api.sys
 local datatypes = api.datatypes
+local sys = api.sys
 
 m = Map(appname)
 api.set_apply_on_parse(m)
