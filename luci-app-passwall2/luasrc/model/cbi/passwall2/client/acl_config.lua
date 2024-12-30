@@ -279,6 +279,9 @@ o = s:option(Value, "remote_dns_client_ip", translate("Remote DNS EDNS Client Su
 o.description = translate("Notify the DNS server when the DNS query is notified, the location of the client (cannot be a private IP address).") .. "<br />" ..
 				translate("This feature requires the DNS server to support the Edns Client Subnet (RFC7871).")
 o.datatype = "ipaddr"
+o:depends("remote_dns_protocol", "tcp")
+o:depends("remote_dns_protocol", "doh")
+o:depends("remote_dns_protocol", "udp")
 
 o = s:option(ListValue, "remote_dns_detour", translate("Remote DNS Outbound"))
 o.default = "remote"

@@ -66,7 +66,7 @@ end
 m:append(Template(appname .. "/global/status"))
 
 local global_cfgid = m:get("@global[0]")[".name"]
-s = m:section(NamedSection, global_cfgid)
+s = m:section(TypedSection, "global")
 s.anonymous = true
 s.addremove = false
 
