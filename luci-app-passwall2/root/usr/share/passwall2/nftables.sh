@@ -258,46 +258,50 @@ gen_shunt_list() {
 	NODE_PROTOCOL=$(config_n_get $node protocol)
 	[ "$NODE_PROTOCOL" = "_shunt" ] && USE_SHUNT_NODE=1
 	[ "$USE_SHUNT_NODE" = "1" ] && {
-		local default_node=$(config_n_get ${node} default_node _direct)
-		local default_outbound="redirect"
-		[ "$default_node" = "_direct" ] && default_outbound="direct"
-		local shunt_ids=$(uci show $CONFIG | grep "=shunt_rules" | awk -F '.' '{print $2}' | awk -F '=' '{print $1}')
-		for shunt_id in $shunt_ids; do
-			local shunt_node=$(config_n_get ${node} "${shunt_id}")
-			[ -n "$shunt_node" ] && {
-				local nftset_v4="passwall2_${node}_${shunt_id}"
-				local nftset_v6="passwall2_${node}_${shunt_id}6"
-				gen_nftset $nftset_v4 ipv4_addr 0 0
-				gen_nftset $nftset_v6 ipv6_addr 0 0
-				local outbound="redirect"
-				[ "$shunt_node" = "_direct" ] && outbound="direct"
-				[ "$shunt_node" = "_default" ] && outbound="${default_outbound}"
-				_SHUNT_LIST4="${_SHUNT_LIST4} ${nftset_v4}:${outbound}"
-				_SHUNT_LIST6="${_SHUNT_LIST6} ${nftset_v6}:${outbound}"
-				insert_nftset $nftset_v4 "0" $(config_n_get $shunt_id ip_list | tr -s "\r\n" "\n" | sed -e "/^$/d" | grep -E "(\.((2(5[0-5]|[0-4][0-9]))|[0-1]?[0-9]{1,2})){3}")
-				insert_nftset $nftset_v6 "0" $(config_n_get $shunt_id ip_list | tr -s "\r\n" "\n" | sed -e "/^$/d" | grep -E "([A-Fa-f0-9]{1,4}::?){1,7}[A-Fa-f0-9]{1,4}")
-				[ "$(config_t_get global_rules enable_geoview)" = "1" ] && {
-					local _geoip_code=$(config_n_get $shunt_id ip_list | tr -s "\r\n" "\n" | sed -e "/^$/d" | grep -E "^geoip:" | grep -v "^geoip:private" | sed -E 's/^geoip:(.*)/\1/' | sed ':a;N;$!ba;s/\n/,/g')
-					[ -n "$_geoip_code" ] && {
-						if [ "$(config_n_get $node type)" = "sing-box" ]; then
-							insert_nftset $nftset_v4 "0" $(get_singbox_geoip $_geoip_code ipv4 | grep -E "(\.((2(5[0-5]|[0-4][0-9]))|[0-1]?[0-9]{1,2})){3}")
-							insert_nftset $nftset_v6 "0" $(get_singbox_geoip $_geoip_code ipv6 | grep -E "([A-Fa-f0-9]{1,4}::?){1,7}[A-Fa-f0-9]{1,4}")
-						else
-							if type geoview &> /dev/null; then
+		local enable_geoview=$(config_t_get global_rules enable_geoview 0)
+		[ -z "$(first_type geoview)" ] && enable_geoview=0
+		local preloading=0
+		preloading=$enable_geoview
+		[ "${preloading}" = "1" ] && {
+			local default_node=$(config_n_get ${node} default_node _direct)
+			local default_outbound="redirect"
+			[ "$default_node" = "_direct" ] && default_outbound="direct"
+			local shunt_ids=$(uci show $CONFIG | grep "=shunt_rules" | awk -F '.' '{print $2}' | awk -F '=' '{print $1}')
+			for shunt_id in $shunt_ids; do
+				local shunt_node=$(config_n_get ${node} "${shunt_id}")
+				[ -n "$shunt_node" ] && {
+					local nftset_v4="passwall2_${node}_${shunt_id}"
+					local nftset_v6="passwall2_${node}_${shunt_id}6"
+					gen_nftset $nftset_v4 ipv4_addr 0 0
+					gen_nftset $nftset_v6 ipv6_addr 0 0
+					local outbound="redirect"
+					[ "$shunt_node" = "_direct" ] && outbound="direct"
+					[ "$shunt_node" = "_default" ] && outbound="${default_outbound}"
+					_SHUNT_LIST4="${_SHUNT_LIST4} ${nftset_v4}:${outbound}"
+					_SHUNT_LIST6="${_SHUNT_LIST6} ${nftset_v6}:${outbound}"
+					insert_nftset $nftset_v4 "0" $(config_n_get $shunt_id ip_list | tr -s "\r\n" "\n" | sed -e "/^$/d" | grep -E "(\.((2(5[0-5]|[0-4][0-9]))|[0-1]?[0-9]{1,2})){3}")
+					insert_nftset $nftset_v6 "0" $(config_n_get $shunt_id ip_list | tr -s "\r\n" "\n" | sed -e "/^$/d" | grep -E "([A-Fa-f0-9]{1,4}::?){1,7}[A-Fa-f0-9]{1,4}")
+					[ "${enable_geoview}" = "1" ] && {
+						local _geoip_code=$(config_n_get $shunt_id ip_list | tr -s "\r\n" "\n" | sed -e "/^$/d" | grep -E "^geoip:" | grep -v "^geoip:private" | sed -E 's/^geoip:(.*)/\1/' | sed ':a;N;$!ba;s/\n/,/g')
+						[ -n "$_geoip_code" ] && {
+							if [ "$(config_n_get $node type)" = "sing-box" ]; then
+								insert_nftset $nftset_v4 "0" $(get_singbox_geoip $_geoip_code ipv4 | grep -E "(\.((2(5[0-5]|[0-4][0-9]))|[0-1]?[0-9]{1,2})){3}")
+								insert_nftset $nftset_v6 "0" $(get_singbox_geoip $_geoip_code ipv6 | grep -E "([A-Fa-f0-9]{1,4}::?){1,7}[A-Fa-f0-9]{1,4}")
+							else
 								insert_nftset $nftset_v4 "0" $(get_geoip $_geoip_code ipv4 | grep -E "(\.((2(5[0-5]|[0-4][0-9]))|[0-1]?[0-9]{1,2})){3}")
 								insert_nftset $nftset_v6 "0" $(get_geoip $_geoip_code ipv6 | grep -E "([A-Fa-f0-9]{1,4}::?){1,7}[A-Fa-f0-9]{1,4}")
 							fi
-						fi
-						echolog "  - [$?]解析分流规则[$shunt_id]-[geoip:${_geoip_code}]加入到 NFTSET 完成"
+							echolog "  - [$?]解析分流规则[$shunt_id]-[geoip:${_geoip_code}]加入到 NFTSET 完成"
+						}
 					}
 				}
-			}
-		done
+			done
+		}
 		[ "${_write_ipset_direct}" = "1" ] && {
 			_SHUNT_LIST4="${_SHUNT_LIST4} ${_set_name4}:direct"
 			_SHUNT_LIST6="${_SHUNT_LIST6} ${_set_name6}:direct"
 		}
-		[ -n "$default_node" ] && {
+		[ "${preloading}" = "1" ] && [ -n "$default_node" ] && {
 			local nftset_v4="passwall2_${node}_default"
 			local nftset_v6="passwall2_${node}_default6"
 			gen_nftset $nftset_v4 ipv4_addr 0 0
