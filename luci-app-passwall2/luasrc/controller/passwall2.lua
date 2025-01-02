@@ -124,6 +124,7 @@ function socks_autoswitch_add_node()
 	local id = luci.http.formvalue("id")
 	local key = luci.http.formvalue("key")
 	if id and id ~= "" and key and key ~= "" then
+		uci:set(appname, id, "enable_autoswitch", "1")
 		local new_list = uci:get(appname, id, "autoswitch_backup_node") or {}
 		for i = #new_list, 1, -1 do
 			if (uci:get(appname, new_list[i], "remarks") or ""):find(key) then
@@ -145,6 +146,7 @@ function socks_autoswitch_remove_node()
 	local id = luci.http.formvalue("id")
 	local key = luci.http.formvalue("key")
 	if id and id ~= "" and key and key ~= "" then
+		uci:set(appname, id, "enable_autoswitch", "1")
 		local new_list = uci:get(appname, id, "autoswitch_backup_node") or {}
 		for i = #new_list, 1, -1 do
 			if (uci:get(appname, new_list[i], "remarks") or ""):find(key) then
