@@ -55,24 +55,48 @@ function uci_section(cursor, config, type, name, values)
 	return stat and name
 end
 
+function uci_save(cursor, config, commit, apply)
+	if is_js_luci() then
+		commit = true
+		if commit then
+			if apply then
+				cursor:commit(config)
+			else
+				sh_uci_commit(config)
+			end
+		end
+	else
+		cursor:save(config)
+		if commit then
+			cursor:commit(config)
+			if apply then
+				sys.call("/etc/init.d/" .. config .. " reload > /dev/null 2>&1 &")
+			end
+		end
+	end
+end
+
 function sh_uci_get(config, section, option)
 	exec_call(string.format("uci -q get %s.%s.%s", config, section, option))
-	exec_call(string.format("uci -q commit %s", config))
 end
 
-function sh_uci_set(config, section, option, val)
+function sh_uci_set(config, section, option, val, commit)
 	exec_call(string.format("uci -q set %s.%s.%s=\"%s\"", config, section, option, val))
-	exec_call(string.format("uci -q commit %s", config))
+	if commit then sh_uci_commit(config) end
 end
 
-function sh_uci_del(config, section, option)
+function sh_uci_del(config, section, option, commit)
 	exec_call(string.format("uci -q delete %s.%s.%s", config, section, option))
-	exec_call(string.format("uci -q commit %s", config))
+	if commit then sh_uci_commit(config) end
 end
 
-function sh_uci_add_list(config, section, option, val)
+function sh_uci_add_list(config, section, option, val, commit)
 	exec_call(string.format("uci -q del_list %s.%s.%s=\"%s\"", config, section, option, val))
 	exec_call(string.format("uci -q add_list %s.%s.%s=\"%s\"", config, section, option, val))
+	if commit then sh_uci_commit(config) end
+end
+
+function sh_uci_commit(config)
 	exec_call(string.format("uci -q commit %s", config))
 end
 
