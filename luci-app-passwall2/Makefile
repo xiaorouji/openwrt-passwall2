@@ -1,4 +1,4 @@
-# Copyright (C) 2022-2023 xiaorouji
+# Copyright (C) 2022-2025 xiaorouji
 #
 # This is free software, licensed under the GNU General Public License v3.
 
