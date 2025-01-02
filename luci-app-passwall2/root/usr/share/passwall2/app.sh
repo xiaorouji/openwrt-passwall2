@@ -16,13 +16,6 @@ GLOBAL_ACL_PATH=${TMP_ACL_PATH}/default
 LOG_FILE=/tmp/log/$CONFIG.log
 APP_PATH=/usr/share/$CONFIG
 RULES_PATH=/usr/share/${CONFIG}/rules
-TUN_DNS_PORT=15353
-TUN_DNS="127.0.0.1#${TUN_DNS_PORT}"
-DEFAULT_DNS=
-ENABLED_DEFAULT_ACL=0
-ENABLED_ACLS=0
-PROXY_IPV6=0
-PROXY_IPV6_UDP=0
 LUA_UTIL_PATH=/usr/lib/lua/luci/passwall2
 UTIL_SINGBOX=$LUA_UTIL_PATH/util_sing-box.lua
 UTIL_SS=$LUA_UTIL_PATH/util_shadowsocks.lua
@@ -30,8 +23,6 @@ UTIL_XRAY=$LUA_UTIL_PATH/util_xray.lua
 UTIL_NAIVE=$LUA_UTIL_PATH/util_naiveproxy.lua
 UTIL_HYSTERIA2=$LUA_UTIL_PATH/util_hysteria2.lua
 UTIL_TUIC=$LUA_UTIL_PATH/util_tuic.lua
-V2RAY_ARGS=""
-V2RAY_CONFIG=""
 
 echolog() {
 	local d="$(date "+%Y-%m-%d %H:%M:%S")"
@@ -218,7 +209,11 @@ check_depends() {
 
 get_new_port() {
 	port=$1
-	[ "$port" == "auto" ] && port=2082
+	[ "$port" == "auto" ] && {
+		port=2082
+		local GET_NEW_PORT=$(get_cache_var "get_new_port")
+		[ -n "${GET_NEW_PORT}" ] && port=${GET_NEW_PORT}
+	}
 	protocol=$(echo $2 | tr 'A-Z' 'a-z')
 	result=$(check_port_exists $port $protocol)
 	if [ "$result" != 0 ]; then
@@ -230,6 +225,7 @@ get_new_port() {
 		fi
 		get_new_port $temp $protocol
 	else
+		set_cache_var "get_new_port" "$port"
 		echo $port
 	fi
 }
@@ -328,7 +324,11 @@ set_cache_var() {
 	local key="${1}"
 	shift 1
 	local val="$@"
-	[ -n "${key}" ] && [ -n "${val}" ] && echo "${key}=\"${val}\"" >> $TMP_PATH/var
+	[ -n "${key}" ] && [ -n "${val}" ] && {
+		sed -i "/${key}=/d" $TMP_PATH/var >/dev/null 2>&1
+		echo "${key}=\"${val}\"" >> $TMP_PATH/var
+		eval ${key}=\"${val}\"
+	}
 }
 get_cache_var() {
 	local key="${1}"
@@ -337,8 +337,12 @@ get_cache_var() {
 	}
 }
 
+eval_cache_var() {
+	[ -s "$TMP_PATH/var" ] && eval $(cat "$TMP_PATH/var")
+}
+
 run_xray() {
-	local flag node redir_port socks_address socks_port socks_username socks_password http_address http_port http_username http_password
+	local flag node redir_port tcp_proxy_way socks_address socks_port socks_username socks_password http_address http_port http_username http_password
 	local dns_listen_port direct_dns_query_strategy remote_dns_protocol remote_dns_udp_server remote_dns_tcp_server remote_dns_doh remote_dns_client_ip remote_dns_detour remote_fakedns remote_dns_query_strategy dns_cache write_ipset_direct
 	local loglevel log_file config_file
 	local _extra_param=""
@@ -440,15 +444,18 @@ run_xray() {
 			_extra_param="${_extra_param} -remote_dns_udp_port ${dns_remote_listen_port} -remote_dns_udp_server 127.0.0.1 -remote_dns_query_strategy ${remote_dns_query_strategy}"
 		fi
 	}
+	[ -n "${redir_port}" ] && {
+		_extra_param="${_extra_param} -redir_port ${redir_port}"
+		set_cache_var "node_${node}_redir_port" "${redir_port}"
+		[ -n "${tcp_proxy_way}" ] && _extra_param="${_extra_param} -tcp_proxy_way ${tcp_proxy_way}"
+	}
 
-	lua $UTIL_XRAY gen_config -node $node -redir_port $redir_port -tcp_proxy_way $tcp_proxy_way -loglevel $loglevel ${_extra_param} > $config_file
+	lua $UTIL_XRAY gen_config -node $node -loglevel $loglevel ${_extra_param} > $config_file
 	ln_run "$(first_type $(config_t_get global_app ${type}_file) ${type})" ${type} $log_file run -c "$config_file"
-
-	[ -n "${redir_port}" ] && set_cache_var "node_${node}_redir_port" "${redir_port}"
 }
 
 run_singbox() {
-	local flag node redir_port socks_address socks_port socks_username socks_password http_address http_port http_username http_password
+	local flag node redir_port tcp_proxy_way socks_address socks_port socks_username socks_password http_address http_port http_username http_password
 	local dns_listen_port direct_dns_query_strategy remote_dns_protocol remote_dns_udp_server remote_dns_tcp_server remote_dns_doh remote_dns_client_ip remote_dns_detour remote_fakedns remote_dns_query_strategy dns_cache write_ipset_direct
 	local loglevel log_file config_file
 	local _extra_param=""
@@ -543,10 +550,14 @@ run_singbox() {
 		[ "$remote_fakedns" = "1" ] && _extra_param="${_extra_param} -remote_dns_fake 1"
 	}
 
-	lua $UTIL_SINGBOX gen_config -node $node -redir_port $redir_port -tcp_proxy_way $tcp_proxy_way ${_extra_param} > $config_file
-	ln_run "$(first_type $(config_t_get global_app singbox_file) sing-box)" "sing-box" "${log_file}" run -c "$config_file"
+	[ -n "${redir_port}" ] && {
+		_extra_param="${_extra_param} -redir_port ${redir_port}"
+		set_cache_var "node_${node}_redir_port" "${redir_port}"
+		[ -n "${tcp_proxy_way}" ] && _extra_param="${_extra_param} -tcp_proxy_way ${tcp_proxy_way}"
+	}
 
-	[ -n "${redir_port}" ] && set_cache_var "node_${node}_redir_port" "${redir_port}"
+	lua $UTIL_SINGBOX gen_config -node $node ${_extra_param} > $config_file
+	ln_run "$(first_type $(config_t_get global_app singbox_file) sing-box)" "sing-box" "${log_file}" run -c "$config_file"
 }
 
 run_socks() {
@@ -714,9 +725,12 @@ run_global() {
 
 	if [ $PROXY_IPV6 == "1" ]; then
 		echolog "开启实验性IPv6透明代理(TProxy)，请确认您的节点及类型支持IPv6！"
-		PROXY_IPV6_UDP=1
 	fi
-	V2RAY_ARGS="flag=global node=$NODE redir_port=$REDIR_PORT"
+
+	TUN_DNS_PORT=15353
+	TUN_DNS="127.0.0.1#${TUN_DNS_PORT}"
+
+	V2RAY_ARGS="flag=global node=$NODE redir_port=$REDIR_PORT tcp_proxy_way=${TCP_PROXY_WAY}"
 	V2RAY_ARGS="${V2RAY_ARGS} dns_listen_port=${TUN_DNS_PORT} direct_dns_query_strategy=${DIRECT_DNS_QUERY_STRATEGY} remote_dns_query_strategy=${REMOTE_DNS_QUERY_STRATEGY} dns_cache=${DNS_CACHE}"
 	local msg="${TUN_DNS} （直连DNS：${AUTO_DNS}"
 
@@ -774,7 +788,7 @@ run_global() {
 		run_func="run_singbox"
 	fi
 	
-	${run_func} $V2RAY_ARGS
+	${run_func} ${V2RAY_ARGS}
 
 	local RUN_NEW_DNSMASQ=1
 	RUN_NEW_DNSMASQ=${DNS_REDIRECT}
@@ -1202,7 +1216,7 @@ acl_app() {
 								elif [ "${type}" = "sing-box" ] && [ -n "${SINGBOX_BIN}" ]; then
 									run_func="run_singbox"
 								fi
-								${run_func} flag=acl_$sid node=$node redir_port=$redir_port socks_address=127.0.0.1 socks_port=$acl_socks_port dns_listen_port=${dns_port} direct_dns_query_strategy=${direct_dns_query_strategy} remote_dns_protocol=${remote_dns_protocol} remote_dns_tcp_server=${remote_dns} remote_dns_udp_server=${remote_dns} remote_dns_doh="${remote_dns}" remote_dns_client_ip=${remote_dns_client_ip} remote_dns_detour=${remote_dns_detour} remote_fakedns=${remote_fakedns} remote_dns_query_strategy=${remote_dns_query_strategy} write_ipset_direct=${write_ipset_direct} config_file=${config_file}
+								${run_func} flag=acl_$sid node=$node redir_port=$redir_port tcp_proxy_way=${TCP_PROXY_WAY} socks_address=127.0.0.1 socks_port=$acl_socks_port dns_listen_port=${dns_port} direct_dns_query_strategy=${direct_dns_query_strategy} remote_dns_protocol=${remote_dns_protocol} remote_dns_tcp_server=${remote_dns} remote_dns_udp_server=${remote_dns} remote_dns_doh="${remote_dns}" remote_dns_client_ip=${remote_dns_client_ip} remote_dns_detour=${remote_dns_detour} remote_fakedns=${remote_fakedns} remote_dns_query_strategy=${remote_dns_query_strategy} write_ipset_direct=${write_ipset_direct} config_file=${config_file}
 							fi
 							dnsmasq_port=$(get_new_port $(expr $dnsmasq_port + 1))
 							run_copy_dnsmasq flag="$sid" listen_port=$dnsmasq_port tun_dns="127.0.0.1#${dns_port}"
@@ -1222,10 +1236,13 @@ acl_app() {
 
 start() {
 	pgrep -f /tmp/etc/passwall2/bin > /dev/null 2>&1 && {
-		echolog "程序已启动，先停止再重新启动!"
+		#echolog "程序已启动，先停止再重新启动!"
 		stop
 	}
-
+	mkdir -p /tmp/etc $TMP_PATH $TMP_BIN_PATH $TMP_SCRIPT_FUNC_PATH $TMP_ROUTE_PATH $TMP_ACL_PATH $TMP_PATH2
+	get_config
+	export V2RAY_LOCATION_ASSET=$(config_t_get global_rules v2ray_location_asset "/usr/share/v2ray/")
+	export XRAY_LOCATION_ASSET=$V2RAY_LOCATION_ASSET
 	ulimit -n 65535
 	start_haproxy
 	start_socks
@@ -1289,8 +1306,8 @@ start() {
 
 stop() {
 	clean_log
-	[ -n "$($(source $APP_PATH/iptables.sh get_ipt_bin) -t mangle -t nat -L -nv 2>/dev/null | grep "PSW2")" ] && source $APP_PATH/iptables.sh stop
-	[ -n "$(nft list sets 2>/dev/null | grep "${CONFIG}_")" ] && source $APP_PATH/nftables.sh stop
+	eval_cache_var
+	[ -n "$USE_TABLES" ] && source $APP_PATH/${USE_TABLES}.sh stop
 	delete_ip2route
 	kill_all v2ray-plugin obfs-local
 	pgrep -f "sleep.*(6s|9s|58s)" | xargs kill -9 >/dev/null 2>&1
@@ -1309,14 +1326,12 @@ stop() {
 			uci -q delete ${CONFIG}.@global[0].dnsmasq_dns_redirect
 			uci -q commit ${CONFIG}
 		}
-		if [ -z "$(get_cache_var "ACL_default_dns_port")" ] || [ -n "${bak_dnsmasq_dns_redirect}" ]; then
+		if [ -z "${ACL_default_dns_port}" ] || [ -n "${bak_dnsmasq_dns_redirect}" ]; then
 			uci -q del_list dhcp.@dnsmasq[0].addnmount="${GLOBAL_DNSMASQ_CONF_PATH}"
 			uci -q commit dhcp
 			lua $APP_PATH/helper_dnsmasq.lua restart -LOG 0
 		fi
-		bak_bridge_nf_ipt=$(get_cache_var "bak_bridge_nf_ipt")
 		[ -n "${bak_bridge_nf_ipt}" ] && sysctl -w net.bridge.bridge-nf-call-iptables=${bak_bridge_nf_ipt} >/dev/null 2>&1
-		bak_bridge_nf_ip6t=$(get_cache_var "bak_bridge_nf_ip6t")
 		[ -n "${bak_bridge_nf_ip6t}" ] && sysctl -w net.bridge.bridge-nf-call-ip6tables=${bak_bridge_nf_ip6t} >/dev/null 2>&1
 	}
 	rm -rf $TMP_PATH
@@ -1325,68 +1340,66 @@ stop() {
 	exit 0
 }
 
-ENABLED=$(config_t_get global enabled 0)
-NODE=$(config_t_get global node)
-[ "$ENABLED" == 1 ] && {
-	[ -n "$NODE" ] && [ "$(config_get_type $NODE)" == "nodes" ] && ENABLED_DEFAULT_ACL=1
-}
-ENABLED_ACLS=$(config_t_get global acl_enable 0)
-[ "$ENABLED_ACLS" == 1 ] && {
-	[ "$(uci show ${CONFIG} | grep "@acl_rule" | grep "enabled='1'" | wc -l)" == 0 ] && ENABLED_ACLS=0
-}
-SOCKS_ENABLED=$(config_t_get global socks_enabled 0)
-REDIR_PORT=$(echo $(get_new_port 1041 tcp,udp))
-tcp_proxy_way=$(config_t_get global_forwarding tcp_proxy_way redirect)
-TCP_NO_REDIR_PORTS=$(config_t_get global_forwarding tcp_no_redir_ports 'disable')
-UDP_NO_REDIR_PORTS=$(config_t_get global_forwarding udp_no_redir_ports 'disable')
-TCP_REDIR_PORTS=$(config_t_get global_forwarding tcp_redir_ports '22,25,53,143,465,587,853,993,995,80,443')
-UDP_REDIR_PORTS=$(config_t_get global_forwarding udp_redir_ports '1:65535')
-TCP_PROXY_MODE="global"
-UDP_PROXY_MODE="global"
-LOCALHOST_PROXY=$(config_t_get global localhost_proxy '1')
-CLIENT_PROXY=$(config_t_get global client_proxy '1')
-DIRECT_DNS_QUERY_STRATEGY=$(config_t_get global direct_dns_query_strategy UseIP)
-REMOTE_DNS_PROTOCOL=$(config_t_get global remote_dns_protocol tcp)
-REMOTE_DNS_DETOUR=$(config_t_get global remote_dns_detour remote)
-REMOTE_DNS=$(config_t_get global remote_dns 1.1.1.1:53 | sed 's/#/:/g' | sed -E 's/\:([^:]+)$/#\1/g')
-REMOTE_FAKEDNS=$(config_t_get global remote_fakedns '0')
-REMOTE_DNS_QUERY_STRATEGY=$(config_t_get global remote_dns_query_strategy UseIPv4)
-WRITE_IPSET_DIRECT=$(config_t_get global write_ipset_direct 1)
-DNS_CACHE=$(config_t_get global dns_cache 1)
-DNS_REDIRECT=$(config_t_get global dns_redirect 1)
+get_config() {
+	ENABLED_DEFAULT_ACL=0
+	ENABLED=$(config_t_get global enabled 0)
+	NODE=$(config_t_get global node)
+	[ "$ENABLED" == 1 ] && {
+		[ -n "$NODE" ] && [ "$(config_get_type $NODE)" == "nodes" ] && ENABLED_DEFAULT_ACL=1
+	}
+	ENABLED_ACLS=$(config_t_get global acl_enable 0)
+	[ "$ENABLED_ACLS" == 1 ] && {
+		[ "$(uci show ${CONFIG} | grep "@acl_rule" | grep "enabled='1'" | wc -l)" == 0 ] && ENABLED_ACLS=0
+	}
+	SOCKS_ENABLED=$(config_t_get global socks_enabled 0)
+	REDIR_PORT=$(echo $(get_new_port 1041 tcp,udp))
+	TCP_PROXY_WAY=$(config_t_get global_forwarding tcp_proxy_way redirect)
+	TCP_NO_REDIR_PORTS=$(config_t_get global_forwarding tcp_no_redir_ports 'disable')
+	UDP_NO_REDIR_PORTS=$(config_t_get global_forwarding udp_no_redir_ports 'disable')
+	TCP_REDIR_PORTS=$(config_t_get global_forwarding tcp_redir_ports '22,25,53,143,465,587,853,993,995,80,443')
+	UDP_REDIR_PORTS=$(config_t_get global_forwarding udp_redir_ports '1:65535')
+	PROXY_IPV6=$(config_t_get global_forwarding ipv6_tproxy 0)
+	TCP_PROXY_MODE="global"
+	UDP_PROXY_MODE="global"
+	LOCALHOST_PROXY=$(config_t_get global localhost_proxy '1')
+	CLIENT_PROXY=$(config_t_get global client_proxy '1')
+	DIRECT_DNS_QUERY_STRATEGY=$(config_t_get global direct_dns_query_strategy UseIP)
+	REMOTE_DNS_PROTOCOL=$(config_t_get global remote_dns_protocol tcp)
+	REMOTE_DNS_DETOUR=$(config_t_get global remote_dns_detour remote)
+	REMOTE_DNS=$(config_t_get global remote_dns 1.1.1.1:53 | sed 's/#/:/g' | sed -E 's/\:([^:]+)$/#\1/g')
+	REMOTE_FAKEDNS=$(config_t_get global remote_fakedns '0')
+	REMOTE_DNS_QUERY_STRATEGY=$(config_t_get global remote_dns_query_strategy UseIPv4)
+	WRITE_IPSET_DIRECT=$(config_t_get global write_ipset_direct 1)
+	DNS_CACHE=$(config_t_get global dns_cache 1)
+	DNS_REDIRECT=$(config_t_get global dns_redirect 1)
 
-RESOLVFILE=/tmp/resolv.conf.d/resolv.conf.auto
-[ -f "${RESOLVFILE}" ] && [ -s "${RESOLVFILE}" ] || RESOLVFILE=/tmp/resolv.conf.auto
+	RESOLVFILE=/tmp/resolv.conf.d/resolv.conf.auto
+	[ -f "${RESOLVFILE}" ] && [ -s "${RESOLVFILE}" ] || RESOLVFILE=/tmp/resolv.conf.auto
 
-ISP_DNS=$(cat $RESOLVFILE 2>/dev/null | grep -E -o "[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+" | sort -u | grep -v 0.0.0.0 | grep -v 127.0.0.1)
-ISP_DNS6=$(cat $RESOLVFILE 2>/dev/null | grep -E "([A-Fa-f0-9]{1,4}::?){1,7}[A-Fa-f0-9]{1,4}" | awk -F % '{print $1}' | awk -F " " '{print $2}'| sort -u | grep -v -Fx ::1 | grep -v -Fx ::)
+	ISP_DNS=$(cat $RESOLVFILE 2>/dev/null | grep -E -o "[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+" | sort -u | grep -v 0.0.0.0 | grep -v 127.0.0.1)
+	ISP_DNS6=$(cat $RESOLVFILE 2>/dev/null | grep -E "([A-Fa-f0-9]{1,4}::?){1,7}[A-Fa-f0-9]{1,4}" | awk -F % '{print $1}' | awk -F " " '{print $2}'| sort -u | grep -v -Fx ::1 | grep -v -Fx ::)
 
-DEFAULT_DNSMASQ_CFGID=$(uci show dhcp.@dnsmasq[0] |  awk -F '.' '{print $2}' | awk -F '=' '{print $1}'| head -1)
-DEFAULT_DNS=$(uci show dhcp.@dnsmasq[0] | grep "\.server=" | awk -F '=' '{print $2}' | sed "s/'//g" | tr ' ' '\n' | grep -v "\/" | head -2 | sed ':label;N;s/\n/,/;b label')
-[ -z "${DEFAULT_DNS}" ] && DEFAULT_DNS=$(echo -n $ISP_DNS | tr ' ' '\n' | head -2 | tr '\n' ',' | sed 's/,$//')
-AUTO_DNS=${DEFAULT_DNS:-119.29.29.29}
+	DEFAULT_DNSMASQ_CFGID=$(uci show dhcp.@dnsmasq[0] |  awk -F '.' '{print $2}' | awk -F '=' '{print $1}'| head -1)
+	DEFAULT_DNS=$(uci show dhcp.@dnsmasq[0] | grep "\.server=" | awk -F '=' '{print $2}' | sed "s/'//g" | tr ' ' '\n' | grep -v "\/" | head -2 | sed ':label;N;s/\n/,/;b label')
+	[ -z "${DEFAULT_DNS}" ] && DEFAULT_DNS=$(echo -n $ISP_DNS | tr ' ' '\n' | head -2 | tr '\n' ',' | sed 's/,$//')
+	AUTO_DNS=${DEFAULT_DNS:-119.29.29.29}
 
-DNSMASQ_CONF_DIR=/tmp/dnsmasq.d
-DEFAULT_DNSMASQ_CFGID="$(uci -q show "dhcp.@dnsmasq[0]" | awk 'NR==1 {split($0, conf, /[.=]/); print conf[2]}')"
-if [ -f "/tmp/etc/dnsmasq.conf.$DEFAULT_DNSMASQ_CFGID" ]; then
-	DNSMASQ_CONF_DIR="$(awk -F '=' '/^conf-dir=/ {print $2}' "/tmp/etc/dnsmasq.conf.$DEFAULT_DNSMASQ_CFGID")"
-	if [ -n "$DNSMASQ_CONF_DIR" ]; then
-		DNSMASQ_CONF_DIR=${DNSMASQ_CONF_DIR%*/}
-	else
-		DNSMASQ_CONF_DIR="/tmp/dnsmasq.d"
+	DNSMASQ_CONF_DIR=/tmp/dnsmasq.d
+	DEFAULT_DNSMASQ_CFGID="$(uci -q show "dhcp.@dnsmasq[0]" | awk 'NR==1 {split($0, conf, /[.=]/); print conf[2]}')"
+	if [ -f "/tmp/etc/dnsmasq.conf.$DEFAULT_DNSMASQ_CFGID" ]; then
+		DNSMASQ_CONF_DIR="$(awk -F '=' '/^conf-dir=/ {print $2}' "/tmp/etc/dnsmasq.conf.$DEFAULT_DNSMASQ_CFGID")"
+		if [ -n "$DNSMASQ_CONF_DIR" ]; then
+			DNSMASQ_CONF_DIR=${DNSMASQ_CONF_DIR%*/}
+		else
+			DNSMASQ_CONF_DIR="/tmp/dnsmasq.d"
+		fi
 	fi
-fi
-GLOBAL_DNSMASQ_CONF=${DNSMASQ_CONF_DIR}/dnsmasq-${CONFIG}.conf
-GLOBAL_DNSMASQ_CONF_PATH=${GLOBAL_ACL_PATH}/dnsmasq.d
+	set_cache_var GLOBAL_DNSMASQ_CONF ${DNSMASQ_CONF_DIR}/dnsmasq-${CONFIG}.conf
+	set_cache_var GLOBAL_DNSMASQ_CONF_PATH ${GLOBAL_ACL_PATH}/dnsmasq.d
 
-PROXY_IPV6=$(config_t_get global_forwarding ipv6_tproxy 0)
-
-XRAY_BIN=$(first_type $(config_t_get global_app xray_file) xray)
-SINGBOX_BIN=$(first_type $(config_t_get global_app singbox_file) sing-box)
-
-export V2RAY_LOCATION_ASSET=$(config_t_get global_rules v2ray_location_asset "/usr/share/v2ray/")
-export XRAY_LOCATION_ASSET=$V2RAY_LOCATION_ASSET
-mkdir -p /tmp/etc $TMP_PATH $TMP_BIN_PATH $TMP_SCRIPT_FUNC_PATH $TMP_ROUTE_PATH $TMP_ACL_PATH $TMP_PATH2
+	XRAY_BIN=$(first_type $(config_t_get global_app xray_file) xray)
+	SINGBOX_BIN=$(first_type $(config_t_get global_app singbox_file) sing-box)
+}
 
 arg1=$1
 shift
@@ -1394,17 +1407,11 @@ case $arg1 in
 add_ip2route)
 	add_ip2route $@
 	;;
-get_new_port)
-	get_new_port $@
-	;;
-run_socks)
-	run_socks $@
-	;;
-socks_node_switch)
-	socks_node_switch $@
-	;;
 echolog)
 	echolog $@
+	;;
+get_new_port)
+	get_new_port $@
 	;;
 get_cache_var)
 	get_cache_var $@
@@ -1412,10 +1419,16 @@ get_cache_var)
 set_cache_var)
 	set_cache_var $@
 	;;
-stop)
-	stop
+run_socks)
+	run_socks $@
+	;;
+socks_node_switch)
+	socks_node_switch $@
 	;;
 start)
 	start
+	;;
+stop)
+	stop
 	;;
 esac
