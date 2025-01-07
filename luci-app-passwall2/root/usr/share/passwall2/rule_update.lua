@@ -93,6 +93,9 @@ local function fetch_geoip()
 				end
 			end
 		end
+		if json.message then
+			log(json.message)
+		end
 	end,
 	function(e)
 	end)
@@ -143,6 +146,9 @@ local function fetch_geosite()
 					break
 				end
 			end
+		end
+		if json.message then
+			log(json.message)
 		end
 	end,
 	function(e)
@@ -196,10 +202,7 @@ if reboot == 1 then
 	end
 
 	log("重启服务，应用新的规则。")
-	if use_nft == "1" then
-		sys.call("sh /usr/share/" .. name .. "/nftables.sh flush_nftset_reload > /dev/null 2>&1 &")
-	else
-		sys.call("sh /usr/share/" .. name .. "/iptables.sh flush_ipset_reload > /dev/null 2>&1 &")
-	end
+	uci:set(name, "@global[0]", "flush_set", "1")
+	api.uci_save(uci, name, true, true)
 end
 log("规则更新完毕...")

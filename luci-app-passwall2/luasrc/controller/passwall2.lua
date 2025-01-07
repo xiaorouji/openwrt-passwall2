@@ -98,16 +98,14 @@ function reset_config()
 end
 
 function show_menu()
-	uci:delete(appname, "@global[0]", "hide_from_luci")
-	api.uci_save(uci, appname, true)
+	api.sh_uci_del(appname, "@global[0]", "hide_from_luci", true)
 	luci.sys.call("rm -rf /tmp/luci-*")
 	luci.sys.call("/etc/init.d/rpcd restart >/dev/null")
 	luci.http.redirect(api.url())
 end
 
 function hide_menu()
-	uci:set(appname, "@global[0]", "hide_from_luci","1")
-	api.uci_save(uci, appname, true)
+	api.sh_uci_set(appname, "@global[0]", "hide_from_luci", "1", true)
 	luci.sys.call("rm -rf /tmp/luci-*")
 	luci.sys.call("/etc/init.d/rpcd restart >/dev/null")
 	luci.http.redirect(luci.dispatcher.build_url("admin", "status", "overview"))
@@ -294,8 +292,7 @@ function set_node()
 	local config = luci.http.formvalue("config")
 	local section = luci.http.formvalue("section")
 	uci:set(appname, type, config, section)
-	api.uci_save(uci, appname, true)
-	luci.sys.call("/etc/init.d/passwall2 restart > /dev/null 2>&1 &")
+	api.uci_save(uci, appname, true, true)
 	luci.http.redirect(api.url("log"))
 end
 

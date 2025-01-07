@@ -1027,11 +1027,11 @@ del_firewall_rule() {
 	destroy_nftset $NFTSET_LAN6
 	destroy_nftset $NFTSET_VPS6
 
-	$DIR/app.sh echolog "删除nftables防火墙规则完成。"
+	$DIR/app.sh echolog "删除 nftables 规则完成。"
 }
 
 flush_nftset() {
-	$DIR/app.sh echolog "清空 NFTSET。"
+	$DIR/app.sh echolog "清空 NFTSet。"
 	for _name in $(nft -a list sets | grep -E "passwall2" | awk -F 'set ' '{print $2}' | awk '{print $1}'); do
 		destroy_nftset ${_name}
 	done
@@ -1040,14 +1040,6 @@ flush_nftset() {
 flush_table() {
 	nft flush table $NFTABLE_NAME
 	nft delete table $NFTABLE_NAME
-}
-
-flush_nftset_reload() {
-	del_firewall_rule
-	flush_table
-	rm -rf /tmp/singbox_passwall2_*
-	rm -f /tmp/etc/passwall2_tmp/geoip-*.json
-	/etc/init.d/passwall2 reload
 }
 
 flush_include() {
@@ -1101,6 +1093,14 @@ start() {
 
 stop() {
 	del_firewall_rule
+	[ $(config_t_get global flush_set "0") = "1" ] && {
+		uci -q delete ${CONFIG}.@global[0].flush_set
+		uci -q commit ${CONFIG}
+		#flush_table
+		flush_nftset
+		rm -rf /tmp/etc/passwall2_tmp/singbox*
+		rm -f /tmp/etc/passwall2_tmp/geoip-*.json
+	}
 	flush_include
 }
 
@@ -1115,12 +1115,6 @@ insert_rule_before)
 	;;
 insert_rule_after)
 	insert_rule_after "$@"
-	;;
-flush_nftset)
-	flush_nftset
-	;;
-flush_nftset_reload)
-	flush_nftset_reload
 	;;
 get_wan_ip)
 	get_wan_ip

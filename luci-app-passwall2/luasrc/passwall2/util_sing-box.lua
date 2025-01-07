@@ -1301,7 +1301,7 @@ function gen_config(var)
 			experimental.cache_file = {
 				enabled = true,
 				store_fakeip = true,
-				path = "/tmp/singbox_passwall2_" .. flag .. ".db"
+				path = CACHE_PATH .. "/singbox_" .. flag .. ".db"
 			}
 		end
 	

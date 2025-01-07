@@ -337,10 +337,15 @@ o = s:taboption("DNS", Flag, "dns_redirect", translate("DNS Redirect"), translat
 o.default = "1"
 o.rmempty = false
 
-o = s:taboption("DNS", Button, "clear_ipset", translate("Clear IPSet"), translate("Try this feature if the rule modification does not take effect."))
+if (m:get("@global_forwarding[0]", "use_nft") or "0") == "1" then
+	o = s:taboption("DNS", Button, "clear_ipset", translate("Clear NFTSET"), translate("Try this feature if the rule modification does not take effect."))
+else
+	o = s:taboption("DNS", Button, "clear_ipset", translate("Clear IPSET"), translate("Try this feature if the rule modification does not take effect."))
+end
 o.inputstyle = "remove"
 function o.write(e, e)
-	luci.sys.call('[ -n "$(nft list sets 2>/dev/null | grep \"passwall2_\")" ] && sh /usr/share/passwall2/nftables.sh flush_nftset_reload || sh /usr/share/passwall2/iptables.sh flush_ipset_reload > /dev/null 2>&1 &')
+	m:set("@global[0]", "flush_set", "1")
+	api.uci_save(m.uci, appname, true, true)
 	luci.http.redirect(api.url("log"))
 end
 
