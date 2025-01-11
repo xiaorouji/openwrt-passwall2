@@ -718,6 +718,9 @@ msgstr "请输入节点关键字，注意区分空格、大写和小写。"
 msgid "Enable Load Balancing"
 msgstr "开启负载均衡"
 
+msgid "Console Login Auth"
+msgstr "控制台登录认证"
+
 msgid "Console Username"
 msgstr "控制台账号"
 
