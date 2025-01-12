@@ -1047,6 +1047,17 @@ local function processData(szType, content, add_mode, add_from)
 			if params.type == 'xhttp' or params.type == 'splithttp' then
 				result.xhttp_host = params.host
 				result.xhttp_path = params.path
+				result.xhttp_mode = params.mode or "auto"
+				result.use_xhttp_extra = (params.extra and params.extra ~= "") and "1" or nil
+				result.xhttp_extra = (params.extra and params.extra ~= "") and params.extra or nil
+				local success, Data = pcall(jsonParse, params.extra)
+				if success and Data then
+					local address = (Data.extra and Data.extra.downloadSettings and Data.extra.downloadSettings.address)
+							or (Data.downloadSettings and Data.downloadSettings.address)
+					result.download_address = address and address ~= "" and address or nil
+				else
+					result.download_address = nil
+				end
 			end
 			if params.type == 'httpupgrade' then
 				result.httpupgrade_host = params.host
