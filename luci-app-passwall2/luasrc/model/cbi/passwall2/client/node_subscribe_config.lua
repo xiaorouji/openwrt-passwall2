@@ -1,5 +1,14 @@
 local api = require "luci.passwall2.api"
 local appname = api.appname
+
+m = Map(appname)
+m.redirect = api.url("node_subscribe")
+api.set_apply_on_parse(m)
+
+if not arg[1] or not m:get(arg[1]) then
+	luci.http.redirect(m.redirect)
+end
+
 local has_ss = api.is_finded("ss-redir")
 local has_ss_rust = api.is_finded("sslocal")
 local has_singbox = api.finded_com("singbox")
@@ -37,10 +46,6 @@ if has_hysteria2 then
 	local s = "hysteria2"
 	table.insert(hysteria2_type, s)
 end
-
-m = Map(appname)
-m.redirect = api.url("node_subscribe")
-api.set_apply_on_parse(m)
 
 s = m:section(NamedSection, arg[1])
 s.addremove = false

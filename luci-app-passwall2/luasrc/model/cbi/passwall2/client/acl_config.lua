@@ -1,13 +1,18 @@
 local api = require "luci.passwall2.api"
 local appname = api.appname
+
+m = Map(appname)
+api.set_apply_on_parse(m)
+
+if not arg[1] or not m:get(arg[1]) then
+	luci.http.redirect(api.url("acl"))
+end
+
 local sys = api.sys
 
 local port_validate = function(self, value, t)
 	return value:gsub("-", ":")
 end
-
-m = Map(appname)
-api.set_apply_on_parse(m)
 
 local nodes_table = {}
 for k, e in ipairs(api.get_valid_nodes()) do
