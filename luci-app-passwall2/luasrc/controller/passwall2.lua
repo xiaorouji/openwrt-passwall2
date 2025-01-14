@@ -447,7 +447,7 @@ function create_backup()
 		"/etc/config/passwall2_server",
 		"/usr/share/passwall2/domains_excluded"
 	}
-	local date = os.date("%Y%m%d")
+	local date = os.date("%y%m%d%H%M")
 	local tar_file = "/tmp/passwall2-" .. date .. "-backup.tar.gz"
 	fs.remove(tar_file)
 	local cmd = "tar -czf " .. tar_file .. " " .. table.concat(backup_files, " ")
