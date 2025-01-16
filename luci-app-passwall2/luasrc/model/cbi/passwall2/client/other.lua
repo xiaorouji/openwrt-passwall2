@@ -111,13 +111,16 @@ if (os.execute("lsmod | grep -i REDIRECT >/dev/null") == 0 and os.execute("lsmod
 	o:value("redirect", "REDIRECT")
 	o:value("tproxy", "TPROXY")
 	o:depends("ipv6_tproxy", false)
+	o.remove = function(self, section)
+		-- 禁止在隐藏时删除
+	end
 
 	o = s:option(ListValue, "_tcp_proxy_way", translate("TCP Proxy Way"))
 	o.default = "tproxy"
 	o:value("tproxy", "TPROXY")
 	o:depends("ipv6_tproxy", true)
 	o.write = function(self, section, value)
-		return self.map:set(section, "tcp_proxy_way", value)
+		self.map:set(section, "tcp_proxy_way", value)
 	end
 
 	if os.execute("lsmod | grep -i ip6table_mangle >/dev/null") == 0 or os.execute("lsmod | grep -i nft_tproxy >/dev/null") == 0 then
@@ -210,6 +213,7 @@ if has_xray then
 	o = s_xray_noise:option(ListValue, "type", translate("Type"))
 	o:value("rand", "rand")
 	o:value("str", "str")
+	o:value("hex", "hex")
 	o:value("base64", "base64")
 
 	o = s_xray_noise:option(Value, "packet", translate("Packet"))

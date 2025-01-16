@@ -1,5 +1,6 @@
 local api = require "luci.passwall2.api"
 local appname = api.appname
+local uci = api.uci
 local has_ss = api.is_finded("ss-redir")
 local has_ss_rust = api.is_finded("sslocal")
 local has_singbox = api.finded_com("singbox")
@@ -40,6 +41,15 @@ end
 
 m = Map(appname)
 api.set_apply_on_parse(m)
+
+if api.is_js_luci() then
+	m.on_after_apply = function(self)
+		uci:foreach(appname, "subscribe_list", function(e)
+			uci:delete(appname, e[".name"], "md5")
+		end)
+		uci:commit(appname)
+	end
+end
 
 -- [[ Subscribe Settings ]]--
 s = m:section(TypedSection, "global_subscribe", "")
