@@ -141,7 +141,7 @@ jobs:
           echo "CONFIG_PACKAGE_luci-app-passwall2=m" >> .config
           make defconfig
           echo "make package/luci-app-passwall2/{clean,compile} -j1"
-          make package/luci-app-passwall2/{clean,compile} -j1
+          make package/luci-app-passwall2/{clean,compile} -j1 V=s
           mv bin/packages/x86_64/passwall2/ ../
           make clean
           rm .config .config.old
@@ -299,20 +299,20 @@ jobs:
         id: compile
         run: |
           cd sdk
-          make package/feeds/passwall_packages/chinadns-ng/compile -j1 2>/dev/null
-          make package/feeds/passwall_packages/geoview/compile -j1 2>/dev/null
-          make package/feeds/passwall_packages/tcping/compile -j1 2>/dev/null
-          make package/feeds/passwall_packages/xray-core/compile -j1 2>/dev/null
-          make package/feeds/passwall_packages/v2ray-geodata/compile -j1 2>/dev/null
+          make package/feeds/passwall_packages/chinadns-ng/compile -j1 V=s 2>/dev/null
+          make package/feeds/passwall_packages/geoview/compile -j1 V=s 2>/dev/null
+          make package/feeds/passwall_packages/tcping/compile -j1 V=s 2>/dev/null
+          make package/feeds/passwall_packages/xray-core/compile -j1 V=s 2>/dev/null
+          make package/feeds/passwall_packages/v2ray-geodata/compile -j1 V=s 2>/dev/null
 
-          make package/feeds/passwall_packages/hysteria/compile -j1 2>/dev/null
-          make package/feeds/passwall_packages/naiveproxy/compile -j1 2>/dev/null
-          make package/feeds/passwall_packages/shadowsocks-rust/compile -j1 2>/dev/null
-          make package/feeds/passwall_packages/shadowsocksr-libev/compile -j1 2>/dev/null
-          make package/feeds/passwall_packages/simple-obfs/compile -j1 2>/dev/null
-          make package/feeds/passwall_packages/sing-box/compile -j1 2>/dev/null
-          make package/feeds/passwall_packages/tuic-client/compile -j1 2>/dev/null
-          make package/feeds/passwall_packages/v2ray-plugin/compile -j1 2>/dev/null
+          make package/feeds/passwall_packages/hysteria/compile -j1 V=s 2>/dev/null
+          make package/feeds/passwall_packages/naiveproxy/compile -j1 V=s 2>/dev/null
+          make package/feeds/passwall_packages/shadowsocks-rust/compile -j1 V=s 2>/dev/null
+          make package/feeds/passwall_packages/shadowsocksr-libev/compile -j1 V=s 2>/dev/null
+          make package/feeds/passwall_packages/simple-obfs/compile -j1 V=s 2>/dev/null
+          make package/feeds/passwall_packages/sing-box/compile -j1 V=s 2>/dev/null
+          make package/feeds/passwall_packages/tuic-client/compile -j1 V=s 2>/dev/null
+          make package/feeds/passwall_packages/v2ray-plugin/compile -j1 V=s 2>/dev/null
 
           echo "status=success" >> $GITHUB_OUTPUT
 
