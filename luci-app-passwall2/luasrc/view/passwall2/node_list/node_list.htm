@@ -46,8 +46,18 @@ table td, .table .td {
 	color: red !important;
 }
 
+._now_use_bg {
+	background: #5e72e445 !important;
+}
+
 .ping a:hover{
 	text-decoration : underline;
+}
+
+@media (prefers-color-scheme: dark) {
+    ._now_use_bg {
+        background: #4a90e2 !important;
+    }
 }
 </style>
 
@@ -228,6 +238,7 @@ table td, .table .td {
 					var dom = document.getElementById("cbi-passwall2-" + id);
 					if (dom) {
 						dom.title = "当前使用的节点";
+						dom.classList.add("_now_use_bg");
 						//var v = "<a style='color: red'>当前节点：</a>" + document.getElementById("cbid.passwall2." + id + ".remarks").value;
 						//document.getElementById("cbi-passwall2-" + id + "-remarks").innerHTML = v;
 						var dom_remarks = document.getElementById("cbi-passwall2-" + id + "-remarks");
