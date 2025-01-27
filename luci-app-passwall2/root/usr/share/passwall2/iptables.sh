@@ -1048,6 +1048,8 @@ gen_include() {
 		${__ipt}
 		
 		${__ip6t}
+		
+		return 0
 	EOF
 	return 0
 }
