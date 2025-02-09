@@ -30,7 +30,7 @@ function log(...)
 end
 
 function is_old_uci()
-	return sys.call("grep 'require \"uci\"' /usr/lib/lua/luci/model/uci.lua >/dev/null 2>&1") == 0
+	return sys.call("grep -E 'require[ \t]*\"uci\"' /usr/lib/lua/luci/model/uci.lua >/dev/null 2>&1") == 0
 end
 
 function uci_save(cursor, config, commit, apply)
