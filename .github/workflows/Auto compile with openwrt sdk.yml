@@ -115,10 +115,14 @@ jobs:
           echo "src-git routing https://git.openwrt.org/feed/routing.git;openwrt-${{ matrix.sdk_ver }}"  >> feeds.conf
           echo "src-git passwall_packages https://github.com/${{ env.packages }}.git;main" >> feeds.conf
           echo "src-git passwall2 https://github.com/${{ env.passwall2 }}.git;${{ github.ref_name }}" >> feeds.conf
+
+          rm -rf feeds/packages/lang/golang
+          git clone https://github.com/sbwml/packages_lang_golang -b 24.x feeds/packages/lang/golang
+
           ./scripts/feeds update -a
           echo "CONFIG_PACKAGE_luci-app-passwall2=m" > .config
           ./scripts/feeds install -d n luci-app-passwall2
-          make package/luci-app-passwall2/download -j1
+          make package/luci-app-passwall2/download -j$(nproc)
 
       - name: Update passwall2 feeds
         if: steps.cache-sdk.outputs.cache-hit == 'true'
@@ -140,8 +144,8 @@ jobs:
           echo "CONFIG_LUCI_LANG_zh_Hans=y" >> .config
           echo "CONFIG_PACKAGE_luci-app-passwall2=m" >> .config
           make defconfig
-          echo "make package/luci-app-passwall2/{clean,compile} -j1"
-          make package/luci-app-passwall2/{clean,compile} -j1 V=s
+          echo "make package/luci-app-passwall2/{clean,compile} -j$(nproc)"
+          make package/luci-app-passwall2/{clean,compile} -j$(nproc) V=s
           mv bin/packages/x86_64/passwall2/ ../
           make clean
           rm .config .config.old
@@ -310,22 +314,26 @@ jobs:
       - name: ${{ matrix.platform }} download
         run: |
           cd sdk
-          make download -j1
+          make download -j$(nproc)
           find dl -size -1024c -exec ls -l {} \;
 
       - name: ${{ matrix.platform }} compile
         id: compile
         run: |
           cd sdk
-          for package in $(ls feeds/passwall_packages); do
-              if [ -d "feeds/passwall_packages/$package" ]; then
-                  echo "-----------begin compile $package ---------------"
-                  sleep 10s
-                  make package/feeds/passwall_packages/$package/compile -j$(nproc) V=s
-                  echo "-----------compiled $package ---------------"
-                  echo ""
-              fi
-          done
+          make package/feeds/passwall_packages/chinadns-ng/compile -j$(nproc) V=s
+          make package/feeds/passwall_packages/geoview/compile -j$(nproc) V=s
+          make package/feeds/passwall_packages/tcping/compile -j$(nproc) V=s
+          make package/feeds/passwall_packages/xray-core/compile -j$(nproc) V=s
+          make package/feeds/passwall_packages/v2ray-geodata/compile -j$(nproc) V=s
+          make package/feeds/passwall_packages/hysteria/compile -j$(nproc) V=s
+          make package/feeds/passwall_packages/naiveproxy/compile -j$(nproc) V=s
+          make package/feeds/passwall_packages/shadowsocks-rust/compile -j$(nproc) V=s
+          make package/feeds/passwall_packages/shadowsocksr-libev/compile -j$(nproc) V=s
+          make package/feeds/passwall_packages/simple-obfs/compile -j$(nproc) V=s
+          make package/feeds/passwall_packages/sing-box/compile -j$(nproc) V=s
+          make package/feeds/passwall_packages/tuic-client/compile -j$(nproc) V=s
+          make package/feeds/passwall_packages/v2ray-plugin/compile -j$(nproc) V=s
 
           echo "status=success" >> $GITHUB_OUTPUT
 
