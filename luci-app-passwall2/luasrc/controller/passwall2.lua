@@ -176,7 +176,7 @@ function get_redir_log()
 	local name = luci.http.formvalue("name")
 	local file_path = "/tmp/etc/passwall2/acl/" .. id .. "/" .. name .. ".log"
 	if nixio.fs.access(file_path) then
-		local content = luci.sys.exec("cat '" .. file_path .. "'")
+		local content = luci.sys.exec("tail -n 19999 '" .. file_path .. "'")
 		content = content:gsub("\n", "<br />")
 		luci.http.write(content)
 	else
@@ -188,7 +188,7 @@ function get_socks_log()
 	local name = luci.http.formvalue("name")
 	local path = "/tmp/etc/passwall2/SOCKS_" .. name .. ".log"
 	if nixio.fs.access(path) then
-		local content = luci.sys.exec("cat ".. path)
+		local content = luci.sys.exec("tail -n 5000 ".. path)
 		content = content:gsub("\n", "<br />")
 		luci.http.write(content)
 	else
