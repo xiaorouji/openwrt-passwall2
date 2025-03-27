@@ -149,7 +149,7 @@ local function start()
 				bin = ln_run(api.get_app_path("xray"), "xray", "run -c " .. config_file, log_path)
 			elseif type == "sing-box" then
 				config = require(require_dir .. "util_sing-box").gen_config_server(user)
-				bin = ln_run(api.get_app_path("singbox"), "sing-box", "run -c " .. config_file, log_path)
+				bin = ln_run(api.get_app_path("sing-box"), "sing-box", "run -c " .. config_file, log_path)
 			elseif type == "Hysteria2" then
 				config = require(require_dir .. "util_hysteria2").gen_config_server(user)
 				bin = ln_run(api.get_app_path("hysteria"), "hysteria", "-c " .. config_file .. " server", log_path)

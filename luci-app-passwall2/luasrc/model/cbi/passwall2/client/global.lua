@@ -1,7 +1,7 @@
 local api = require "luci.passwall2.api"
 local appname = api.appname
 local datatypes = api.datatypes
-local has_singbox = api.finded_com("singbox")
+local has_singbox = api.finded_com("sing-box")
 local has_xray = api.finded_com("xray")
 
 m = Map(appname)
