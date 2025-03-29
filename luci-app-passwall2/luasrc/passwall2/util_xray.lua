@@ -584,7 +584,8 @@ function gen_config(var)
 	local inbounds = {}
 	local outbounds = {}
 	local routing = nil
-	local observatory = nil
+	local burstObservatory = nil
+ 	local strategy = nil
 	local COMMON = {}
 
 	local CACHE_TEXT_FILE = CACHE_PATH .. "/cache_" .. flag .. ".txt"
@@ -758,19 +759,33 @@ function gen_config(var)
 				end
 			end
 		end
+		if _node.balancingStrategy == "leastLoad" then
+			strategy = {
+				type = _node.balancingStrategy,
+				settings = {
+					expected = _node.expected and tonumber(_node.expected) and tonumber(_node.expected) or 2,
+					maxRTT = "1s"
+				}
+			}
+		else
+			strategy = { type = _node.balancingStrategy or "random" }
+		end
 		table.insert(balancers, {
 			tag = balancer_tag,
 			selector = valid_nodes,
 			fallbackTag = fallback_node_tag,
-			strategy = { type = _node.balancingStrategy or "random" }
+			strategy = strategy
 		})
-		if _node.balancingStrategy == "leastPing" or fallback_node_tag then
-			if not observatory then
-				observatory = {
+		if _node.balancingStrategy == "leastPing" or _node.balancingStrategy == "leastLoad" or fallback_node_tag then
+			if not burstObservatory then
+				burstObservatory = {
 					subjectSelector = { "blc-" },
-					probeUrl = _node.useCustomProbeUrl and _node.probeUrl or nil,
-					probeInterval = _node.probeInterval or "1m",
-					enableConcurrency = true
+					pingConfig = {
+						destination = _node.useCustomProbeUrl and _node.probeUrl or nil,
+						interval = _node.probeInterval or "1m",
+						sampling = 3,
+						timeout = "5s"
+					}
 				}
 			end
 		end
@@ -1476,7 +1491,7 @@ function gen_config(var)
 			-- 传出连接
 			outbounds = outbounds,
 			-- 连接观测
-			observatory = observatory,
+			burstObservatory = burstObservatory,
 			-- 路由
 			routing = routing,
 			-- 本地策略
