@@ -178,6 +178,9 @@ msgstr "强制需要代理的设备使用专用 DNS 服务器。"
 msgid "Clear IPSet"
 msgstr "清空 IPSet"
 
+msgid "Clear NFTSet"
+msgstr "清空 NFTSet"
+
 msgid "Try this feature if the rule modification does not take effect."
 msgstr "如果修改规则后没有生效，请尝试此功能。"
 
