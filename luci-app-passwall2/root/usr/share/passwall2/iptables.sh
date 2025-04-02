@@ -468,7 +468,7 @@ load_acl() {
 				$ip6t_m -A PSW2 $(comment "$remarks") ${_ipt_source} -p udp -j RETURN 2>/dev/null
 				unset ipt_tmp ipt_j _ipt_source msg msg2
 			done
-			unset enabled sid remarks sources tcp_no_redir_ports udp_no_redir_ports tcp_redir_ports udp_redir_ports node interface
+			unset enabled sid remarks sources tcp_no_redir_ports udp_no_redir_ports tcp_redir_ports udp_redir_ports node interface write_ipset_direct
 			unset node_remark _acl_list
 		done
 	}
