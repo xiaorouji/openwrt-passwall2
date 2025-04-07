@@ -631,6 +631,7 @@ o = s:option(Flag, _n("xmux"), "XUDP Mux")
 o.default = 1
 o:depends({ [_n("protocol")] = "vless", [_n("flow")] = "xtls-rprx-vision" })
 o:depends({ [_n("protocol")] = "vless", [_n("flow")] = "xtls-rprx-vision-udp443" })
+o:depends({ [_n("protocol")] = "shadowsocks" })
 
 o = s:option(Value, _n("xudp_concurrency"), translate("XUDP Mux concurrency"))
 o.default = 8
