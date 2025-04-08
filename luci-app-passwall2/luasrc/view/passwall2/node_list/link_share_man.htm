@@ -487,22 +487,33 @@ local hysteria2_type = map:get("@global_subscribe[0]", "hysteria2_type") or "sin
 			}
 			url += params;
 		} else if ((v_type === "Hysteria2") || (v_type === "sing-box" && opt.get(dom_prefix + "protocol").value === "hysteria2")) {
-			protocol = "hysteria2";
+			protocol = "hysteria2"
 			var v_port = opt.get(dom_prefix + "port");
 			var params = "";
 			params += opt.query("sni", dom_prefix + "tls_serverName");
 			params += opt.query("insecure", dom_prefix + "tls_allowInsecure");
 			
 			var v_password = null;
-			params += opt.query("obfs", "salamander");
+			
 			if (v_type === "Hysteria2") {
 				v_password = opt.get("hysteria2_auth_password");
-				params += opt.query("obfs-password", "hysteria2_obfs");
 				params += opt.query("pinSHA256", "hysteria2_tls_pinSHA256");
+				var dom_obfs = opt.get("hysteria2_obfs");
+				if (dom_obfs && dom_obfs.value != "") {
+					params += "&obfs=" + "salamander";
+					params += opt.query("obfs-password", "hysteria2_obfs");
+				}
+				params += opt.query("mport", "hysteria2_hop");
 			} else {
 				v_password = opt.get(dom_prefix + "hysteria2_auth_password");
-				params += opt.query("obfs-password", dom_prefix + "hysteria2_obfs_password");
+				var dom_obfs_type = opt.get(dom_prefix + "hysteria2_obfs_type");
+				if (dom_obfs_type && dom_obfs_type.value != "") {
+					params += opt.query("obfs", dom_prefix + "hysteria2_obfs_type");
+					params += opt.query("obfs-password", dom_prefix + "hysteria2_obfs_password");
+				}
+				params += opt.query("mport", dom_prefix + "hysteria2_ports");
 			}
+			params = params.replace(/^&/, "");
 			url =
 				_address + ":" +
 				v_port.value + "?" +
@@ -1289,6 +1300,7 @@ local hysteria2_type = map:get("@global_subscribe[0]", "hysteria2_type") or "sin
 					opt.set(dom_prefix + 'hysteria2_obfs_type', "salamander");
 					opt.set(dom_prefix + 'hysteria2_obfs_password', queryParam["obfs-password"]);
 				}
+				opt.set(dom_prefix + 'hysteria2_ports', queryParam.mport || "");
 			} else if (has_hysteria2) {
 				opt.set('type', "Hysteria2");
 				dom_prefix = "hysteria2_"
@@ -1299,12 +1311,13 @@ local hysteria2_type = map:get("@global_subscribe[0]", "hysteria2_type") or "sin
 				if (queryParam.pinSHA256) {
 					opt.set(dom_prefix + 'tls_pinSHA256', queryParam.pinSHA256);
 				}
+				opt.set(dom_prefix + 'hop', queryParam.mport || "");
 			}
 			
 			opt.set(dom_prefix + 'address', m.hostname);
 			opt.set(dom_prefix + 'port', m.port || "443");
 			
-			opt.set(dom_prefix + 'tls_serverName', queryParam.sni);
+			opt.set(dom_prefix + 'tls_serverName', queryParam.sni || "");
 			if (queryParam.insecure && queryParam.insecure == "1") {
 				opt.set(dom_prefix + 'tls_allowInsecure', true);
 			}
