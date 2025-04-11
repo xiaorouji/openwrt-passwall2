@@ -31,6 +31,9 @@ local xray_version = api.get_app_version("xray")
 -- [[ Xray ]]
 
 s.fields["type"]:value(type_name, "Xray")
+if not s.fields["type"].default then
+	s.fields["type"].default = type_name
+end
 
 o = s:option(ListValue, _n("protocol"), translate("Protocol"))
 o:value("vmess", translate("Vmess"))

@@ -33,6 +33,9 @@ local security_list = { "none", "auto", "aes-128-gcm", "chacha20-poly1305", "zer
 -- [[ sing-box ]]
 
 s.fields["type"]:value(type_name, translate("Sing-Box"))
+if not s.fields["type"].default then
+	s.fields["type"].default = type_name
+end
 
 o = s:option(ListValue, _n("protocol"), translate("Protocol"))
 o:value("socks", "Socks")
