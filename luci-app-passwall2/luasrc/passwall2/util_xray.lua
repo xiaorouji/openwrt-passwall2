@@ -1375,6 +1375,55 @@ function gen_config(var)
 					break
 				end
 			end
+			
+			-- Collect DNS routing information to ensure DNS servers use their configured outbound
+			local dns_route_rules = {}
+			
+			-- Process DNS servers in reverse order to maintain priority
+			for i = #dns_servers, 1, -1 do
+				local value = dns_servers[i]
+				
+				-- For each DNS server with an explicit outbound tag, create a routing rule
+				if value.server and (value.outboundTag or value.balancerTag) then
+					-- Add a high-priority routing rule for the DNS server's tag
+					local rule = {
+						inboundTag = { value.server.tag },
+						outboundTag = value.outboundTag,
+						balancerTag = value.balancerTag
+					}
+					
+					-- Insert at the beginning of temporary rules array to maintain priority
+					table.insert(dns_route_rules, 1, rule)
+					
+					-- Special handling for DNS servers that should go direct - add IP-based rule too
+					if value.outboundTag == "direct" and value.server.address then
+						local server_ip = value.server.address
+						if server_ip:find("^tcp://") then
+							server_ip = server_ip:match("tcp://([^:]+)")
+						elseif server_ip:find("^https://") then
+							-- Skip DoH URLs
+							server_ip = nil
+						end
+						
+						-- Only create IP rule if it's a valid IP (not DoH URL, etc)
+						if server_ip and api.is_ip(server_ip) then
+							local ip_rule = {
+								ruleTag = "DNS Direct Access: " .. server_ip,
+								ip = { server_ip },
+								port = value.server.port,
+								network = "tcp,udp",
+								outboundTag = "direct"
+							}
+							table.insert(dns_route_rules, 1, ip_rule)
+						end
+					end
+				end
+			end
+			
+			-- Insert all DNS routing rules with high priority
+			for _, rule in ipairs(dns_route_rules) do
+				table.insert(routing.rules, 1, rule)
+			end
 
 			-- Shunt rule DNS logic
 			if dns_domain_rules and #dns_domain_rules > 0 then
