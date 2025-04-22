@@ -1368,7 +1368,7 @@ function gen_config(var)
 					default_dns_server = api.clone(value)
 					default_dns_server.server.tag = default_dns_tag
 					if value.server.tag == remote_dns_tag then
-						default_dns_server.outboundTag = COMMON.default_outbound_tag
+						default_dns_server.outboundTag = value.outboundTag or COMMON.default_outbound_tag
 						default_dns_server.balancerTag = COMMON.default_balancer_tag
 					end
 					table.insert(dns_servers, 1, default_dns_server)
@@ -1381,6 +1381,8 @@ function gen_config(var)
 				for index, value in ipairs(dns_domain_rules) do
 					if value.domain and (value.outboundTag or value.balancerTag) then
 						local dns_server = nil
+						local dns_outboundTag = value.outboundTag
+						local dns_balancerTag = value.balancerTag
 						if value.outboundTag == "direct" then
 							dns_server = api.clone(_direct_dns)
 						else
@@ -1388,6 +1390,10 @@ function gen_config(var)
 								dns_server = api.clone(_remote_fakedns)
 							else
 								dns_server = api.clone(_remote_dns)
+								if remote_dns_detour == "direct" then
+									dns_outboundTag = "direct"
+									dns_balancerTag = nil
+								end
 							end
 						end
 						dns_server.domains = value.domain
@@ -1397,8 +1403,8 @@ function gen_config(var)
 
 						if dns_server then
 							table.insert(dns_servers, {
-								outboundTag = value.outboundTag,
-								balancerTag = value.balancerTag,
+								outboundTag = dns_outboundTag,
+								balancerTag = dns_balancerTag,
 								server = dns_server
 							})
 						end
