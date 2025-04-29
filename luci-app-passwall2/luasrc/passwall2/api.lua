@@ -471,6 +471,8 @@ function get_valid_nodes()
 							protocol = "HY"
 						elseif protocol == "hysteria2" then
 							protocol = "HY2"
+						elseif protocol == "anytls" then
+							protocol = "AnyTLS"
 						else
 							protocol = protocol:gsub("^%l",string.upper)
 						end
@@ -504,9 +506,22 @@ function get_node_remarks(n)
 					protocol = "VMess"
 				elseif protocol == "vless" then
 					protocol = "VLESS"
+				elseif protocol == "shadowsocks" then
+					protocol = "SS"
+				elseif protocol == "shadowsocksr" then
+					protocol = "SSR"
+				elseif protocol == "wireguard" then
+					protocol = "WG"
+				elseif protocol == "hysteria" then
+					protocol = "HY"
+				elseif protocol == "hysteria2" then
+					protocol = "HY2"
+				elseif protocol == "anytls" then
+					protocol = "AnyTLS"
 				else
 					protocol = protocol:gsub("^%l",string.upper)
 				end
+				if type2 == "sing-box" then type2 = "Sing-Box" end
 				type2 = type2 .. " " .. protocol
 			end
 			remarks = "%s：[%s]" % {type2, n.remarks}
