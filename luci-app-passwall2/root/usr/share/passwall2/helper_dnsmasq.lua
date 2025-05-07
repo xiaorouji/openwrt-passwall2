@@ -322,6 +322,10 @@ function add_rule(var)
 		if LISTEN_PORT then
 			--Copy dnsmasq instance
 			conf_lines = copy_instance({["-LISTEN_PORT"] = LISTEN_PORT, ["-TMP_DNSMASQ_PATH"] = TMP_DNSMASQ_PATH, ["-return"] = "1"})
+			--dhcp.leases to hostsMore actions
+			local hosts = "/tmp/etc/" .. appname .. "_tmp/dhcp-hosts"
+			sys.call("touch " .. hosts)
+			tinsert(conf_lines, "addn-hosts=" .. hosts)
 		else
 			--Modify the default dnsmasq service
 		end
