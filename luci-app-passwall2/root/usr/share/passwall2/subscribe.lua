@@ -1219,6 +1219,7 @@ local function processData(szType, content, add_mode, add_from)
 		result.hysteria_alpn = params.alpn
 		result.hysteria_up_mbps = params.upmbps
 		result.hysteria_down_mbps = params.downmbps
+		result.hysteria_hop = params.mport
 
 		if has_singbox then
 			result.type = 'sing-box'
