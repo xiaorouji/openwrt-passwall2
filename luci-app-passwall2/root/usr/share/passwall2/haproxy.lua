@@ -1,7 +1,7 @@
 #!/usr/bin/lua
 
 local api = require ("luci.passwall2.api")
-local appname = api.appname
+local appname = "passwall2"
 local fs = api.fs
 local jsonc = api.jsonc
 local uci = api.uci
@@ -35,11 +35,13 @@ local haproxy_dns = var["-dns"] or "119.29.29.29:53,223.5.5.5:53"
 local cpu_thread = sys.exec('echo -n $(cat /proc/cpuinfo | grep "processor" | wc -l)') or "1"
 local health_check_type = uci:get(appname, "@global_haproxy[0]", "health_check_type") or "tcp"
 local health_check_inter = uci:get(appname, "@global_haproxy[0]", "health_check_inter") or "10"
+local console_port = uci:get(appname, "@global_haproxy[0]", "console_port")
 local bind_local = uci:get(appname, "@global_haproxy[0]", "bind_local") or "0"
 local bind_address = "0.0.0.0"
 if bind_local == "1" then bind_address = "127.0.0.1" end
 
-log("HAPROXY 负载均衡...")
+log("HAPROXY 负载均衡：")
+log(string.format("  * 控制台端口：%s", console_port))
 fs.mkdir(haproxy_path)
 local haproxy_file = haproxy_path .. "/" .. haproxy_conf
 
@@ -91,7 +93,7 @@ string.gsub(haproxy_dns, '[^' .. "," .. ']+', function(w)
 	if not s:find(":") then
 		s = s .. ":53"
 	end
-	mydns = mydns .. (index > 1 and "\n" or "") .. "    " .. string.format("nameserver dns%s %s", index, s)
+	mydns = mydns .. (index > 1 and "\n" or "") .. "	" .. string.format("nameserver dns%s %s", index, s)
 end)
 haproxy_config = haproxy_config:gsub("{{dns}}",  mydns)
 
@@ -162,7 +164,7 @@ end
 table.sort(sortTable, function(a,b) return (a < b) end)
 
 for i, port in pairs(sortTable) do
-	log("  + 入口 %s:%s" % {bind_address, port})
+	log("  +  入口 %s:%s" % {bind_address, port})
 
 	f_out:write("\n" .. string.format([[
 listen %s
@@ -178,22 +180,31 @@ listen %s
 ]], port, port))
 	end
 
+	local count_M, count_B = 1, 1
 	for i, o in ipairs(listens[port]) do
-		local remark = o.server_remark
+		local remark = o.server_remark or ""
+		-- 防止重名导致无法运行
+		if tostring(o.backup) ~= "1" then
+			remark = "M" .. count_M .. "-" .. remark
+			count_M = count_M + 1
+		else
+			remark = "B" .. count_B .. "-" .. remark
+			count_B = count_B + 1
+		end
 		local server = o.server_address .. ":" .. o.server_port
 		local server_conf = "server {{remark}} {{server}} weight {{weight}} {{resolvers}} check inter {{inter}} rise 1 fall 3 {{backup}}"
 		server_conf = server_conf:gsub("{{remark}}", remark)
 		server_conf = server_conf:gsub("{{server}}", server)
-		server_conf = server_conf:gsub("{{weight}}",  o.lbweight)
+		server_conf = server_conf:gsub("{{weight}}", o.lbweight)
 		local resolvers = "resolvers mydns"
 		if api.is_ip(o.server_address) then
 			resolvers = ""
 		end
-		server_conf = server_conf:gsub("{{resolvers}}",  resolvers)
-		server_conf = server_conf:gsub("{{inter}}",  tonumber(health_check_inter) .. "s")
-		server_conf = server_conf:gsub("{{backup}}",  o.backup == "1" and "backup" or "")
+		server_conf = server_conf:gsub("{{resolvers}}", resolvers)
+		server_conf = server_conf:gsub("{{inter}}", tonumber(health_check_inter) .. "s")
+		server_conf = server_conf:gsub("{{backup}}", tostring(o.backup) == "1" and "backup" or "")
 
-		f_out:write("    " .. server_conf .. "\n")
+		f_out:write("	" .. server_conf .. "\n")
 
 		if o.export ~= "0" then
 			sys.call(string.format("/usr/share/passwall2/app.sh add_ip2route %s %s", o.origin_address, o.export))
@@ -204,7 +215,6 @@ listen %s
 end
 
 --控制台配置
-local console_port = uci:get(appname, "@global_haproxy[0]", "console_port")
 local console_user = uci:get(appname, "@global_haproxy[0]", "console_user")
 local console_password = uci:get(appname, "@global_haproxy[0]", "console_password")
 local str = [[
@@ -217,7 +227,6 @@ listen console
 	%s
 ]]
 f_out:write("\n" .. string.format(str, console_port, (console_user and console_user ~= "" and console_password and console_password ~= "") and "stats auth " .. console_user .. ":" .. console_password or ""))
-log(string.format("  * 控制台端口：%s", console_port))
 
 f_out:close()
 
