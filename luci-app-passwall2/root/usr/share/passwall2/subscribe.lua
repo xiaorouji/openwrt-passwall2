@@ -534,7 +534,7 @@ local function processData(szType, content, add_mode, add_from)
 				result.xhttp_host = info.host
 				result.xhttp_path = info.path
 			else
-				result.http_host = info.host
+				result.http_host = (info.host and info.host ~= "") and { info.host } or nil
 				result.http_path = info.path
 			end
 		end
@@ -774,7 +774,7 @@ local function processData(szType, content, add_mode, add_from)
 					if params.type == "http" then
 						if result.type == "sing-box" then
 							result.transport = "http"
-							result.http_host = params.host
+							result.http_host = (params.host and params.host ~= "") and { params.host } or nil
 							result.http_path = params.path
 						elseif result.type == "Xray" then
 							result.transport = "xhttp"
@@ -939,7 +939,7 @@ local function processData(szType, content, add_mode, add_from)
 			if params.type == "http" then
 				if result.type == "sing-box" then
 					result.transport = "http"
-					result.http_host = params.host
+					result.http_host = (params.host and params.host ~= "") and { params.host } or nil
 					result.http_path = params.path
 				elseif result.type == "Xray" then
 					result.transport = "xhttp"
@@ -1084,7 +1084,7 @@ local function processData(szType, content, add_mode, add_from)
 			if params.type == "http" then
 				if result.type == "sing-box" then
 					result.transport = "http"
-					result.http_host = params.host
+					result.http_host = (params.host and params.host ~= "") and { params.host } or nil
 					result.http_path = params.path
 				elseif result.type == "Xray" then
 					result.transport = "xhttp"
