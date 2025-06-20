@@ -141,7 +141,7 @@ function copy_instance(var)
 	end
 	tinsert(conf_lines, "port=" .. LISTEN_PORT)
 	if TMP_DNSMASQ_PATH then
-		sys.call("rm -rf " .. TMP_DNSMASQ_PATH .. "/*passwall*")
+		sys.call("rm -rf " .. TMP_DNSMASQ_PATH .. "/*passwall2*")
 	end
 	if var["-return"] == "1" then
 		return conf_lines
