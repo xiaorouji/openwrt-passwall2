@@ -8,6 +8,7 @@ local http = require "luci.http"
 local util = require "luci.util"
 local i18n = require "luci.i18n"
 local fs = api.fs
+local jsonStringify = luci.jsonc.stringify
 
 function index()
 	if not nixio.fs.access("/etc/config/passwall2") then
@@ -96,35 +97,35 @@ end
 
 local function http_write_json(content)
 	http.prepare_content("application/json")
-	http.write_json(content or {code = 1})
+	http.write(jsonStringify(content or {code = 1}))
 end
 
 function reset_config()
 	luci.sys.call('/etc/init.d/passwall2 stop')
 	luci.sys.call('[ -f "/usr/share/passwall2/0_default_config" ] && cp -f /usr/share/passwall2/0_default_config /etc/config/passwall2')
-	luci.http.redirect(api.url())
+	http.redirect(api.url())
 end
 
 function show_menu()
 	api.sh_uci_del(appname, "@global[0]", "hide_from_luci", true)
 	luci.sys.call("rm -rf /tmp/luci-*")
 	luci.sys.call("/etc/init.d/rpcd restart >/dev/null")
-	luci.http.redirect(api.url())
+	http.redirect(api.url())
 end
 
 function hide_menu()
 	api.sh_uci_set(appname, "@global[0]", "hide_from_luci", "1", true)
 	luci.sys.call("rm -rf /tmp/luci-*")
 	luci.sys.call("/etc/init.d/rpcd restart >/dev/null")
-	luci.http.redirect(luci.dispatcher.build_url("admin", "status", "overview"))
+	http.redirect(luci.dispatcher.build_url("admin", "status", "overview"))
 end
 
 function link_add_node()
 	-- 分片接收以突破uhttpd的限制
 	local tmp_file = "/tmp/links.conf"
-	local chunk = luci.http.formvalue("chunk")
-	local chunk_index = tonumber(luci.http.formvalue("chunk_index"))
-	local total_chunks = tonumber(luci.http.formvalue("total_chunks"))
+	local chunk = http.formvalue("chunk")
+	local chunk_index = tonumber(http.formvalue("chunk_index"))
+	local total_chunks = tonumber(http.formvalue("total_chunks"))
 
 	if chunk and chunk_index ~= nil and total_chunks ~= nil then
 		-- 按顺序拼接到文件
@@ -145,8 +146,8 @@ function link_add_node()
 end
 
 function socks_autoswitch_add_node()
-	local id = luci.http.formvalue("id")
-	local key = luci.http.formvalue("key")
+	local id = http.formvalue("id")
+	local key = http.formvalue("key")
 	if id and id ~= "" and key and key ~= "" then
 		uci:set(appname, id, "enable_autoswitch", "1")
 		local new_list = uci:get(appname, id, "autoswitch_backup_node") or {}
@@ -163,12 +164,12 @@ function socks_autoswitch_add_node()
 		uci:set_list(appname, id, "autoswitch_backup_node", new_list)
 		api.uci_save(uci, appname)
 	end
-	luci.http.redirect(api.url("socks_config", id))
+	http.redirect(api.url("socks_config", id))
 end
 
 function socks_autoswitch_remove_node()
-	local id = luci.http.formvalue("id")
-	local key = luci.http.formvalue("key")
+	local id = http.formvalue("id")
+	local key = http.formvalue("key")
 	if id and id ~= "" and key and key ~= "" then
 		uci:set(appname, id, "enable_autoswitch", "1")
 		local new_list = uci:get(appname, id, "autoswitch_backup_node") or {}
@@ -180,19 +181,19 @@ function socks_autoswitch_remove_node()
 		uci:set_list(appname, id, "autoswitch_backup_node", new_list)
 		api.uci_save(uci, appname)
 	end
-	luci.http.redirect(api.url("socks_config", id))
+	http.redirect(api.url("socks_config", id))
 end
 
 function gen_client_config()
-	local id = luci.http.formvalue("id")
+	local id = http.formvalue("id")
 	local config_file = api.TMP_PATH .. "/config_" .. id
 	luci.sys.call(string.format("/usr/share/passwall2/app.sh run_socks flag=config_%s node=%s bind=127.0.0.1 socks_port=1080 config_file=%s no_run=1", id, id, config_file))
 	if nixio.fs.access(config_file) then
-		luci.http.prepare_content("application/json")
-		luci.http.write(luci.sys.exec("cat " .. config_file))
+		http.prepare_content("application/json")
+		http.write(luci.sys.exec("cat " .. config_file))
 		luci.sys.call("rm -f " .. config_file)
 	else
-		luci.http.redirect(api.url("node_list"))
+		http.redirect(api.url("node_list"))
 	end
 end
 
@@ -202,38 +203,37 @@ function get_now_use_node()
 	if node then
 		e["global"] = node
 	end
-	luci.http.prepare_content("application/json")
-	luci.http.write_json(e)
+	http_write_json(e)
 end
 
 function get_redir_log()
-	local id = luci.http.formvalue("id")
-	local name = luci.http.formvalue("name")
+	local id = http.formvalue("id")
+	local name = http.formvalue("name")
 	local file_path = "/tmp/etc/passwall2/acl/" .. id .. "/" .. name .. ".log"
 	if nixio.fs.access(file_path) then
 		local content = luci.sys.exec("tail -n 19999 '" .. file_path .. "'")
 		content = content:gsub("\n", "<br />")
-		luci.http.write(content)
+		http.write(content)
 	else
-		luci.http.write(string.format("<script>alert('%s');window.close();</script>", i18n.translate("Not enabled log")))
+		http.write(string.format("<script>alert('%s');window.close();</script>", i18n.translate("Not enabled log")))
 	end
 end
 
 function get_socks_log()
-	local name = luci.http.formvalue("name")
+	local name = http.formvalue("name")
 	local path = "/tmp/etc/passwall2/SOCKS_" .. name .. ".log"
 	if nixio.fs.access(path) then
 		local content = luci.sys.exec("tail -n 5000 ".. path)
 		content = content:gsub("\n", "<br />")
-		luci.http.write(content)
+		http.write(content)
 	else
-		luci.http.write(string.format("<script>alert('%s');window.close();</script>", i18n.translate("Not enabled log")))
+		http.write(string.format("<script>alert('%s');window.close();</script>", i18n.translate("Not enabled log")))
 	end
 end
 
 function get_log()
 	-- luci.sys.exec("[ -f /tmp/log/passwall2.log ] && sed '1!G;h;$!d' /tmp/log/passwall2.log > /tmp/log/passwall2_show.log")
-	luci.http.write(luci.sys.exec("[ -f '/tmp/log/passwall2.log' ] && cat /tmp/log/passwall2.log"))
+	http.write(luci.sys.exec("[ -f '/tmp/log/passwall2.log' ] && cat /tmp/log/passwall2.log"))
 end
 
 function clear_log()
@@ -243,20 +243,18 @@ end
 function index_status()
 	local e = {}
 	e["global_status"] = luci.sys.call("/bin/busybox top -bn1 | grep -v 'grep' | grep '/tmp/etc/passwall2/bin/' | grep 'default' | grep 'global' >/dev/null") == 0
-	luci.http.prepare_content("application/json")
-	luci.http.write_json(e)
+	http_write_json(e)
 end
 
 function haproxy_status()
 	local e = luci.sys.call(string.format("/bin/busybox top -bn1 | grep -v grep | grep '%s/bin/' | grep haproxy >/dev/null", appname)) == 0
-	luci.http.prepare_content("application/json")
-	luci.http.write_json(e)
+	http_write_json(e)
 end
 
 function socks_status()
 	local e = {}
-	local index = luci.http.formvalue("index")
-	local id = luci.http.formvalue("id")
+	local index = http.formvalue("index")
+	local id = http.formvalue("id")
 	e.index = index
 	e.socks_status = luci.sys.call(string.format("/bin/busybox top -bn1 | grep -v -E 'grep|acl/|acl_' | grep '%s/bin/' | grep '%s' | grep 'SOCKS_' > /dev/null", appname, id)) == 0
 	local use_http = uci:get(appname, id, "http_port") or 0
@@ -265,14 +263,13 @@ function socks_status()
 		e.use_http = 1
 		e.http_status = luci.sys.call(string.format("/bin/busybox top -bn1 | grep -v -E 'grep|acl/|acl_' | grep '%s/bin/' | grep '%s' | grep -E 'HTTP_|HTTP2SOCKS' > /dev/null", appname, id)) == 0
 	end
-	luci.http.prepare_content("application/json")
-	luci.http.write_json(e)
+	http_write_json(e)
 end
 
 function connect_status()
 	local e = {}
 	e.use_time = ""
-	local url = luci.http.formvalue("url")
+	local url = http.formvalue("url")
 	local result = luci.sys.exec('curl --connect-timeout 3 -o /dev/null -I -sk -w "%{http_code}:%{time_appconnect}" ' .. url)
 	local code = tonumber(luci.sys.exec("echo -n '" .. result .. "' | awk -F ':' '{print $1}'") or "0")
 	if code ~= 0 then
@@ -284,15 +281,14 @@ function connect_status()
 		end
 		e.ping_type = "curl"
 	end
-	luci.http.prepare_content("application/json")
-	luci.http.write_json(e)
+	http_write_json(e)
 end
 
 function ping_node()
-	local index = luci.http.formvalue("index")
-	local address = luci.http.formvalue("address")
-	local port = luci.http.formvalue("port")
-	local type = luci.http.formvalue("type") or "icmp"
+	local index = http.formvalue("index")
+	local address = http.formvalue("address")
+	local port = http.formvalue("port")
+	local type = http.formvalue("type") or "icmp"
 	local e = {}
 	e.index = index
 	if type == "tcping" and luci.sys.exec("echo -n $(command -v tcping)") ~= "" then
@@ -303,13 +299,12 @@ function ping_node()
 	else
 		e.ping = luci.sys.exec("echo -n $(ping -c 1 -W 1 %q 2>&1 | grep -o 'time=[0-9]*' | awk -F '=' '{print $2}') 2>/dev/null" % address)
 	end
-	luci.http.prepare_content("application/json")
-	luci.http.write_json(e)
+	http_write_json(e)
 end
 
 function urltest_node()
-	local index = luci.http.formvalue("index")
-	local id = luci.http.formvalue("id")
+	local index = http.formvalue("index")
+	local id = http.formvalue("id")
 	local e = {}
 	e.index = index
 	local result = luci.sys.exec(string.format("/usr/share/passwall2/test.sh url_test_node %s %s", id, "urltest_node"))
@@ -322,21 +317,20 @@ function urltest_node()
 			e.use_time = string.format("%.2f", use_time / 1000)
 		end
 	end
-	luci.http.prepare_content("application/json")
-	luci.http.write_json(e)
+	http_write_json(e)
 end
 
 function set_node()
-	local type = luci.http.formvalue("type")
-	local config = luci.http.formvalue("config")
-	local section = luci.http.formvalue("section")
+	local type = http.formvalue("type")
+	local config = http.formvalue("config")
+	local section = http.formvalue("section")
 	uci:set(appname, type, config, section)
 	api.uci_save(uci, appname, true, true)
-	luci.http.redirect(api.url("log"))
+	http.redirect(api.url("log"))
 end
 
 function copy_node()
-	local section = luci.http.formvalue("section")
+	local section = http.formvalue("section")
 	local uuid = api.gen_short_uuid()
 	uci:section(appname, "nodes", uuid)
 	for k, v in pairs(uci:get_all(appname, section)) do
@@ -353,11 +347,13 @@ function copy_node()
 	uci:delete(appname, uuid, "add_from")
 	uci:set(appname, uuid, "add_mode", 1)
 	api.uci_save(uci, appname)
-	luci.http.redirect(api.url("node_config", uuid))
+	http.redirect(api.url("node_config", uuid))
 end
 
 function clear_all_nodes()
 	uci:set(appname, '@global[0]', "enabled", "0")
+	uci:set(appname, '@global[0]', "socks_enabled", "0")
+	uci:set(appname, '@haproxy_config[0]', "balancing_enable", "0")
 	uci:delete(appname, '@global[0]', "node")
 	uci:foreach(appname, "socks", function(t)
 		uci:delete(appname, t[".name"])
@@ -377,11 +373,10 @@ function clear_all_nodes()
 	end)
 
 	api.uci_save(uci, appname, true, true)
-	luci.sys.call("/etc/init.d/" .. appname .. " stop")
 end
 
 function delete_select_nodes()
-	local ids = luci.http.formvalue("ids")
+	local ids = http.formvalue("ids")
 	string.gsub(ids, '[^' .. "," .. ']+', function(w)
 		if (uci:get(appname, "@global[0]", "node") or "") == w then
 			uci:delete(appname, '@global[0]', "node")
@@ -431,35 +426,34 @@ function delete_select_nodes()
 		uci:delete(appname, w)
 	end)
 	api.uci_save(uci, appname, true, true)
-	luci.sys.call("/etc/init.d/" .. appname .. " restart > /dev/null 2>&1 &")
 end
 
 function update_rules()
-	local update = luci.http.formvalue("update")
+	local update = http.formvalue("update")
 	luci.sys.call("lua /usr/share/passwall2/rule_update.lua log '" .. update .. "' > /dev/null 2>&1 &")
 	http_write_json()
 end
 
 function server_user_status()
 	local e = {}
-	e.index = luci.http.formvalue("index")
-	e.status = luci.sys.call(string.format("/bin/busybox top -bn1 | grep -v 'grep' | grep '%s/bin/' | grep -i '%s' >/dev/null", appname .. "_server", luci.http.formvalue("id"))) == 0
+	e.index = http.formvalue("index")
+	e.status = luci.sys.call(string.format("/bin/busybox top -bn1 | grep -v 'grep' | grep '%s/bin/' | grep -i '%s' >/dev/null", appname .. "_server", http.formvalue("id"))) == 0
 	http_write_json(e)
 end
 
 function server_user_log()
-	local id = luci.http.formvalue("id")
+	local id = http.formvalue("id")
 	if nixio.fs.access("/tmp/etc/passwall2_server/" .. id .. ".log") then
 		local content = luci.sys.exec("cat /tmp/etc/passwall2_server/" .. id .. ".log")
 		content = content:gsub("\n", "<br />")
-		luci.http.write(content)
+		http.write(content)
 	else
-		luci.http.write(string.format("<script>alert('%s');window.close();</script>", i18n.translate("Not enabled log")))
+		http.write(string.format("<script>alert('%s');window.close();</script>", i18n.translate("Not enabled log")))
 	end
 end
 
 function server_get_log()
-	luci.http.write(luci.sys.exec("[ -f '/tmp/log/passwall2_server.log' ] && cat /tmp/log/passwall2_server.log"))
+	http.write(luci.sys.exec("[ -f '/tmp/log/passwall2_server.log' ] && cat /tmp/log/passwall2_server.log"))
 end
 
 function server_clear_log()
@@ -510,21 +504,20 @@ function create_backup()
 end
 
 function restore_backup()
-	http.prepare_content("application/json")
 	local ok, err = pcall(function()
 		local filename = http.formvalue("filename")
 		local chunk = http.formvalue("chunk")
 		local chunk_index = tonumber(http.formvalue("chunk_index") or "-1")
 		local total_chunks = tonumber(http.formvalue("total_chunks") or "-1")
 		if not filename or not chunk then
-			http.write_json({ status = "error", message = "Missing filename or chunk" })
+			http_write_json({ status = "error", message = "Missing filename or chunk" })
 			return
 		end
 		local file_path = "/tmp/" .. filename
 		local decoded = nixio.bin.b64decode(chunk)
 		local fp = io.open(file_path, "a+")
 		if not fp then
-			http.write_json({ status = "error", message = "Failed to open file for writing: " .. file_path })
+			http_write_json({ status = "error", message = "Failed to open file for writing: " .. file_path })
 			return
 		end
 		fp:write(decoded)
@@ -550,25 +543,25 @@ function restore_backup()
 			end
 			api.sys.call("rm -rf " .. temp_dir)
 			fs.remove(file_path)
-			http.write_json({ status = "success", message = "Upload completed", path = file_path })
+			http_write_json({ status = "success", message = "Upload completed", path = file_path })
 		else
-			http.write_json({ status = "success", message = "Chunk received" })
+			http_write_json({ status = "success", message = "Chunk received" })
 		end
 	end)
 	if not ok then
-		http.write_json({ status = "error", message = tostring(err) })
+		http_write_json({ status = "error", message = tostring(err) })
 	end
 end
 
 function subscribe_del_node()
-	local remark = luci.http.formvalue("remark")
+	local remark = http.formvalue("remark")
 	if remark and remark ~= "" then
 		luci.sys.call("lua /usr/share/" .. appname .. "/subscribe.lua truncate " .. luci.util.shellquote(remark) .. " > /dev/null 2>&1")
 	end
-	luci.http.status(200, "OK")
+	http.status(200, "OK")
 end
 
 function subscribe_del_all()
 	luci.sys.call("lua /usr/share/" .. appname .. "/subscribe.lua truncate > /dev/null 2>&1")
-	luci.http.status(200, "OK")
+	http.status(200, "OK")
 end
