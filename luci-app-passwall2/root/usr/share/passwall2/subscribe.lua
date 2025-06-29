@@ -638,8 +638,7 @@ local function processData(szType, content, add_mode, add_from)
 				local idx_pn = plugin_info:find(";")
 				if idx_pn then
 					result.plugin = plugin_info:sub(1, idx_pn - 1)
-					result.plugin_opts =
-						plugin_info:sub(idx_pn + 1, #plugin_info)
+					result.plugin_opts = plugin_info:sub(idx_pn + 1, #plugin_info)
 				else
 					result.plugin = plugin_info
 				end
@@ -724,8 +723,7 @@ local function processData(szType, content, add_mode, add_from)
 						result.plugin = nil
 						result.plugin_opts = nil
 					end
-				end
-				if result.type == "sing-box" then
+				else
 					result.plugin_enabled = "1"
 				end
 			end
@@ -871,6 +869,7 @@ local function processData(szType, content, add_mode, add_from)
 					end
 
 					if result.type == "SS-Rust" then
+						result.plugin_enabled = "1"
 						result.plugin = "shadow-tls"
 						result.plugin_opts = parseShadowTLSParams(params["shadow-tls"])
 					elseif result.type == "sing-box" then
