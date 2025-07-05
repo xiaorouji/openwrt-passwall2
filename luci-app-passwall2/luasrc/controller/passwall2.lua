@@ -371,7 +371,11 @@ function clear_all_nodes()
 	uci:foreach(appname, "nodes", function(node)
 		uci:delete(appname, node['.name'])
 	end)
-	api.uci_save(uci, appname, true)
+	uci:foreach(appname, "subscribe_list", function(t)
+		uci:delete(appname, t[".name"], "md5")
+	end)
+
+	api.uci_save(uci, appname, true, true)
 	luci.sys.call("/etc/init.d/" .. appname .. " stop")
 end
 
@@ -413,9 +417,19 @@ function delete_select_nodes()
 				uci:delete(appname, t[".name"], "chain_proxy")
 			end
 		end)
+		if (uci:get(appname, w, "add_mode") or "0") == "2" then
+			local add_from = uci:get(appname, w, "add_from") or ""
+			if add_from ~= "" then
+				uci:foreach(appname, "subscribe_list", function(t)
+					if t["remark"] == add_from then
+						uci:delete(appname, t[".name"], "md5")
+					end
+				end)
+			end
+		end
 		uci:delete(appname, w)
 	end)
-	api.uci_save(uci, appname, true)
+	api.uci_save(uci, appname, true, true)
 	luci.sys.call("/etc/init.d/" .. appname .. " restart > /dev/null 2>&1 &")
 end
 
