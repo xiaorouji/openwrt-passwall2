@@ -41,6 +41,7 @@ function index()
 	end
 	entry({"admin", "services", appname, "app_update"}, cbi(appname .. "/client/app_update"), _("App Update"), 95).leaf = true
 	entry({"admin", "services", appname, "rule"}, cbi(appname .. "/client/rule"), _("Rule Manage"), 96).leaf = true
+	entry({"admin", "services", appname, "geoview"}, form(appname .. "/client/geoview"), _("Geo View"), 97).leaf = true
 	entry({"admin", "services", appname, "node_subscribe_config"}, cbi(appname .. "/client/node_subscribe_config")).leaf = true
 	entry({"admin", "services", appname, "node_config"}, cbi(appname .. "/client/node_config")).leaf = true
 	entry({"admin", "services", appname, "shunt_rules"}, cbi(appname .. "/client/shunt_rules")).leaf = true
@@ -93,6 +94,9 @@ function index()
 	--[[Backup]]
 	entry({"admin", "services", appname, "create_backup"}, call("create_backup")).leaf = true
 	entry({"admin", "services", appname, "restore_backup"}, call("restore_backup")).leaf = true
+
+	--[[geoview]]
+	entry({"admin", "services", appname, "geo_view"}, call("geo_view")).leaf = true
 end
 
 local function http_write_json(content)
@@ -550,6 +554,56 @@ function restore_backup()
 	end)
 	if not ok then
 		http_write_json({ status = "error", message = tostring(err) })
+	end
+end
+
+function geo_view()
+	local action = luci.http.formvalue("action")
+	local value = luci.http.formvalue("value")
+	if not value or value == "" then
+		http.prepare_content("text/plain")
+		http.write(i18n.translate("Please enter query content!"))
+		return
+	end
+	local geo_dir = (uci:get(appname, "@global_rules[0]", "v2ray_location_asset") or "/usr/share/v2ray/"):match("^(.*)/")
+	local geosite_path = geo_dir .. "/geosite.dat"
+	local geoip_path = geo_dir .. "/geoip.dat"
+	local geo_type, file_path, cmd
+	local geo_string = ""
+	if action == "lookup" then
+		if api.datatypes.ipaddr(value) or api.datatypes.ip6addr(value) then
+			geo_type, file_path = "geoip", geoip_path
+		else
+			geo_type, file_path = "geosite", geosite_path
+		end
+		cmd = string.format("geoview -type %s -action lookup -input '%s' -value '%s' -lowmem=true", geo_type, file_path, value)
+		geo_string = luci.sys.exec(cmd):lower()
+		if geo_string ~= "" then
+			local lines = {}
+			for line in geo_string:gmatch("([^\n]*)\n?") do
+				if line ~= "" then
+					table.insert(lines, geo_type .. ":" .. line)
+				end
+			end
+			geo_string = table.concat(lines, "\n")
+		end
+	elseif action == "extract" then
+		local prefix, list = value:match("^(geoip:)(.*)$")
+		if not prefix then
+			prefix, list = value:match("^(geosite:)(.*)$")
+		end
+		if prefix and list and list ~= "" then
+			geo_type = prefix:sub(1, -2)
+			file_path = (geo_type == "geoip") and geoip_path or geosite_path
+			cmd = string.format("geoview -type %s -action extract -input '%s' -list '%s' -lowmem=true", geo_type, file_path, list)
+			geo_string = luci.sys.exec(cmd)
+		end
+	end
+	http.prepare_content("text/plain")
+	if geo_string and geo_string ~="" then
+		http.write(geo_string)
+	else
+		http.write(i18n.translate("No results were found!"))
 	end
 end
 
