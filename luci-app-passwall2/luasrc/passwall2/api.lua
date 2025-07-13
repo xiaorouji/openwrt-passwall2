@@ -194,11 +194,16 @@ function curl_direct(url, file, args)
 end
 
 function curl_auto(url, file, args)
-	local return_code, result = curl_proxy(url, file, args)
-	if not return_code or return_code ~= 0 then
-		return_code, result = curl_direct(url, file, args)
+	local localhost_proxy = uci:get(appname, "@global[0]", "localhost_proxy") or "1"
+	if localhost_proxy == "1" then
+		return curl_base(url, file, args)
+	else
+		local return_code, result = curl_proxy(url, file, args)
+		if not return_code or return_code ~= 0 then
+			return_code, result = curl_direct(url, file, args)
+		end
+		return return_code, result
 	end
-	return return_code, result
 end
 
 function url(...)
