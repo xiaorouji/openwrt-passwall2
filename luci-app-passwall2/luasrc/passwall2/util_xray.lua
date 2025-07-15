@@ -1374,8 +1374,13 @@ function gen_config(var)
 					default_dns_server = api.clone(value)
 					default_dns_server.server.tag = default_dns_tag
 					if value.server.tag == remote_dns_tag then
-						default_dns_server.outboundTag = value.outboundTag or COMMON.default_outbound_tag
-						default_dns_server.balancerTag = COMMON.default_balancer_tag
+						if remote_dns_fake then
+							default_dns_server.server = api.clone(_remote_fakedns)
+							default_dns_server.server.tag = default_dns_tag
+						else
+							default_dns_server.outboundTag = value.outboundTag or COMMON.default_outbound_tag
+							default_dns_server.balancerTag = COMMON.default_balancer_tag
+						end
 					end
 					table.insert(dns_servers, 1, default_dns_server)
 					break

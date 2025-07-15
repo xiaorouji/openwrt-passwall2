@@ -1523,6 +1523,18 @@ function gen_config(var)
 				end
 			end
 		end
+
+		if remote_dns_fake and default_dns_flag == "remote" then
+			-- When default is not direct and enable fakedns, default DNS use FakeDNS.
+			local fakedns_dns_rule = {
+				query_type = {
+					"A", "AAAA"
+				},
+				server = fakedns_tag,
+				disable_cache = true
+			}
+			table.insert(dns.rules, fakedns_dns_rule)
+		end
 	
 		table.insert(inbounds, {
 			type = "direct",

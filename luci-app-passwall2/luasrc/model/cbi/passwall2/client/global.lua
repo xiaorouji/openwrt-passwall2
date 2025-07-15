@@ -322,7 +322,7 @@ o.default = "remote"
 o:value("remote", translate("Remote"))
 o:value("direct", translate("Direct"))
 
-o = s:taboption("DNS", Flag, "remote_fakedns", "FakeDNS", translate("Use FakeDNS work in the shunt domain that proxy."))
+o = s:taboption("DNS", Flag, "remote_fakedns", "FakeDNS", translate("Use FakeDNS work in the domain that proxy."))
 o.default = "0"
 o.rmempty = false
 
