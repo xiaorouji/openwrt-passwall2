@@ -187,6 +187,9 @@ o:value("h2")
 o:value("http/1.1")
 o:depends({ [_n("tls")] = true })
 
+o = s:option(Value, _n("reality_mldsa65Seed"), "ML-DSA-65 " .. translate("Private Key"))
+o:depends({ [_n("reality")] = true })
+
 -- o = s:option(Value, _n("minversion"), translate("minversion"))
 -- o.default = "1.3"
 -- o:value("1.3")
