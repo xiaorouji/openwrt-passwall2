@@ -365,7 +365,7 @@ load_acl() {
 			_acl_list=${TMP_ACL_PATH}/${sid}/source_list
 
 			for i in $(cat $_acl_list); do
-				local _ipt_source
+				local _ipt_source _ipv4
 				local msg
 				if [ -n "${interface}" ]; then
 					. /lib/functions/network.sh
@@ -382,6 +382,7 @@ load_acl() {
 					_iprange=$(echo ${i} | sed 's#iprange:##g')
 					_ipt_source=$(factor ${_iprange} "${_ipt_source}-m iprange --src-range")
 					msg="${msg}IP range【${_iprange}】，"
+					_ipv4="1"
 					unset _iprange
 				elif [ -n "$(echo ${i} | grep '^ipset:')" ]; then
 					_ipset=$(echo ${i} | sed 's#ipset:##g')
@@ -399,6 +400,7 @@ load_acl() {
 					_ip=$(echo ${i} | sed 's#ip:##g')
 					_ipt_source=$(factor ${_ip} "${_ipt_source}-s")
 					msg="${msg}IP【${_ip}】，"
+					_ipv4="1"
 					unset _ip
 				elif [ -n "$(echo ${i} | grep '^mac:')" ]; then
 					_mac=$(echo ${i} | sed 's#mac:##g')
@@ -417,7 +419,7 @@ load_acl() {
 				
 				[ "$tcp_no_redir_ports" != "disable" ] && {
 					if [ "$tcp_no_redir_ports" != "1:65535" ]; then
-						add_port_rules "$ip6t_m -A PSW2 $(comment "$remarks") ${_ipt_source} -p tcp" $tcp_no_redir_ports "-j RETURN" 2>/dev/null
+						[ "$_ipv4" != "1" ] && add_port_rules "$ip6t_m -A PSW2 $(comment "$remarks") ${_ipt_source} -p tcp" $tcp_no_redir_ports "-j RETURN" 2>/dev/null
 						add_port_rules "$ipt_tmp -A PSW2 $(comment "$remarks") ${_ipt_source} -p tcp" $tcp_no_redir_ports "-j RETURN"
 						echolog "  - ${msg}不代理 TCP 端口[${tcp_no_redir_ports}]"
 					else
@@ -429,7 +431,7 @@ load_acl() {
 				
 				[ "$udp_no_redir_ports" != "disable" ] && {
 					if [ "$udp_no_redir_ports" != "1:65535" ]; then
-						add_port_rules "$ip6t_m -A PSW2 $(comment "$remarks") ${_ipt_source} -p udp" $udp_no_redir_ports "-j RETURN" 2>/dev/null
+						[ "$_ipv4" != "1" ] && add_port_rules "$ip6t_m -A PSW2 $(comment "$remarks") ${_ipt_source} -p udp" $udp_no_redir_ports "-j RETURN" 2>/dev/null
 						add_port_rules "$ipt_m -A PSW2 $(comment "$remarks") ${_ipt_source} -p udp" $udp_no_redir_ports "-j RETURN"
 						echolog "  - ${msg}不代理 UDP 端口[${udp_no_redir_ports}]"
 					else
@@ -479,7 +481,7 @@ load_acl() {
 					add_port_rules "$ipt_tmp -A PSW2 $(comment "$remarks") -p tcp ${_ipt_source}" $tcp_redir_ports "${ipt_j}"
 					[ -n "${is_tproxy}" ] && $ipt_m -A PSW2 $(comment "$remarks") -p tcp ${_ipt_source} $(REDIRECT $redir_port TPROXY)
 
-					[ "$PROXY_IPV6" == "1" ] && {
+					[ "$PROXY_IPV6" == "1" ] && [ "$_ipv4" != "1" ] && {
 						$ip6t_m -A PSW2 $(comment "$remarks") -p tcp ${_ipt_source} -d $FAKE_IP_6 -j PSW2_RULE 2>/dev/null
 						add_shunt_t_rule "${shunt_list6}" "$ip6t_m -A PSW2 $(comment "$remarks") -p tcp ${_ipt_source}" "${ipt_j}" $tcp_redir_ports 2>/dev/null
 						add_port_rules "$ip6t_m -A PSW2 $(comment "$remarks") -p tcp ${_ipt_source}" $tcp_redir_ports "-j PSW2_RULE" 2>/dev/null
@@ -488,7 +490,7 @@ load_acl() {
 					echolog "  - ${msg2}"
 				}
 				$ipt_tmp -A PSW2 $(comment "$remarks") ${_ipt_source} -p tcp -j RETURN
-				$ip6t_m -A PSW2 $(comment "$remarks") ${_ipt_source} -p tcp -j RETURN 2>/dev/null
+				[ "$_ipv4" != "1" ] && $ip6t_m -A PSW2 $(comment "$remarks") ${_ipt_source} -p tcp -j RETURN 2>/dev/null
 
 				[ "$udp_proxy_mode" != "disable" ] && [ -n "$redir_port" ] && {
 					msg2="${msg}使用 UDP 节点[$node_remark](TPROXY:${redir_port})"
@@ -498,7 +500,7 @@ load_acl() {
 					add_port_rules "$ipt_m -A PSW2 $(comment "$remarks") -p udp ${_ipt_source}" $udp_redir_ports "-j PSW2_RULE"
 					$ipt_m -A PSW2 $(comment "$remarks") -p udp ${_ipt_source} $(REDIRECT $redir_port TPROXY)
 
-					[ "$PROXY_IPV6" == "1" ] && {
+					[ "$PROXY_IPV6" == "1" ] && [ "$_ipv4" != "1" ] && {
 						$ip6t_m -A PSW2 $(comment "$remarks") -p udp ${_ipt_source} -d $FAKE_IP_6 -j PSW2_RULE 2>/dev/null
 						add_shunt_t_rule "${shunt_list6}" "$ip6t_m -A PSW2 $(comment "$remarks") -p udp ${_ipt_source}" "-j PSW2_RULE" $udp_redir_ports 2>/dev/null
 						add_port_rules "$ip6t_m -A PSW2 $(comment "$remarks") -p udp ${_ipt_source}" $udp_redir_ports "-j PSW2_RULE" 2>/dev/null
@@ -507,8 +509,8 @@ load_acl() {
 					echolog "  - ${msg2}"
 				}
 				$ipt_m -A PSW2 $(comment "$remarks") ${_ipt_source} -p udp -j RETURN
-				$ip6t_m -A PSW2 $(comment "$remarks") ${_ipt_source} -p udp -j RETURN 2>/dev/null
-				unset ipt_tmp ipt_j _ipt_source msg msg2
+				[ "$_ipv4" != "1" ] && $ip6t_m -A PSW2 $(comment "$remarks") ${_ipt_source} -p udp -j RETURN 2>/dev/null
+				unset ipt_tmp ipt_j _ipt_source msg msg2 _ipv4
 			done
 			unset enabled sid remarks sources tcp_no_redir_ports udp_no_redir_ports tcp_redir_ports udp_redir_ports node interface write_ipset_direct
 			unset node_remark _acl_list

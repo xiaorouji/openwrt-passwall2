@@ -389,7 +389,7 @@ load_acl() {
 			_acl_list=${TMP_ACL_PATH}/${sid}/source_list
 
 			for i in $(cat $_acl_list); do
-				local _ipt_source
+				local _ipt_source _ipv4
 				local msg
 				if [ -n "${interface}" ]; then
 					. /lib/functions/network.sh
@@ -406,6 +406,7 @@ load_acl() {
 					_iprange=$(echo ${i} | sed 's#iprange:##g')
 					_ipt_source=$(factor ${_iprange} "${_ipt_source}ip saddr")
 					msg="${msg}IP range【${_iprange}】，"
+					_ipv4="1"
 					unset _iprange
 				elif [ -n "$(echo ${i} | grep '^ipset:')" ]; then
 					_ipset=$(echo ${i} | sed 's#ipset:##g')
@@ -416,6 +417,7 @@ load_acl() {
 					_ip=$(echo ${i} | sed 's#ip:##g')
 					_ipt_source=$(factor ${_ip} "${_ipt_source}ip saddr")
 					msg="${msg}IP【${_ip}】，"
+					_ipv4="1"
 					unset _ip
 				elif [ -n "$(echo ${i} | grep '^mac:')" ]; then
 					_mac=$(echo ${i} | sed 's#mac:##g')
@@ -432,7 +434,7 @@ load_acl() {
 				[ "$tcp_no_redir_ports" != "disable" ] && {
 					if [ "$tcp_no_redir_ports" != "1:65535" ]; then
 						nft "add rule $NFTABLE_NAME $nft_prerouting_chain ${_ipt_source} ip protocol tcp $(factor $tcp_no_redir_ports "tcp dport") counter return comment \"$remarks\""
-						nft "add rule $NFTABLE_NAME PSW2_MANGLE_V6 ${_ipt_source} meta l4proto tcp $(factor $tcp_no_redir_ports "tcp dport") counter return comment \"$remarks\""
+						[ "$_ipv4" != "1" ] && nft "add rule $NFTABLE_NAME PSW2_MANGLE_V6 ${_ipt_source} meta l4proto tcp $(factor $tcp_no_redir_ports "tcp dport") counter return comment \"$remarks\""
 						echolog "  - ${msg}不代理 TCP 端口[${tcp_no_redir_ports}]"
 					else
 						#结束时会return，无需加多余的规则。
@@ -444,7 +446,7 @@ load_acl() {
 				[ "$udp_no_redir_ports" != "disable" ] && {
 					if [ "$udp_no_redir_ports" != "1:65535" ]; then
 						nft "add rule $NFTABLE_NAME PSW2_MANGLE ip protocol udp ${_ipt_source} $(factor $udp_no_redir_ports "udp dport") counter return comment \"$remarks\""
-						nft "add rule $NFTABLE_NAME PSW2_MANGLE_V6 meta l4proto udp ${_ipt_source} $(factor $udp_no_redir_ports "udp dport") counter return comment \"$remarks\"" 2>/dev/null
+						[ "$_ipv4" != "1" ] && nft "add rule $NFTABLE_NAME PSW2_MANGLE_V6 meta l4proto udp ${_ipt_source} $(factor $udp_no_redir_ports "udp dport") counter return comment \"$remarks\"" 2>/dev/null
 						echolog "  - ${msg}不代理 UDP 端口[${udp_no_redir_ports}]"
 					else
 						#结束时会return，无需加多余的规则。
@@ -499,7 +501,7 @@ load_acl() {
 					nft "add rule $NFTABLE_NAME $nft_chain ip protocol tcp ${_ipt_source} $(factor $tcp_redir_ports "tcp dport") ${nft_j} comment \"$remarks\""
 					[ -n "${is_tproxy}" ] && nft "add rule $NFTABLE_NAME PSW2_MANGLE ip protocol tcp ${_ipt_source} $(REDIRECT $redir_port TPROXY4) comment \"$remarks\""
 
-					[ "$PROXY_IPV6" == "1" ] && {
+					[ "$PROXY_IPV6" == "1" ] && [ "$_ipv4" != "1" ] &&  {
 						nft "add rule $NFTABLE_NAME PSW2_MANGLE_V6 meta l4proto tcp ${_ipt_source} ip6 daddr $FAKE_IP_6 counter jump PSW2_RULE comment \"$remarks\""
 						add_shunt_t_rule "${shunt_list6}" "nft add rule $NFTABLE_NAME PSW2_MANGLE_V6 meta l4proto tcp ${_ipt_source} $(factor $tcp_redir_ports "tcp dport") ip6 daddr" "counter jump PSW2_RULE" "$remarks" 2>/dev/null
 						nft "add rule $NFTABLE_NAME PSW2_MANGLE_V6 meta l4proto tcp ${_ipt_source} $(factor $tcp_redir_ports "tcp dport") counter jump PSW2_RULE comment \"$remarks\"" 2>/dev/null
@@ -508,7 +510,7 @@ load_acl() {
 					echolog "  - ${msg2}"
 				}
 				nft "add rule $NFTABLE_NAME $nft_prerouting_chain ip protocol tcp ${_ipt_source} counter return comment \"$remarks\""
-				nft "add rule $NFTABLE_NAME PSW2_MANGLE_V6 meta l4proto tcp ${_ipt_source} counter return comment \"$remarks\"" 2>/dev/null
+				[ "$_ipv4" != "1" ] && nft "add rule $NFTABLE_NAME PSW2_MANGLE_V6 meta l4proto tcp ${_ipt_source} counter return comment \"$remarks\"" 2>/dev/null
 
 				[ "$udp_proxy_mode" != "disable" ] && [ -n "$redir_port" ] && {
 					msg2="${msg}使用 UDP 节点[$node_remark](TPROXY:${redir_port})"
@@ -518,17 +520,17 @@ load_acl() {
 					nft "add rule $NFTABLE_NAME PSW2_MANGLE ip protocol udp ${_ipt_source} $(factor $udp_redir_ports "udp dport") counter jump PSW2_RULE comment \"$remarks\""
 					nft "add rule $NFTABLE_NAME PSW2_MANGLE ip protocol udp ${_ipt_source} $(REDIRECT $redir_port TPROXY4) comment \"$remarks\""
 
-					[ "$PROXY_IPV6" == "1" ] && {
+					[ "$PROXY_IPV6" == "1" ] && [ "$_ipv4" != "1" ] && {
 						nft "add rule $NFTABLE_NAME PSW2_MANGLE_V6 meta l4proto udp ${_ipt_source} ip6 daddr $FAKE_IP_6 counter jump PSW2_RULE comment \"$remarks\""
-						add_shunt_t_rule "${shunt_list6}" "nft add rule $NFTABLE_NAME PSW2_MANGLE_V6 meta l4proto udp ${_ipt_source} $(factor $udp_redir_ports "udp dport") ip6 daddr" "counter jump PSW2_RULE" "$remarks"
+						add_shunt_t_rule "${shunt_list6}" "nft add rule $NFTABLE_NAME PSW2_MANGLE_V6 meta l4proto udp ${_ipt_source} $(factor $udp_redir_ports "udp dport") ip6 daddr" "counter jump PSW2_RULE" "$remarks" 2>/dev/null
 						nft "add rule $NFTABLE_NAME PSW2_MANGLE_V6 meta l4proto udp ${_ipt_source} $(factor $udp_redir_ports "udp dport") counter jump PSW2_RULE comment \"$remarks\"" 2>/dev/null
 						nft "add rule $NFTABLE_NAME PSW2_MANGLE_V6 meta l4proto udp ${_ipt_source} $(REDIRECT $redir_port TPROXY) comment \"$remarks\"" 2>/dev/null
 					}
 					echolog "  - ${msg2}"
 				}
 				nft "add rule $NFTABLE_NAME PSW2_MANGLE ip protocol udp ${_ipt_source} counter return comment \"$remarks\""
-				nft "add rule $NFTABLE_NAME PSW2_MANGLE_V6 meta l4proto udp ${_ipt_source} counter return comment \"$remarks\"" 2>/dev/null
-				unset nft_chain nft_j _ipt_source msg msg2
+				[ "$_ipv4" != "1" ] && nft "add rule $NFTABLE_NAME PSW2_MANGLE_V6 meta l4proto udp ${_ipt_source} counter return comment \"$remarks\"" 2>/dev/null
+				unset nft_chain nft_j _ipt_source msg msg2 _ipv4
 			done
 			unset enabled sid remarks sources tcp_proxy_mode udp_proxy_mode tcp_no_redir_ports udp_no_redir_ports tcp_redir_ports udp_redir_ports node interface write_ipset_direct
 			unset redir_port node_remark _acl_list
