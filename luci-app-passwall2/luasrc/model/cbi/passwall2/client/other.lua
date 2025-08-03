@@ -234,6 +234,9 @@ if has_xray then
 end
 
 if has_singbox then
+	local version = api.get_app_version("sing-box"):match("[^v]+")
+	local version_ge_1_12_0 = api.compare_versions(version, ">=", "1.12.0")
+
 	s = m:section(TypedSection, "global_singbox", "Sing-Box " .. translate("Settings"))
 	s.anonymous = true
 	s.addremove = false
@@ -278,6 +281,16 @@ if has_singbox then
 		if geosite_path then
 			os.remove(geosite_path)
 		end
+	end
+
+	if version_ge_1_12_0 then
+		o = s:option(Flag, "record_fragment", "TLS Record " .. translate("Fragment"),
+			translate("Split handshake data into multiple TLS records for better censorship evasion. Low overhead. Recommended to enable first."))
+		o.default = 0
+
+		o = s:option(Flag, "fragment", "TLS TCP " .. translate("Fragment"),
+			translate("Split handshake into multiple TCP segments. Enhances obfuscation. May increase delay. Use only if needed."))
+		o.default = 0
 	end
 end
 
