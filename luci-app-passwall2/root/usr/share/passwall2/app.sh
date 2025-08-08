@@ -297,11 +297,11 @@ get_singbox_geoip() {
 	local geoip_code="$1"
 	local geoip_path=$(config_t_get global_singbox geoip_path)
 	[ -e "$geoip_path" ] || { echo ""; return; }
-	local has_geoip_tools=$($(first_type $(config_t_get global_app singbox_file) sing-box) geoip | grep "GeoIP tools")
+	local has_geoip_tools=$($(first_type $(config_t_get global_app sing_box_file) sing-box) geoip | grep "GeoIP tools")
 	if [ -n "${has_geoip_tools}" ]; then
 		[ -f "${geoip_path}" ] && local geoip_md5=$(md5sum ${geoip_path} | awk '{print $1}')
 		local output_file="${TMP_PATH2}/geoip-${geoip_md5}-${geoip_code}.json"
-		[ ! -f ${output_file} ] && $(first_type $(config_t_get global_app singbox_file) sing-box) geoip -f "${geoip_path}" export "${geoip_code}" -o "${output_file}"
+		[ ! -f ${output_file} ] && $(first_type $(config_t_get global_app sing_box_file) sing-box) geoip -f "${geoip_path}" export "${geoip_code}" -o "${output_file}"
 		case "$2" in
 			ipv4)
 				cat ${output_file} | grep -E "([0-9]{1,3}[\.]){3}[0-9]{1,3}" | awk -F '"' '{print $2}' | sed -e "/^$/d"
@@ -468,7 +468,7 @@ run_singbox() {
 	[ "$loglevel" = "warning" ] && loglevel="warn"
 	_extra_param="${_extra_param} -loglevel $loglevel"
 	
-	_extra_param="${_extra_param} -tags $($(first_type $(config_t_get global_app singbox_file) sing-box) version | grep 'Tags:' | awk '{print $2}')"
+	_extra_param="${_extra_param} -tags $($(first_type $(config_t_get global_app sing_box_file) sing-box) version | grep 'Tags:' | awk '{print $2}')"
 	
 	[ -n "$flag" ] && pgrep -af "$TMP_BIN_PATH" | awk -v P1="${flag}" 'BEGIN{IGNORECASE=1}$0~P1{print $1}' | xargs kill -9 >/dev/null 2>&1
 	[ -n "$flag" ] && _extra_param="${_extra_param} -flag $flag"
@@ -552,7 +552,7 @@ run_singbox() {
 	}
 
 	lua $UTIL_SINGBOX gen_config -node $node ${_extra_param} > $config_file
-	ln_run "$(first_type $(config_t_get global_app singbox_file) sing-box)" "sing-box" "${log_file}" run -c "$config_file"
+	ln_run "$(first_type $(config_t_get global_app sing_box_file) sing-box)" "sing-box" "${log_file}" run -c "$config_file"
 }
 
 run_socks() {
@@ -615,7 +615,7 @@ run_socks() {
 		}
 		[ -n "$no_run" ] && _extra_param="${_extra_param} -no_run 1"
 		lua $UTIL_SINGBOX gen_config -flag SOCKS_$flag -node $node -local_socks_address $bind -local_socks_port $socks_port ${_extra_param} > $config_file
-		[ -n "$no_run" ] || ln_run "$(first_type $(config_t_get global_app singbox_file) sing-box)" "sing-box" /dev/null run -c "$config_file"
+		[ -n "$no_run" ] || ln_run "$(first_type $(config_t_get global_app sing_box_file) sing-box)" "sing-box" /dev/null run -c "$config_file"
 	;;
 	xray)
 		[ "$http_port" != "0" ] && {
@@ -666,7 +666,7 @@ run_socks() {
 
 	# http to socks
 	[ -z "$http_flag" ] && [ "$http_port" != "0" ] && [ -n "$http_config_file" ] && [ "$type" != "sing-box" ] && [ "$type" != "xray" ] && [ "$type" != "socks" ] && {
-		local bin=$(first_type $(config_t_get global_app singbox_file) sing-box)
+		local bin=$(first_type $(config_t_get global_app sing_box_file) sing-box)
 		if [ -n "$bin" ]; then
 			type="sing-box"
 			lua $UTIL_SINGBOX gen_proto_config -local_http_port $http_port -server_proto socks -server_address "127.0.0.1" -server_port $socks_port -server_username $_username -server_password $_password > $http_config_file
@@ -1402,7 +1402,7 @@ get_config() {
 	set_cache_var GLOBAL_DNSMASQ_CONF_PATH ${GLOBAL_ACL_PATH}/dnsmasq.d
 
 	XRAY_BIN=$(first_type $(config_t_get global_app xray_file) xray)
-	SINGBOX_BIN=$(first_type $(config_t_get global_app singbox_file) sing-box)
+	SINGBOX_BIN=$(first_type $(config_t_get global_app sing_box_file) sing-box)
 }
 
 arg1=$1

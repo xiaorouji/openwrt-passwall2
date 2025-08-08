@@ -51,7 +51,7 @@ config global_rules
 config global_app
 	option xray_file '/usr/bin/xray'
 	option hysteria_file '/usr/bin/hysteria'
-	option singbox_file '/usr/bin/sing-box'
+	option sing_box_file '/usr/bin/sing-box'
 
 config global_subscribe
 	option filter_keyword_mode '1'
