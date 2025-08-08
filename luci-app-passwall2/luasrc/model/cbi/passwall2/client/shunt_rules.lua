@@ -136,6 +136,11 @@ domain_list.validate = function(self, value)
 			flag = 0
 		elseif host:find("ext:") and host:find("ext:") == 1 then
 			flag = 0
+		elseif host:find("rule-set:", 1, true) == 1 or host:find("rs:") == 1 then
+			local w = host:sub(host:find(":") + 1, #host)
+			if w:find("local:") == 1 or w:find("remote:") == 1 then
+				flag = 0
+			end
 		elseif host:find("#") and host:find("#") == 1 then
 			flag = 0
 		end
@@ -147,13 +152,21 @@ domain_list.validate = function(self, value)
 	end
 	return value
 end
-domain_list.description = "<br /><ul><li>" .. translate("Plaintext: If this string matches any part of the targeting domain, this rule takes effet. Example: rule 'sina.com' matches targeting domain 'sina.com', 'sina.com.cn' and 'www.sina.com', but not 'sina.cn'.")
-.. "</li><li>" .. translate("Regular expression: Begining with 'regexp:', the rest is a regular expression. When the regexp matches targeting domain, this rule takes effect. Example: rule 'regexp:\\.goo.*\\.com$' matches 'www.google.com' and 'fonts.googleapis.com', but not 'google.com'.")
-.. "</li><li>" .. translate("Subdomain (recommended): Begining with 'domain:' and the rest is a domain. When the targeting domain is exactly the value, or is a subdomain of the value, this rule takes effect. Example: rule 'domain:v2ray.com' matches 'www.v2ray.com', 'v2ray.com', but not 'xv2ray.com'.")
-.. "</li><li>" .. translate("Full domain: Begining with 'full:' and the rest is a domain. When the targeting domain is exactly the value, the rule takes effect. Example: rule 'domain:v2ray.com' matches 'v2ray.com', but not 'www.v2ray.com'.")
-.. "</li><li>" .. translate("Pre-defined domain list: Begining with 'geosite:' and the rest is a name, such as geosite:google or geosite:cn.")
-.. "</li><li>" .. translate("Annotation: Begining with #")
-.. "</li></ul>"
+domain_list.description = "<br /><ul>"
+.. "<li>" .. translate("Plaintext: If this string matches any part of the targeting domain, this rule takes effet. Example: rule 'sina.com' matches targeting domain 'sina.com', 'sina.com.cn' and 'www.sina.com', but not 'sina.cn'.") .. "</li>"
+.. "<li>" .. translate("Regular expression: Begining with 'regexp:', the rest is a regular expression. When the regexp matches targeting domain, this rule takes effect. Example: rule 'regexp:\\.goo.*\\.com$' matches 'www.google.com' and 'fonts.googleapis.com', but not 'google.com'.") .. "</li>"
+.. "<li>" .. translate("Subdomain (recommended): Begining with 'domain:' and the rest is a domain. When the targeting domain is exactly the value, or is a subdomain of the value, this rule takes effect. Example: rule 'domain:v2ray.com' matches 'www.v2ray.com', 'v2ray.com', but not 'xv2ray.com'.") .. "</li>"
+.. "<li>" .. translate("Full domain: Begining with 'full:' and the rest is a domain. When the targeting domain is exactly the value, the rule takes effect. Example: rule 'domain:v2ray.com' matches 'v2ray.com', but not 'www.v2ray.com'.") .. "</li>"
+.. "<li>" .. translate("Pre-defined domain list: Begining with 'geosite:' and the rest is a name, such as geosite:google or geosite:cn.") .. "</li>"
+.. "<li>"
+	.. translate("Sing-Box rule-set: Begining with 'rule-set:remote:' or 'rule-set:local:'")
+	.. "<ul>"
+		.. "<li>" .. translate("Such as:") .. "'rule-set:remote:https://raw.githubusercontent.com/SagerNet/sing-geosite/rule-set/geosite-cn.srs'" .. "</li>"
+		.. "<li>" .. translate("Such as:") .. "'rule-set:local:/usr/share/sing-box/geosite-cn.srs'" .. "</li>"
+	.. "</ul>"
+.. "</li>"
+.. "<li>" .. translate("Annotation: Begining with #") .. "</li>"
+.. "</ul>"
 ip_list = s:option(TextValue, "ip_list", "IP")
 ip_list.rows = 10
 ip_list.wrap = "off"
@@ -164,6 +177,11 @@ ip_list.validate = function(self, value)
 	for index, ipmask in ipairs(ipmasks) do
 		if ipmask:find("geoip:") and ipmask:find("geoip:") == 1 and not ipmask:find("%s") then
 		elseif ipmask:find("ext:") and ipmask:find("ext:") == 1 and not ipmask:find("%s") then
+		elseif ipmask:find("rule-set:", 1, true) == 1 or ipmask:find("rs:") == 1 then
+			local w = ipmask:sub(ipmask:find(":") + 1, #ipmask)
+			if w:find("local:") == 1 or w:find("remote:") == 1 then
+				flag = 0
+			end
 		elseif ipmask:find("#") and ipmask:find("#") == 1 then
 		else
 			if not (datatypes.ipmask4(ipmask) or datatypes.ipmask6(ipmask)) then
@@ -173,10 +191,18 @@ ip_list.validate = function(self, value)
 	end
 	return value
 end
-ip_list.description = "<br /><ul><li>" .. translate("IP: such as '127.0.0.1'.")
-.. "</li><li>" .. translate("CIDR: such as '127.0.0.0/8'.")
-.. "</li><li>" .. translate("GeoIP: such as 'geoip:cn'. It begins with geoip: (lower case) and followed by two letter of country code.")
-.. "</li><li>" .. translate("Annotation: Begining with #")
-.. "</li></ul>"
+ip_list.description = "<br /><ul>"
+.. "<li>" .. translate("IP: such as '127.0.0.1'.") .. "</li>"
+.. "<li>" .. translate("CIDR: such as '127.0.0.0/8'.") .. "</li>"
+.. "<li>" .. translate("GeoIP: such as 'geoip:cn'. It begins with geoip: (lower case) and followed by two letter of country code.") .. "</li>"
+.. "<li>"
+	.. translate("Sing-Box rule-set: Begining with 'rule-set:remote:' or 'rule-set:local:'")
+	.. "<ul>"
+		.. "<li>" .. translate("Such as:") .. "'rule-set:remote:https://raw.githubusercontent.com/SagerNet/sing-geoip/rule-set/geoip-cn.srs'" .. "</li>"
+		.. "<li>" .. translate("Such as:") .. "'rule-set:local:/usr/share/sing-box/geoip-cn.srs'" .. "</li>"
+	.. "</ul>"
+.. "</li>"
+.. "<li>" .. translate("Annotation: Begining with #") .. "</li>"
+.. "</ul>"
 
 return m

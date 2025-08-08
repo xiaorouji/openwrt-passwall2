@@ -869,6 +869,7 @@ function gen_config(var)
 	local dns = nil
 	local inbounds = {}
 	local outbounds = {}
+	local rule_set_table = {}
 	local COMMON = {}
 
 	local CACHE_TEXT_FILE = CACHE_PATH .. "/cache_" .. flag .. ".txt"
@@ -890,6 +891,45 @@ function gen_config(var)
 	}
 
 	local experimental = nil
+
+	function rule_set_add(w)
+		local result = nil
+		if w and #w > 0 then
+			if w:find("local:") == 1 or w:find("remote:") == 1 then
+				local _type = w:sub(1, w:find(":") - 1)
+				w = w:sub(w:find(":") + 1, #w)
+				local format = nil
+				local filename = w:sub(-w:reverse():find("/") + 1)
+				local suffix = ""
+				local find_doc = filename:reverse():find("%.")
+				if find_doc then
+					suffix = filename:sub(-find_doc + 1)
+				end
+				if suffix == "srs" then
+					format = "binary"
+				elseif suffix == "json" then
+					format = "source"
+				end
+				if format then
+					local rule_set_tag = filename:sub(1, filename:find("%.") - 1)
+					if not rule_set_table[rule_set_tag] then
+						local t = {
+							type = _type,
+							tag = rule_set_tag,
+							format = format,
+							path = format == "source" and w or nil,
+							url = format == "binary" and w or nil,
+							--download_detour = format == "binary" and "",
+							--update_interval = format == "binary" and "",
+						}
+						rule_set_table[rule_set_tag] = t
+						result = t
+					end
+				end
+			end
+		end
+		return result
+	end
 
 	local node = nil
 	if node_id then
@@ -1298,6 +1338,8 @@ function gen_config(var)
 						rule.port_range = #port_range > 0 and port_range or nil
 					end
 
+					local rule_set = {}
+
 					if e.domain_list then
 						local domain_table = {
 							outboundTag = outboundTag,
@@ -1306,6 +1348,7 @@ function gen_config(var)
 							domain_keyword = {},
 							domain_regex = {},
 							geosite = {},
+							rule_set = {},
 						}
 						string.gsub(e.domain_list, '[^' .. "\r\n" .. ']+', function(w)
 							if w:find("#") == 1 then return end
@@ -1317,6 +1360,13 @@ function gen_config(var)
 								table.insert(domain_table.domain, w:sub(1 + #"full:"))
 							elseif w:find("domain:") == 1 then
 								table.insert(domain_table.domain_suffix, w:sub(1 + #"domain:"))
+							elseif w:find("rule-set:", 1, true) == 1 or w:find("rs:") == 1 then
+								w = w:sub(w:find(":") + 1, #w)
+								local t = rule_set_add(w)
+								if t then
+									table.insert(rule_set, t.tag)
+									table.insert(domain_table.rule_set, t.tag)
+								end
 							else
 								table.insert(domain_table.domain_keyword, w)
 							end
@@ -1326,6 +1376,7 @@ function gen_config(var)
 						rule.domain_keyword = #domain_table.domain_keyword > 0 and domain_table.domain_keyword or nil
 						rule.domain_regex = #domain_table.domain_regex > 0 and domain_table.domain_regex or nil
 						rule.geosite = #domain_table.geosite > 0 and domain_table.geosite or nil
+						rule.rule_set = #domain_table.rule_set > 0 and domain_table.rule_set or nil
 
 						if outboundTag then
 							table.insert(dns_domain_rules, api.clone(domain_table))
@@ -1339,6 +1390,12 @@ function gen_config(var)
 							if w:find("#") == 1 then return end
 							if w:find("geoip:") == 1 then
 								table.insert(geoip, w:sub(1 + #"geoip:"))
+							elseif w:find("rule-set:", 1, true) == 1 or w:find("rs:") == 1 then
+								w = w:sub(w:find(":") + 1, #w)
+								local t = rule_set_add(w)
+								if t then
+									table.insert(rule_set, t.tag)
+								end
 							else
 								table.insert(ip_cidr, w)
 							end
@@ -1347,6 +1404,7 @@ function gen_config(var)
 						rule.ip_cidr = #ip_cidr > 0 and ip_cidr or nil
 						rule.geoip = #geoip > 0 and geoip or nil
 					end
+					rule.rule_set = #rule_set > 0 and rule_set or nil
 
 					table.insert(rules, rule)
 				end
@@ -1512,7 +1570,7 @@ function gen_config(var)
 		--按分流顺序DNS
 		if dns_domain_rules and #dns_domain_rules > 0 then
 			for index, value in ipairs(dns_domain_rules) do
-				if value.outboundTag and (value.domain or value.domain_suffix or value.domain_keyword or value.domain_regex or value.geosite) then
+				if value.outboundTag and (value.domain or value.domain_suffix or value.domain_keyword or value.domain_regex or value.geosite or value.rule_set) then
 					local dns_rule = {
 						server = value.outboundTag,
 						domain = (value.domain and #value.domain > 0) and value.domain or nil,
@@ -1520,6 +1578,7 @@ function gen_config(var)
 						domain_keyword = (value.domain_keyword and #value.domain_keyword > 0) and value.domain_keyword or nil,
 						domain_regex = (value.domain_regex and #value.domain_regex > 0) and value.domain_regex or nil,
 						geosite = (value.geosite and #value.geosite > 0) and value.geosite or nil,
+						rule_set = (value.rule_set and #value.rule_set > 0) and value.rule_set or nil,
 						disable_cache = false,
 					}
 					if value.outboundTag ~= "block" and value.outboundTag ~= "direct" then
@@ -1611,6 +1670,13 @@ function gen_config(var)
 					sys.call(string.format("nft flush set %s %s %s 2>/dev/null", family, table_name, w))
 				end)
 			end
+		end
+	end
+
+	if next(rule_set_table) then
+		route.rule_set = {}
+		for k, v in pairs(rule_set_table) do
+			table.insert(route.rule_set, v)
 		end
 	end
 	

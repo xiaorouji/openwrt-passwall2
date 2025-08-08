@@ -112,6 +112,7 @@ alibaba.cdn.steampipe.steamcontent.com
 
 # 国内游戏geosite域名
 geosite:category-games@cn
+rule-set:remote:https://raw.githubusercontent.com/lyc8503/sing-box-rules/rule-set-geosite/geosite-category-games%40cn.srs
 '
 
 	option ip_list '# steam直连IP
@@ -181,13 +182,13 @@ steamcloud-sydney.storage.googleapis.com
 steamcloud-taiwan.storage.googleapis.com
 steamcloud-eu.storage.googleapis.com
 
-geosite:category-games'
+geosite:category-games
+rule-set:remote:https://raw.githubusercontent.com/lyc8503/sing-box-rules/rule-set-geosite/geosite-category-games.srs'
 
 config shunt_rules 'Direct'
 	option network 'tcp,udp'
 	option remarks 'Direct'
-	option ip_list 'geoip:private
-114.114.114.114
+	option ip_list '114.114.114.114
 114.114.115.115
 223.5.5.5
 223.6.6.6
@@ -219,17 +220,20 @@ domain:xn--ngstr-lra8j.com'
 config shunt_rules 'Netflix'
 	option remarks 'Netflix'
 	option network 'tcp,udp'
-	option domain_list 'geosite:netflix'
+	option domain_list 'geosite:netflix
+rule-set:remote:https://raw.githubusercontent.com/lyc8503/sing-box-rules/rule-set-geosite/geosite-netflix.srs'
 	
 config shunt_rules 'OpenAI'
 	option remarks 'OpenAI'
 	option network 'tcp,udp'
-	option domain_list 'geosite:openai'
+	option domain_list 'geosite:openai
+rule-set:remote:https://raw.githubusercontent.com/lyc8503/sing-box-rules/rule-set-geosite/geosite-openai.srs'
 
 config shunt_rules 'Proxy'
 	option network 'tcp,udp'
 	option remarks 'Proxy'
-	option domain_list 'geosite:geolocation-!cn'
+	option domain_list 'geosite:geolocation-!cn
+rule-set:remote:https://raw.githubusercontent.com/lyc8503/sing-box-rules/rule-set-geosite/geosite-geolocation-!cn.srs'
 	option ip_list '149.154.160.0/20
 91.108.4.0/22
 91.108.56.0/24
@@ -258,8 +262,10 @@ config shunt_rules 'Proxy'
 config shunt_rules 'China'
 	option remarks 'China'
 	option network 'tcp,udp'
-	option ip_list 'geoip:cn'
-	option domain_list 'geosite:cn'
+	option ip_list 'geoip:cn
+rule-set:remote:https://raw.githubusercontent.com/lyc8503/sing-box-rules/rule-set-geoip/geoip-cn.srs'
+	option domain_list 'geosite:cn
+rule-set:remote:https://raw.githubusercontent.com/lyc8503/sing-box-rules/rule-set-geosite/geosite-cn.srs'
 
 config shunt_rules 'QUIC'
 	option remarks 'QUIC'

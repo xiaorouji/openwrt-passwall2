@@ -1093,6 +1093,12 @@ msgstr "子域名 (推荐): 由'domain:'开始，余下部分是一个域名。�
 msgid "Full domain: Begining with 'full:' and the rest is a domain. When the targeting domain is exactly the value, the rule takes effect. Example: rule 'domain:v2ray.com' matches 'v2ray.com', but not 'www.v2ray.com'."
 msgstr "完整匹配: 由'full:'开始，余下部分是一个域名。当此域名完整匹配目标域名时，该规则生效。例如'full:v2ray.com'匹配'v2ray.com'但不匹配'www.v2ray.com'。"
 
+msgid "Sing-Box rule-set: Begining with 'rule-set:remote:' or 'rule-set:local:'"
+msgstr "Sing-Box 规则集： 由 'rule-set:remote:' 或 'rule-set:local:' 开始"
+
+msgid "Such as:"
+msgstr "例如："
+
 msgid "Pre-defined domain list: Begining with 'geosite:' and the rest is a name, such as geosite:google or geosite:cn."
 msgstr "预定义域名列表：由'geosite:'开头，余下部分是一个名称，如geosite:google或者geosite:cn。"
 
