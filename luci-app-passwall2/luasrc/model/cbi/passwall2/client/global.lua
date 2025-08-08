@@ -419,6 +419,18 @@ o.rmempty = false
 
 o = s2:option(ListValue, "node", translate("Socks Node"))
 
+o = s2:option(DummyValue, "now_node", translate("Current Node"))
+o.rawhtml = true
+o.cfgvalue = function(_, n)
+	local current_node = api.get_cache_var("socks_" .. n)
+	if current_node then
+		local node = m:get(current_node)
+		if node then
+			return (api.get_node_remarks(node) or ""):gsub("(：)%[", "%1<br>[")
+		end
+	end
+end
+
 local n = 1
 m.uci:foreach(appname, "socks", function(s)
 	if s[".name"] == section then
