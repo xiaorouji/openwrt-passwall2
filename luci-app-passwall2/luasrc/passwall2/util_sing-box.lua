@@ -1803,6 +1803,24 @@ function gen_config(var)
 				})
 			end
 		end
+		if version_ge_1_12_0 then
+			-- removed geo in version 1.12
+			config.route.geoip = nil
+			config.route.geosite = nil
+			if config.route and config.route.rules then
+				for i = #config.route.rules, 1, -1 do
+					local value = config.route.rules[i]
+					value.geoip = nil
+					value.geosite = nil
+				end
+			end
+			if config.dns and config.dns.rules then
+				for i = #config.dns.rules, 1, -1 do
+					local value = config.dns.rules[i]
+					value.geosite = nil
+				end
+			end
+		end
 		return jsonc.stringify(config, 1)
 	end
 end
