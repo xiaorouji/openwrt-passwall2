@@ -284,10 +284,6 @@ local hysteria2_type = map:get("@global_subscribe[0]", "hysteria2_type") or "sin
 						params += opt.query("spx", dom_prefix + "reality_spiderX");
 						params += opt.query("pqv", dom_prefix + "reality_mldsa65Verify");
 					}
-					if (opt.get(dom_prefix + "flow") && opt.get(dom_prefix + "flow").value) {
-						let v_flow = opt.get(dom_prefix + "flow").value;
-						params += "&flow=" + v_flow;
-					}
 					params += "&security=" + v_security;
 					params += opt.query("alpn", dom_prefix + "alpn");
 					params += opt.query("sni", dom_prefix + "tls_serverName");
@@ -960,7 +956,6 @@ local hysteria2_type = map:get("@global_subscribe[0]", "hysteria2_type") or "sin
 					if (queryParam.security == "tls") {
 						opt.set(dom_prefix + 'tls', true);
 						opt.set(dom_prefix + 'reality', false);
-						opt.set(dom_prefix + 'flow', queryParam.flow || '');
 						opt.set(dom_prefix + 'alpn', queryParam.alpn || 'default');
 						opt.set(dom_prefix + 'tls_serverName', queryParam.sni || '');
 						opt.set(dom_prefix + 'tls_allowInsecure', true);
@@ -978,7 +973,6 @@ local hysteria2_type = map:get("@global_subscribe[0]", "hysteria2_type") or "sin
 					if (queryParam.security == "reality") {
 						opt.set(dom_prefix + 'tls', true);
 						opt.set(dom_prefix + 'reality', true);
-						opt.set(dom_prefix + 'flow', queryParam.flow || '');
 						opt.set(dom_prefix + 'alpn', queryParam.alpn || 'default');
 						opt.set(dom_prefix + 'tls_serverName', queryParam.sni || '');
 						if (queryParam.fp && queryParam.fp.trim() != "") {
@@ -1205,6 +1199,7 @@ local hysteria2_type = map:get("@global_subscribe[0]", "hysteria2_type") or "sin
 				}
 				tls_serverName = tls_serverName || "";
 				opt.set(dom_prefix + 'tls_serverName', tls_serverName);
+				opt.set(dom_prefix + 'flow', (queryParam.flow || '').replace('-udp443', ''));
 			}
 			opt.set(dom_prefix + 'tls_allowInsecure', true);
 			if (queryParam.allowinsecure === '0' || queryParam.insecure === '0') {
@@ -1342,7 +1337,7 @@ local hysteria2_type = map:get("@global_subscribe[0]", "hysteria2_type") or "sin
 				if (queryParam.security == "tls") {
 					opt.set(dom_prefix + 'tls', true);
 					opt.set(dom_prefix + 'reality', false);
-					opt.set(dom_prefix + 'flow', queryParam.flow || '');
+					opt.set(dom_prefix + 'flow', (queryParam.flow || '').replace('-udp443', ''));
 					opt.set(dom_prefix + 'alpn', queryParam.alpn || 'default');
 					opt.set(dom_prefix + 'tls_serverName', queryParam.sni || '');
 					opt.set(dom_prefix + 'tls_allowInsecure', true);
@@ -1360,7 +1355,7 @@ local hysteria2_type = map:get("@global_subscribe[0]", "hysteria2_type") or "sin
 				if (queryParam.security == "reality") {
 					opt.set(dom_prefix + 'tls', true);
 					opt.set(dom_prefix + 'reality', true);
-					opt.set(dom_prefix + 'flow', queryParam.flow || '');
+					opt.set(dom_prefix + 'flow', (queryParam.flow || '').replace('-udp443', ''));
 					opt.set(dom_prefix + 'alpn', queryParam.alpn || 'default');
 					opt.set(dom_prefix + 'tls_serverName', queryParam.sni || '');
 					if (queryParam.fp && queryParam.fp.trim() != "") {
@@ -1579,7 +1574,6 @@ local hysteria2_type = map:get("@global_subscribe[0]", "hysteria2_type") or "sin
 				if (queryParam.security == "tls") {
 					opt.set(dom_prefix + 'tls', true);
 					opt.set(dom_prefix + 'reality', false);
-					opt.set(dom_prefix + 'flow', queryParam.flow || '');
 					opt.set(dom_prefix + 'alpn', queryParam.alpn || 'default');
 					opt.set(dom_prefix + 'tls_serverName', queryParam.sni || '');
 					opt.set(dom_prefix + 'tls_allowInsecure', true);
@@ -1594,7 +1588,6 @@ local hysteria2_type = map:get("@global_subscribe[0]", "hysteria2_type") or "sin
 				if (queryParam.security == "reality") {
 					opt.set(dom_prefix + 'tls', true);
 					opt.set(dom_prefix + 'reality', true);
-					opt.set(dom_prefix + 'flow', queryParam.flow || '');
 					opt.set(dom_prefix + 'alpn', queryParam.alpn || 'default');
 					opt.set(dom_prefix + 'tls_serverName', queryParam.sni || '');
 					if (queryParam.fp && queryParam.fp.trim() != "") {
