@@ -336,6 +336,15 @@ eval_cache_var() {
 	[ -s "$TMP_PATH/var" ] && eval $(cat "$TMP_PATH/var")
 }
 
+has_1_65535() {
+	local val="$1"
+	val=${val//:/-}
+	case ",$val," in
+		*,1-65535,*) return 0 ;;
+		*) return 1 ;;
+	esac
+}
+
 run_xray() {
 	local flag node redir_port tcp_proxy_way socks_address socks_port socks_username socks_password http_address http_port http_username http_password
 	local dns_listen_port direct_dns_query_strategy remote_dns_protocol remote_dns_udp_server remote_dns_tcp_server remote_dns_doh remote_dns_client_ip remote_dns_detour remote_fakedns remote_dns_query_strategy dns_cache write_ipset_direct
@@ -1182,7 +1191,9 @@ acl_app() {
 			udp_no_redir_ports=${udp_no_redir_ports:-default}
 			[ "$tcp_no_redir_ports" = "default" ] && tcp_no_redir_ports=$TCP_NO_REDIR_PORTS
 			[ "$udp_no_redir_ports" = "default" ] && udp_no_redir_ports=$UDP_NO_REDIR_PORTS
-			[ "$tcp_no_redir_ports" == "1:65535" ] && [ "$udp_no_redir_ports" == "1:65535" ] && unset node
+			if has_1_65535 "$tcp_no_redir_ports" && has_1_65535 "$udp_no_redir_ports"; then
+				unset node
+			fi
 
 			[ -n "$node" ] && {
 				tcp_proxy_mode="global"
