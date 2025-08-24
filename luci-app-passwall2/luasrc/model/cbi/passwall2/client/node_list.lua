@@ -167,6 +167,8 @@ o.cfgvalue = function(t, n)
 			protocol = "HY2"
 		elseif protocol == "anytls" then
 			protocol = "AnyTLS"
+		elseif protocol == "ssh" then
+			protocol = "SSH"
 		else
 			protocol = protocol:gsub("^%l",string.upper)
 		end
