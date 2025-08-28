@@ -40,7 +40,7 @@ end
 -- curl
 local function curl(url, file)
 	local args = {
-		"-skL", "-w %{http_code}", "--retry 3", "--connect-timeout 3"
+		"-skL", "-w %{http_code}", "--retry 3", "--connect-timeout 3", "--max-time 300", "--speed-limit 51200 --speed-time 15"
 	}
 	if file then
 		args[#args + 1] = "-o " .. file
