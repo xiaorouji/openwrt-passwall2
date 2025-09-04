@@ -937,10 +937,10 @@ function gen_config(var)
 							type = _type,
 							tag = rule_set_tag,
 							format = format,
-							path = format == "source" and w or nil,
-							url = format == "binary" and w or nil,
-							--download_detour = format == "binary" and "",
-							--update_interval = format == "binary" and "",
+							path = _type == "local" and w or nil,
+							url = _type == "remote" and w or nil,
+							--download_detour = _type == "remote" and "",
+							--update_interval = _type == "remote" and "",
 						}
 						rule_set_table[rule_set_tag] = t
 						result = t
