@@ -1005,7 +1005,7 @@ function to_download(app_name, url, size)
 	end
 
 	local _curl_args = clone(curl_args)
-	table.insert(_curl_args, "-m 60")
+	table.insert(_curl_args, "--speed-limit 51200 --speed-time 15 --max-time 300")
 
 	local return_code, result = curl_logic(url, tmp_file, _curl_args)
 	result = return_code == 0
