@@ -181,13 +181,13 @@ end
 
 o = s:option(ListValue, _n("alpn"), translate("alpn"))
 o.default = "h2,http/1.1"
-o:value("h3,h2,http/1.1")
-o:value("h3,h2")
-o:value("h2,http/1.1")
 o:value("h3")
 o:value("h2")
+o:value("h3,h2")
 o:value("http/1.1")
-o:depends({ [_n("tls")] = true })
+o:value("h2,http/1.1")
+o:value("h3,h2,http/1.1")
+o:depends({ [_n("tls")] = true, [_n("reality")] = false })
 
 o = s:option(Flag, _n("use_mldsa65Seed"), translate("ML-DSA-65"))
 o.default = "0"
