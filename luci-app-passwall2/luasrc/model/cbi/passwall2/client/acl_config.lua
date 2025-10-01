@@ -219,7 +219,7 @@ local TCP_REDIR_PORTS = m:get("@global_forwarding[0]", "tcp_redir_ports")
 o = s:option(Value, "tcp_redir_ports", translate("TCP Redir Ports"))
 o:value("", translate("Use global config") .. "(" .. TCP_REDIR_PORTS .. ")")
 o:value("1:65535", translate("All"))
-o:value("22,25,53,143,465,587,853,993,995,80,443", translate("Common Use"))
+o:value("22,25,53,80,143,443,465,587,853,873,993,995,5222,8080,8443,9418", translate("Common Use"))
 o:value("80,443", "80,443")
 o.validate = port_validate
 o:depends({ _hide_node_option = "1",  ['!reverse'] = true })
