@@ -6,7 +6,7 @@ m = Map(appname, "Sing-Box/Xray " .. translate("Shunt Rule"))
 m.redirect = api.url()
 api.set_apply_on_parse(m)
 
--- Add inline CSS to map description (AdGuardHome-style approach)
+-- Add inline CSS to map description
 m.description = (m.description or "") .. [[
 <style>
 /* Scope to passwall2 CBI fields so it won't leak elsewhere */
