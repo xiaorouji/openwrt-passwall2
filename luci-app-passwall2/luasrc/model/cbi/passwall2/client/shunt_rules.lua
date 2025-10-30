@@ -3,8 +3,12 @@ local appname = api.appname
 local datatypes = api.datatypes
 
 m = Map(appname, "Sing-Box/Xray " .. translate("Shunt Rule"))
-m.redirect = api.url()
+m.redirect = api.url("rule")
 api.set_apply_on_parse(m)
+
+if not arg[1] or not m:get(arg[1]) then
+	luci.http.redirect(m.redirect)
+end
 
 -- Add inline CSS to map description
 m.description = (m.description or "") .. [[
