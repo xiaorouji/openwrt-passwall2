@@ -1839,3 +1839,6 @@ msgstr "配置的类型同样适用于手动导入节点时所指定的核心程
 
 msgid "Group Name"
 msgstr "分组名"
+
+msgid "Using..."
+msgstr "使用中。"

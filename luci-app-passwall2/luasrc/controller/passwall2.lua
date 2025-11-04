@@ -79,6 +79,7 @@ function index()
 	entry({"admin", "services", appname, "copy_node"}, call("copy_node")).leaf = true
 	entry({"admin", "services", appname, "clear_all_nodes"}, call("clear_all_nodes")).leaf = true
 	entry({"admin", "services", appname, "delete_select_nodes"}, call("delete_select_nodes")).leaf = true
+	entry({"admin", "services", appname, "get_node"}, call("get_node")).leaf = true
 	entry({"admin", "services", appname, "update_rules"}, call("update_rules")).leaf = true
 	entry({"admin", "services", appname, "subscribe_del_node"}, call("subscribe_del_node")).leaf = true
 	entry({"admin", "services", appname, "subscribe_del_all"}, call("subscribe_del_all")).leaf = true
@@ -488,6 +489,19 @@ function delete_select_nodes()
 	else
 		api.uci_save(uci, appname, true, true)
 	end
+end
+
+function get_node()
+	local id = http.formvalue("id")
+	local result = {}
+	if id then
+		result = uci:get_all(appname, id)
+	else
+		uci:foreach(appname, "nodes", function(t)
+			result[#result + 1] = t
+		end)
+	end
+	http_write_json(result)
 end
 
 function update_rules()
