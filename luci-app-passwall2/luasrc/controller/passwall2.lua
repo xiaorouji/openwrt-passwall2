@@ -74,6 +74,7 @@ function index()
 	entry({"admin", "services", appname, "connect_status"}, call("connect_status")).leaf = true
 	entry({"admin", "services", appname, "ping_node"}, call("ping_node")).leaf = true
 	entry({"admin", "services", appname, "urltest_node"}, call("urltest_node")).leaf = true
+	entry({"admin", "services", appname, "add_node"}, call("add_node")).leaf = true
 	entry({"admin", "services", appname, "set_node"}, call("set_node")).leaf = true
 	entry({"admin", "services", appname, "copy_node"}, call("copy_node")).leaf = true
 	entry({"admin", "services", appname, "clear_all_nodes"}, call("clear_all_nodes")).leaf = true
@@ -326,6 +327,21 @@ function urltest_node()
 	http_write_json(e)
 end
 
+function add_node()
+	local redirect = http.formvalue("redirect")
+
+	local uuid = api.gen_short_uuid()
+	uci:section(appname, "nodes", uuid)
+
+	if redirect == "1" then
+		api.uci_save(uci, appname)
+		http.redirect(api.url("node_config", uuid))
+	else
+		api.uci_save(uci, appname, true, true)
+		http_write_json({result = uuid})
+	end
+end
+
 function set_node()
 	local type = http.formvalue("type")
 	local config = http.formvalue("config")
@@ -386,6 +402,7 @@ end
 
 function delete_select_nodes()
 	local ids = http.formvalue("ids")
+	local redirect = http.formvalue("redirect")
 	string.gsub(ids, '[^' .. "," .. ']+', function(w)
 		if (uci:get(appname, "@global[0]", "node") or "") == w then
 			uci:delete(appname, '@global[0]', "node")
@@ -465,7 +482,12 @@ function delete_select_nodes()
 		end
 		uci:delete(appname, w)
 	end)
-	api.uci_save(uci, appname, true, true)
+	if redirect == "1" then
+		api.uci_save(uci, appname)
+		http.redirect(api.url("node_list"))
+	else
+		api.uci_save(uci, appname, true, true)
+	end
 end
 
 function update_rules()

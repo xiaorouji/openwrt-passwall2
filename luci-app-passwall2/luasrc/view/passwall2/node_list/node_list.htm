@@ -122,6 +122,10 @@ table td, .table .td {
 		window.location.href = '<%=api.url("copy_node")%>' + "?section=" + cbi_id;
 	}
 	
+	function del_node(cbi_id) {
+		window.location.href = '<%=api.url("delete_select_nodes")%>' + "?redirect=1&ids=" + cbi_id;
+	}
+	
 	var section = "";
 	function open_set_node_div(cbi_id) {
 		section = cbi_id;
@@ -394,16 +398,23 @@ table td, .table .td {
 			var onclick_str = edit_btn[i].getAttribute("onclick");
 			var id = onclick_str.substring(onclick_str.lastIndexOf('/') + 1, onclick_str.length - 1);
 			var td = edit_btn[i].parentNode;
-			var new_div = "";
-			//添加"勾选"框
-			new_div += '<input class="cbi-input-checkbox nodes_select" type="checkbox" cbid="' + id + '" />&nbsp;&nbsp;';
+			var befoce_div = "";
+			var after_div = "";
 			//添加"置顶"按钮
-			new_div += '<input class="btn cbi-button" type="button" value="<%:To Top%>" onclick="_cbi_row_top(\'' + id + '\')"/>&nbsp;&nbsp;';
+			befoce_div += '<input class="btn cbi-button" type="button" value="<%:To Top%>" onclick="_cbi_row_top(\'' + id + '\')"/>&nbsp;&nbsp;';
+			//添加"勾选"框
+			befoce_div += '<input class="cbi-input-checkbox nodes_select" type="checkbox" cbid="' + id + '" />&nbsp;&nbsp;';
 			//添加"应用"按钮
-			new_div += '<input class="btn cbi-button cbi-button-apply" type="button" value="<%:Use%>" id="apply_' + id + '" onclick="open_set_node_div(\'' + id + '\')"/>&nbsp;&nbsp;';
+			befoce_div += '<input class="btn cbi-button cbi-button-apply" type="button" value="<%:Use%>" id="apply_' + id + '" onclick="open_set_node_div(\'' + id + '\')"/>&nbsp;&nbsp;';
 			//添加"复制"按钮
-			new_div += '<input class="btn cbi-button cbi-button-add" type="button" value="<%:Copy%>" onclick="copy_node(\'' + id + '\')"/>&nbsp;&nbsp;';
-			td.innerHTML = new_div + td.innerHTML;
+			befoce_div += '<input class="btn cbi-button cbi-button-add" type="button" value="<%:Copy%>" onclick="copy_node(\'' + id + '\')"/>&nbsp;&nbsp;';
+
+			td.innerHTML = befoce_div + td.innerHTML;
+
+			//添加"删除"按钮
+			after_div += '<input class="btn cbi-button cbi-button-remove" type="button" value="<%:Delete%>" onclick="del_node(\'' + id + '\')"/>&nbsp;&nbsp;';
+
+			td.innerHTML = td.innerHTML + "&nbsp;&nbsp;" + after_div;
 			
 			var obj = {};
 			obj.id = id;
