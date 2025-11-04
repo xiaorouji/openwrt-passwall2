@@ -350,7 +350,7 @@ function copy_node()
 			end)
 		end
 	end
-	uci:delete(appname, uuid, "add_from")
+	uci:delete(appname, uuid, "group")
 	uci:set(appname, uuid, "add_mode", 1)
 	api.uci_save(uci, appname)
 	http.redirect(api.url("node_config", uuid))
@@ -454,10 +454,10 @@ function delete_select_nodes()
 			end
 		end)
 		if (uci:get(appname, w, "add_mode") or "0") == "2" then
-			local add_from = uci:get(appname, w, "add_from") or ""
-			if add_from ~= "" then
+			local group = uci:get(appname, w, "group") or ""
+			if group ~= "" then
 				uci:foreach(appname, "subscribe_list", function(t)
-					if t["remark"] == add_from then
+					if t["remark"] == group then
 						uci:delete(appname, t[".name"], "md5")
 					end
 				end)

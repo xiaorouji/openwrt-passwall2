@@ -28,8 +28,10 @@ local show_node_info = m:get("@global_other[0]", "show_node_info") or "0"
 s = m:section(TypedSection, "nodes")
 s.anonymous = true
 s.addremove = true
-s.template = "cbi/tblsection"
 s.extedit = api.url("node_config", "%s")
+s.sortable = true
+s.template = "cbi/tblsection"
+
 function s.create(e, t)
 	local uuid = api.gen_short_uuid()
 	t = uuid
@@ -95,10 +97,10 @@ function s.remove(e, t)
 		end
 	end)
 	if (m:get(t, "add_mode") or "0") == "2" then
-		local add_from = m:get(t, "add_from") or ""
-		if add_from ~= "" then
+		local group = m:get(t, "group") or ""
+		if group ~= "" then
 			m.uci:foreach(appname, "subscribe_list", function(s)
-				if s["remark"] == add_from then
+				if s["remark"] == group then
 					m:del(s[".name"], "md5")
 				end
 			end)
@@ -119,21 +121,9 @@ function s.remove(e, t)
 	end
 end
 
-s.sortable = true
--- 简洁模式
-o = s:option(DummyValue, "add_from", "")
-o.cfgvalue = function(t, n)
-	local v = Value.cfgvalue(t, n)
-	if v and v ~= '' then
-		local group = m:get(n, "group") or ""
-		if group ~= "" then
-			v = v .. " " .. group
-		end
-		return v
-	else
-		return ''
-	end
-end
+o = s:option(DummyValue, "group", translate("Group Name"))
+o.width = "10%"
+
 o = s:option(DummyValue, "remarks", translate("Remarks"))
 o.rawhtml = true
 o.cfgvalue = function(t, n)
@@ -194,7 +184,6 @@ o.cfgvalue = function(t, n)
 	return str
 end
 
----- Ping
 o = s:option(DummyValue, "ping", "Ping")
 o.width = "8%"
 o.rawhtml = true
@@ -208,7 +197,6 @@ o.cfgvalue = function(t, n)
 	return result
 end
 
----- TCP Ping
 o = s:option(DummyValue, "tcping", "TCPing")
 o.width = "8%"
 o.rawhtml = true

@@ -35,12 +35,12 @@ EOF
 
 chmod +x /usr/share/passwall2/*.sh
 
-[ -e "/etc/config/passwall2_show" ] && rm -rf /etc/config/passwall2_show
-
 [ "$(uci -q get passwall2.@global_xray[0].sniffing)" == "1" ] && [ "$(uci -q get passwall2.@global_xray[0].route_only)" != "1" ] && uci -q set passwall2.@global_xray[0].sniffing_override_dest=1
 uci -q delete passwall2.@global_xray[0].sniffing
 uci -q delete passwall2.@global_xray[0].route_only
 uci -q commit passwall2
+
+sed -i "s#add_from#group#g" /etc/config/passwall2 2>/dev/null
 
 rm -f /tmp/luci-indexcache
 rm -rf /tmp/luci-modulecache/

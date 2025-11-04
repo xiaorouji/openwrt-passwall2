@@ -416,11 +416,11 @@ table td, .table .td {
 			}
 			
 			node_count++;
-			var add_from = document.getElementById("cbid.passwall2." + id + ".add_from").value;
-			if (node_list[add_from])
-				node_list[add_from].push(obj);
+			var group = document.getElementById("cbid.passwall2." + id + ".group").value;
+			if (node_list[group])
+				node_list[group].push(obj);
 			else
-				node_list[add_from] = [];
+				node_list[group] = [];
 			
 		}
 		catch(err) {
@@ -432,12 +432,12 @@ table td, .table .td {
 
 	if (true) {
 		var str = "";
-		for (var add_from in node_list) {
-			var num = node_list[add_from].length + 1;
-			if (add_from == "") {
-				add_from = "<%:Self add%>";
+		for (var group in node_list) {
+			var num = node_list[group].length + 1;
+			if (group == "") {
+				group = "<%:Self add%>";
 			}
-			str += add_from + " " + "<%:Node num%>: <a style='color: red'>" + num + "</a>&nbsp&nbsp&nbsp";
+			str += group + " " + "<%:Node num%>: <a style='color: red'>" + num + "</a>&nbsp&nbsp&nbsp";
 		}
 		document.getElementById("div_node_count").innerHTML = "<div style='margin-top:5px'>" + str + "</div>";
 	}
