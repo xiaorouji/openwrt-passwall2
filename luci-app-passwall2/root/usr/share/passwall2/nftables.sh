@@ -382,7 +382,7 @@ load_acl() {
 					gen_nftset $nftset_white6 ipv6_addr 3d 3d
 
 					#分流规则的IP列表(使用分流节点时导入)
-					gen_shunt_list ${node} shunt_list4 shunt_list6 ${write_ipset_direct} ${nftset_white} ${nftset_white6}
+					gen_shunt_list "${node}" shunt_list4 shunt_list6 ${write_ipset_direct} ${nftset_white} ${nftset_white6}
 				fi
 			}
 
@@ -701,7 +701,7 @@ filter_direct_node_list() {
 }
 
 add_firewall_rule() {
-	echolog "开始加载防火墙规则..."
+	echolog "开始加载 nftables 防火墙规则..."
 	gen_nft_tables
 	gen_nftset $NFTSET_LOCAL ipv4_addr 0 "-1"
 	gen_nftset $NFTSET_LAN ipv4_addr 0 "-1" $(gen_lanlist)
@@ -749,7 +749,7 @@ add_firewall_rule() {
 	gen_nftset $nftset_global_white6 ipv6_addr 0 0
 
 	#分流规则的IP列表(使用分流节点时导入)
-	gen_shunt_list ${NODE} SHUNT_LIST4 SHUNT_LIST6 ${WRITE_IPSET_DIRECT} ${nftset_global_white} ${nftset_global_white6}
+	gen_shunt_list "${NODE}" SHUNT_LIST4 SHUNT_LIST6 ${WRITE_IPSET_DIRECT} ${nftset_global_white} ${nftset_global_white6}
 
 	#  过滤所有节点IP
 	filter_vpsip > /dev/null 2>&1 &

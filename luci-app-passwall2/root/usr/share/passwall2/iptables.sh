@@ -358,7 +358,7 @@ load_acl() {
 					ipset -! create $ipset_white6 nethash family inet6 maxelem 1048576
 
 					#分流规则的IP列表(使用分流节点时导入)
-					gen_shunt_list ${node} shunt_list4 shunt_list6 ${write_ipset_direct} ${ipset_white} ${ipset_white6}
+					gen_shunt_list "${node}" shunt_list4 shunt_list6 ${write_ipset_direct} ${ipset_white} ${ipset_white6}
 				fi
 			}
 			
@@ -671,7 +671,7 @@ filter_direct_node_list() {
 }
 
 add_firewall_rule() {
-	echolog "开始加载防火墙规则..."
+	echolog "开始加载 iptables 防火墙规则..."
 	ipset -! create $IPSET_LOCAL nethash maxelem 1048576
 	ipset -! create $IPSET_LAN nethash maxelem 1048576
 	ipset -! create $IPSET_VPS nethash maxelem 1048576
@@ -735,7 +735,7 @@ add_firewall_rule() {
 	ipset -! create $ipset_global_white6 nethash family inet6 maxelem 1048576 timeout 259200
 
 	#分流规则的IP列表(使用分流节点时导入)
-	gen_shunt_list ${NODE} SHUNT_LIST4 SHUNT_LIST6 ${WRITE_IPSET_DIRECT} ${ipset_global_white} ${ipset_global_white6}
+	gen_shunt_list "${NODE}" SHUNT_LIST4 SHUNT_LIST6 ${WRITE_IPSET_DIRECT} ${ipset_global_white} ${ipset_global_white6}
 
 	#  过滤所有节点IP
 	filter_vpsip > /dev/null 2>&1 &
