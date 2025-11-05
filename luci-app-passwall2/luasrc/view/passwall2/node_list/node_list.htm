@@ -347,6 +347,7 @@ table td, .table .td {
 	/* Auto Ping */
 	function pingAllNodes() {
 		if (auto_detection_time == "icmp" || auto_detection_time == "tcping") {
+			const now = Date.now();
 			var nodes = [];
 			const ping_value = document.getElementsByClassName(auto_detection_time == "tcping" ? 'tcping_value' : 'ping_value');
 			for (var i = 0; i < ping_value.length; i++) {
@@ -364,11 +365,23 @@ table td, .table .td {
 					}
 					if (flag)
 						continue;
-					nodes.push({
-						indexs: i + "",
-						address: full.address,
-						port: full.port
-					});
+
+					const cacheData = JSON.parse(localStorage.getItem(auto_detection_time + ":" + full.address + ":" + full.port));
+					if (cacheData && cacheData.savetime && (now - cacheData.timestamp) < cacheData.savetime) {
+						if (cacheData.value < 100)
+							ping_value[i].innerHTML = "<font style='color:green'>" + cacheData.value + " ms" + "</font>";
+						else if (cacheData.value < 200)
+							ping_value[i].innerHTML = "<font style='color:#fb9a05'>" + cacheData.value + " ms" + "</font>";
+						else if (cacheData.value >= 200)
+							ping_value[i].innerHTML = "<font style='color:red'>" + cacheData.value + " ms" + "</font>";
+					} else {
+						localStorage.removeItem(auto_detection_time + ":" + full.address + ":" + full.port);
+						nodes.push({
+							indexs: i + "",
+							address: full.address,
+							port: full.port
+						});
+					}
 				}
 			}
 
@@ -377,39 +390,47 @@ table td, .table .td {
 					const dom = nodes[index];
 					if (!dom) res()
 					ajax.post('<%=api.url("ping_node")%>', {
-							index: dom.indexs,
-							address: dom.address,
-							port: dom.port,
-							type: auto_detection_time
-						},
-						function(x, result) {
-							if (x && x.status == 200) {
-								var strs = dom.indexs.split(",");
-								for (var i = 0; i < strs.length; i++) {
-									if (result.ping == null || result.ping.trim() == "") {
-										ping_value[strs[i]].innerHTML = "<font style='color:red'><%:Timeout%></font>";
-									} else {
-										var ping = parseInt(result.ping);
-										if (ping < 100)
-											ping_value[strs[i]].innerHTML = "<font style='color:green'>" + result.ping + " ms" + "</font>";
-										else if (ping < 200)
-											ping_value[strs[i]].innerHTML = "<font style='color:#fb9a05'>" + result.ping + " ms" + "</font>";
-										else if (ping >= 200)
-											ping_value[strs[i]].innerHTML = "<font style='color:red'>" + result.ping + " ms" + "</font>";
-									}
-								}
-							}
-							res();
-						},
-						5000,
-						function(x) {
+						index: dom.indexs,
+						address: dom.address,
+						port: dom.port,
+						type: auto_detection_time
+					},
+					function(x, result) {
+						if (x && x.status == 200) {
 							var strs = dom.indexs.split(",");
 							for (var i = 0; i < strs.length; i++) {
-								ping_value[strs[i]].innerHTML = "<font style='color:red'><%:Timeout%></font>";
+								if (result.ping == null || result.ping.trim() == "") {
+									ping_value[strs[i]].innerHTML = "<font style='color:red'><%:Timeout%></font>";
+								} else {
+									var ping = parseInt(result.ping);
+									//save to cache
+									const cache_data = {
+										dom_id: strs[i],
+										timestamp: Date.now(),
+										savetime: 60 * 1000,
+										value: ping
+									};
+									localStorage.setItem(auto_detection_time + ":" + dom.address + ":" + dom.port, JSON.stringify(cache_data));
+									if (ping < 100)
+										ping_value[strs[i]].innerHTML = "<font style='color:green'>" + result.ping + " ms" + "</font>";
+									else if (ping < 200)
+										ping_value[strs[i]].innerHTML = "<font style='color:#fb9a05'>" + result.ping + " ms" + "</font>";
+									else if (ping >= 200)
+										ping_value[strs[i]].innerHTML = "<font style='color:red'>" + result.ping + " ms" + "</font>";
+								}
 							}
-							res();
 						}
-					);
+						res();
+					},
+					5000,
+					function(x) {
+						var strs = dom.indexs.split(",");
+						for (var i = 0; i < strs.length; i++) {
+							ping_value[strs[i]].innerHTML = "<font style='color:red'><%:Timeout%></font>";
+						}
+						res();
+					}
+				);
 				})
 			}
 
@@ -615,15 +636,10 @@ table td, .table .td {
 			}
 			
 			get_now_use_node();
+			
+			pingAllNodes();
 		}
 	);
-
-	window.onload = function () {
-		setTimeout(function () {
-			pingAllNodes();
-		}, 1000);
-	};
-
 	//]]>
 </script>
 
