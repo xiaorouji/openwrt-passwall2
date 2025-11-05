@@ -99,6 +99,7 @@ table td, .table .td {
 <script type="text/javascript">
 	//<![CDATA[
 	let auto_detection_time = "<%=api.uci_get_type("global_other", "auto_detection_time", "0")%>"
+	let show_node_info = "<%=api.uci_get_type("global_other", "show_node_info", "0")%>"
 	var nodes_list = [];
 	
 	var ajax = {
@@ -469,7 +470,10 @@ table td, .table .td {
 
 <script type="text/template" id="node-tr-template">
 	<tr class="tr cbi-section-table-row" id="cbi-passwall2-{{id}}">
-		<td class="td cbi-value-field">{{remarks}}<input class="hidden" id="cbid.passwall2.{{id}}.remarks" value="{{remarks}}"/></td>
+		<input class="hidden" id="cbid.passwall2.{{id}}.remarks" value="{{remarks_val}}"/>
+		<input class="hidden" id="cbid.passwall2.{{id}}.address" value="{{address_val}}"/>
+		<input class="hidden" id="cbid.passwall2.{{id}}.port" value="{{port_val}}"/>
+		<td class="td cbi-value-field">{{remarks}}</td>
 		<td class="td cbi-value-field">{{ping}}</td>
 		<td class="td cbi-value-field">{{tcping}}</td>
 		<td class="td cbi-value-field">{{url_test}}</td>
@@ -492,7 +496,6 @@ table td, .table .td {
 
 <script type="text/javascript">
 	function get_remarks_name(o) {
-		let show_node_info = "<%=api.uci_get_type("global_other", "show_node_info", "0")%>"
 		let str = "";
 		let remarks = o["remarks"] || "";
 		let type = o["type"] || "";
@@ -541,14 +544,6 @@ table td, .table .td {
 			port_s = o["hysteria_hop"] || o["hysteria2_hop"];
 		}
 		str += type + "：" + remarks;
-		if (address != "" && port_s != "") {
-			port_s = port_s.split(":").join("-");
-			if (show_node_info == "1") {
-				//TODO
-			}
-		}
-		str += "<input type='hidden' id='cbid.passwall2." + o[".name"] + ".address' value='" + address + "'/>";
-		str += "<input type='hidden' id='cbid.passwall2." + o[".name"] + ".port' value='" + port + "'/>";
 		return str;
 	}
 
@@ -590,12 +585,12 @@ table td, .table .td {
 						var newDom = node_template.cloneNode(true);
 						newDom.classList.add("cbi-rowstyle-" + (i % 2 + 1));
 						var innerHTML = newDom.innerHTML;
-						if (auto_detection_time != "icmp") {
+						if (auto_detection_time != "icmp" && o["address"] && o["port"]) {
 							innerHTML = innerHTML.split("{{ping}}").join('<span class="ping"><a href="javascript:void(0)" onclick="javascript:ping_node(\'{{id}}\', this, \'icmp\')"><%:Test%></a></span>');
 						} else {
 							innerHTML = innerHTML.split("{{ping}}").join('<span class="ping_value" cbiid="{{id}}">---</span>');
 						}
-						if (auto_detection_time != "tcping") {
+						if (auto_detection_time != "tcping" && o["address"] && o["port"]) {
 							innerHTML = innerHTML.split("{{tcping}}").join('<span class="ping"><a href="javascript:void(0)" onclick="javascript:ping_node(\'{{id}}\', this, \'tcping\')"><%:Test%></a></span>');
 						} else {
 							innerHTML = innerHTML.split("{{tcping}}").join('<span class="tcping_value" cbiid="{{id}}">---</span>');
@@ -603,7 +598,19 @@ table td, .table .td {
 						innerHTML = innerHTML.split("{{url_test}}").join('<span class="ping"><a href="javascript:void(0)" onclick="javascript:urltest_node(\'{{id}}\', this)"><%:Test%></a></span>');
 						innerHTML = innerHTML.split("{{id}}").join(o[".name"]);
 						innerHTML = innerHTML.split("{{group}}").join(o["group"] || "");
-						innerHTML = innerHTML.split("{{remarks}}").join(get_remarks_name(o));
+						let node_remarks = get_remarks_name(o);
+						if (show_node_info == "1") {
+							if (o["address"] && o["port"]) {
+								let _address = o["address"]
+								if (o["full_address"])
+									_address = o["full_address"]
+								node_remarks += "<br>" + _address + ":" + o["port"]
+							}
+						}
+						innerHTML = innerHTML.split("{{remarks}}").join(node_remarks);
+						innerHTML = innerHTML.split("{{remarks_val}}").join(o["remarks"]);
+						innerHTML = innerHTML.split("{{address_val}}").join(o["address"] || "");
+						innerHTML = innerHTML.split("{{port_val}}").join(o["port"] || "");
 						
 						node_tr_html += innerHTML
 					}

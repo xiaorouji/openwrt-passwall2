@@ -494,10 +494,24 @@ end
 function get_node()
 	local id = http.formvalue("id")
 	local result = {}
+	local show_node_info = api.uci_get_type("global_other", "show_node_info", "0")
+
+	function add_is_ipv6_key(o)
+		if o and o.address and show_node_info == "1" then
+			local f = api.get_ipv6_full(o.address)
+			if f ~= "" then
+				o.ipv6 = true
+				o.full_address = f
+			end
+		end
+	end
+
 	if id then
 		result = uci:get_all(appname, id)
+		add_is_ipv6_key(result)
 	else
 		uci:foreach(appname, "nodes", function(t)
+			add_is_ipv6_key(t)
 			result[#result + 1] = t
 		end)
 	end
