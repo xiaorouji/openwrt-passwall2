@@ -134,6 +134,7 @@ function link_add_node()
 	local chunk = http.formvalue("chunk")
 	local chunk_index = tonumber(http.formvalue("chunk_index"))
 	local total_chunks = tonumber(http.formvalue("total_chunks"))
+	local group = http.formvalue("group") or "default"
 
 	if chunk and chunk_index ~= nil and total_chunks ~= nil then
 		-- 按顺序拼接到文件
@@ -148,7 +149,7 @@ function link_add_node()
 		end
 		-- 如果是最后一片，才执行
 		if chunk_index + 1 == total_chunks then
-			luci.sys.call("lua /usr/share/passwall2/subscribe.lua add log")
+			luci.sys.call("lua /usr/share/passwall2/subscribe.lua add " .. group)
 		end
 	end
 end
