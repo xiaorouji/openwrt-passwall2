@@ -162,6 +162,13 @@ local api = require "luci.passwall2.api"
 			obs.disconnect();
 		});
 		observer.observe(document.body, {childList: true, subtree: true});
+
+		// 点击外部时自动收起
+		document.addEventListener("click", function(e) {
+			if (!dropdown.contains(e.target)) {
+				list.style.display = "none";
+			}
+		});
 	});
 
 	//]]>
