@@ -1208,11 +1208,18 @@ function set_apply_on_parse(map)
 		return
 	end
 	if is_js_luci() == true then
-		map.apply_on_parse = false
-		map.on_after_apply = function(self)
-			if self.redirect then
-				os.execute("sleep 1")
-				luci.http.redirect(self.redirect)
+		local hide_popup_box = nil
+		if hide_popup_box == true then
+			map.apply_on_parse = false
+			map.on_after_apply = function(self)
+				if self.redirect then
+					os.execute("sleep 1")
+					luci.http.redirect(self.redirect)
+				end
+			end
+		else
+			map.on_after_save = function(self)
+				map:set("@global[0]", "timestamp", os.time())
 			end
 		end
 	end
