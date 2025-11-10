@@ -976,6 +976,12 @@ msgstr "手動订阅全部"
 msgid "This remark already exists, please change a new remark."
 msgstr "此備注已存在，请改一个新的備注。"
 
+msgid "Remark cannot be empty."
+msgstr "備注不能爲空。"
+
+msgid "URL cannot be empty."
+msgstr "網址不能爲空。"
+
 msgid "Filter keyword Mode"
 msgstr "过滤關键字模式"
 
