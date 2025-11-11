@@ -75,7 +75,7 @@ end
 o = s:option(Value, "remark", translate("Subscribe Remark"))
 o.rmempty = false
 o.validate = function(self, value, section)
-	value = (value or ""):match("^%s*(.-)%s*$")
+	value = api.trim(value)
 	if value == "" then
 		return nil, translate("Remark cannot be empty.")
 	end
@@ -86,7 +86,7 @@ o.validate = function(self, value, section)
 			return false
 		end
 	end)
-	if duplicate then
+	if duplicate or value:lower() == "default" then
 		return nil, translate("This remark already exists, please change a new remark.")
 	end
 	return value

@@ -36,6 +36,21 @@ end)
 for k, v in pairs(groups) do
 	o:value(k)
 end
+o.write = function(self, section, value)
+	value = api.trim(value)
+	local lower = value:lower()
+
+	if lower == "" or lower == "default" then
+		return m:del(section, self.option)
+	end
+
+	for _, v in ipairs(self.keylist or {}) do
+		if v:lower() == lower then
+			return m:set(section, self.option, v)
+		end
+	end
+	m:set(section, self.option, value)
+end
 
 local fs = require "nixio.fs"
 local types_dir = "/usr/lib/lua/luci/model/cbi/passwall2/client/type/"
