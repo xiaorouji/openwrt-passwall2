@@ -129,10 +129,12 @@ jobs:
           fi
           cd sdk
 
-          cat << EOF >> feeds.conf.default
+          cat > feeds.tmp <<'EOF'
           src-git passwall_packages https://github.com/xiaorouji/openwrt-passwall-packages.git;main
           src-git passwall2 https://github.com/${{ env.passwall2 }}.git;${{ github.ref_name }}
           EOF
+          cat feeds.conf.default >> feeds.tmp
+          mv feeds.tmp feeds.conf.default
 
           
           ./scripts/feeds update -a
@@ -383,10 +385,12 @@ jobs:
       - name: ${{ matrix.platform }} feeds configuration packages
         run: |
           cd sdk
-          cat << EOF >> feeds.conf.default
+          cat > feeds.tmp <<'EOF'
           src-git passwall_packages https://github.com/xiaorouji/openwrt-passwall-packages.git;main
           src-git passwall2 https://github.com/${{ env.passwall2 }}.git;${{ github.ref_name }}
           EOF
+          cat feeds.conf.default >> feeds.tmp
+          mv feeds.tmp feeds.conf.default
 
 
           ./scripts/feeds update -a
