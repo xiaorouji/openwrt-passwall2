@@ -36,7 +36,7 @@ while [ "$ENABLED" -eq 1 ]; do
 			[ -n "$(echo $cmd_check | grep "dns2socks")" ] && cmd_check=$(echo $cmd_check | sed "s#:# #g")
 			icount=$(pgrep -f "$(echo $cmd_check)" | wc -l)
 			if [ $icount = 0 ]; then
-				#echo "${cmd} 进程挂掉，重启" >> /tmp/log/passwall2.log
+				#echo "${cmd} crashed, restarting." >> /tmp/log/passwall2.log
 				eval $(echo "nohup ${cmd} 2>&1 &") >/dev/null 2>&1 &
 			fi
 		done

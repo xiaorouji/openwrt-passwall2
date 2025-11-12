@@ -239,7 +239,7 @@ o:depends({ [_n("protocol")] = "anytls" })
 
 -- https://github.com/SagerNet/sing-box/commit/d2a04c4e41e6cef0937331cb6d10211f431caaab
 if singbox_tags:find("with_utls") then
-	-- [[ REALITY部分 ]] --
+	-- [[ REALITY ]] --
 	o = s:option(Flag, _n("reality"), translate("REALITY"))
 	o.default = 0
 	o:depends({ [_n("protocol")] = "http", [_n("tls")] = true })
@@ -264,7 +264,7 @@ if singbox_tags:find("with_utls") then
 	o:depends({ [_n("reality")] = true })
 end
 
--- [[ TLS部分 ]] --
+-- [[ TLS ]] --
 
 o = s:option(FileUpload, _n("tls_certificateFile"), translate("Public key absolute path"), translate("as:") .. "/etc/ssl/fullchain.pem")
 o.default = m:get(s.section, "tls_certificateFile") or "/etc/config/ssl/" .. arg[1] .. ".pem"
@@ -346,7 +346,7 @@ o:depends({ [_n("protocol")] = "vmess" })
 o:depends({ [_n("protocol")] = "vless" })
 o:depends({ [_n("protocol")] = "trojan" })
 
--- [[ HTTP部分 ]]--
+-- [[ HTTP ]]--
 
 o = s:option(DynamicList, _n("http_host"), translate("HTTP Host"))
 o:depends({ [_n("transport")] = "http" })
@@ -354,7 +354,7 @@ o:depends({ [_n("transport")] = "http" })
 o = s:option(Value, _n("http_path"), translate("HTTP Path"))
 o:depends({ [_n("transport")] = "http" })
 
--- [[ WebSocket部分 ]]--
+-- [[ WebSocket ]]--
 
 o = s:option(Value, _n("ws_host"), translate("WebSocket Host"))
 o:depends({ [_n("transport")] = "ws" })
@@ -362,7 +362,7 @@ o:depends({ [_n("transport")] = "ws" })
 o = s:option(Value, _n("ws_path"), translate("WebSocket Path"))
 o:depends({ [_n("transport")] = "ws" })
 
--- [[ HTTPUpgrade部分 ]]--
+-- [[ HTTPUpgrade ]]--
 
 o = s:option(Value, _n("httpupgrade_host"), translate("HTTPUpgrade Host"))
 o:depends({ [_n("transport")] = "httpupgrade" })
@@ -370,7 +370,7 @@ o:depends({ [_n("transport")] = "httpupgrade" })
 o = s:option(Value, _n("httpupgrade_path"), translate("HTTPUpgrade Path"))
 o:depends({ [_n("transport")] = "httpupgrade" })
 
--- [[ gRPC部分 ]]--
+-- [[ gRPC ]]--
 o = s:option(Value, _n("grpc_serviceName"), "ServiceName")
 o:depends({ [_n("transport")] = "grpc" })
 

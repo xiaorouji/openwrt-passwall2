@@ -84,7 +84,7 @@ function restart(var)
 	local LOG = var["-LOG"]
 	sys.call("/etc/init.d/dnsmasq restart >/dev/null 2>&1")
 	if LOG == "1" then
-		api.log("重启 dnsmasq 服务")
+		api.log(api.i18n.translate("Restart dnsmasq service."))
 	end
 end
 
@@ -111,7 +111,7 @@ function logic_restart(var)
 		sys.call("/etc/init.d/dnsmasq restart >/dev/null 2>&1")
 	end
 	if LOG == "1" then
-		api.log("重启 dnsmasq 服务")
+		api.log(api.i18n.translate("Restart dnsmasq service."))
 	end
 end
 
@@ -267,7 +267,7 @@ function add_rule(var)
 
 		local fwd_dns
 
-		--始终用国内DNS解析节点域名
+		-- Always use domestic DNS to resolve node domain names
 		if true then
 			fwd_dns = LOCAL_DNS
 			uci:foreach(appname, "nodes", function(t)

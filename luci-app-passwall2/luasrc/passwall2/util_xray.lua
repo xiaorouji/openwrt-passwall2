@@ -139,7 +139,6 @@ function gen_outbound(flag, node, tag, proxy_table)
 				concurrency = (node.mux == "1" and ((node.mux_concurrency) and tonumber(node.mux_concurrency) or -1)) or nil,
 				xudpConcurrency = (node.mux == "1" and ((node.xudp_concurrency) and tonumber(node.xudp_concurrency) or 8)) or nil
 			} or nil,
-			-- 底层传输配置
 			streamSettings = (node.streamSettings or node.protocol == "vmess" or node.protocol == "vless" or node.protocol == "socks" or node.protocol == "shadowsocks" or node.protocol == "trojan") and {
 				sockopt = {
 					mark = 255,
@@ -217,7 +216,7 @@ function gen_outbound(flag, node, tag, proxy_table)
 					mode = node.xhttp_mode or "auto",
 					path = node.xhttp_path or "/",
 					host = node.xhttp_host,
-					-- 如果包含 "extra" 节，取 "extra" 内的内容，否则直接赋值给 extra
+					-- If the code contains an "extra" section, retrieve the contents of "extra"; otherwise, assign the value directly to "extra".
 					extra = node.xhttp_extra and (function()
 							local success, parsed = pcall(jsonc.parse, node.xhttp_extra)
 							if success then
@@ -445,7 +444,6 @@ function gen_config_server(node)
 		log = {
 			loglevel = ("1" == node.log) and node.loglevel or "none"
 		},
-		-- 传入连接
 		inbounds = {
 			{
 				listen = (node.bind_local == "1") and "127.0.0.1" or nil,
@@ -519,7 +517,6 @@ function gen_config_server(node)
 				}
 			}
 		},
-		-- 传出连接
 		outbounds = outbounds,
 		routing = routing
 	}
@@ -1523,18 +1520,12 @@ function gen_config(var)
 				--dnsLog = true,
 				loglevel = loglevel
 			},
-			-- DNS
 			dns = dns,
 			fakedns = fakedns,
-			-- 传入连接
 			inbounds = inbounds,
-			-- 传出连接
 			outbounds = outbounds,
-			-- 连接观测
 			burstObservatory = burstObservatory,
-			-- 路由
 			routing = routing,
-			-- 本地策略
 			policy = {
 				levels = {
 					[0] = {
@@ -1703,8 +1694,7 @@ function gen_proto_config(var)
 		}
 		if outbound then table.insert(outbounds, outbound) end
 	end
-	
-	-- 额外传出连接
+
 	table.insert(outbounds, {
 		protocol = "freedom", tag = "direct", settings = {keep = ""}
 	})
@@ -1713,11 +1703,8 @@ function gen_proto_config(var)
 		log = {
 			loglevel = "warning"
 		},
-		-- 传入连接
 		inbounds = inbounds,
-		-- 传出连接
 		outbounds = outbounds,
-		-- 路由
 		routing = routing
 	}
 	return jsonc.stringify(config, 1)
@@ -1954,13 +1941,9 @@ function gen_dns_config(var)
 				--dnsLog = true,
 				loglevel = loglevel
 			},
-			-- DNS
 			dns = dns,
-			-- 传入连接
 			inbounds = inbounds,
-			-- 传出连接
 			outbounds = outbounds,
-			-- 路由
 			routing = routing
 		}
 		return jsonc.stringify(config, 1)

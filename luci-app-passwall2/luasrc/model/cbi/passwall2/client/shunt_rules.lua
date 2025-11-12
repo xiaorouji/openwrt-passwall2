@@ -27,8 +27,8 @@ div[id^="cbid.passwall2."] .cbi-checkbox {
 ]]
 
 function clean_text(text)
-	local nbsp = string.char(0xC2, 0xA0) -- 不间断空格（U+00A0）
-	local fullwidth_space = string.char(0xE3, 0x80, 0x80) -- 全角空格（U+3000）
+	local nbsp = string.char(0xC2, 0xA0) -- Non-breaking space (U+00A0)
+	local fullwidth_space = string.char(0xE3, 0x80, 0x80) -- Full-width space (U+3000)
 	return text
 		:gsub("\t", " ")
 		:gsub(nbsp, " ")

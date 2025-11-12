@@ -95,12 +95,12 @@ m.uci:foreach(appname, "socks", function(s)
 	if s.enabled == "1" and s.node then
 		socks_list[#socks_list + 1] = {
 			id = "Socks_" .. s[".name"],
-			remark = translate("Socks Config") .. " [" .. s.port .. "端口]"
+			remark = translate("Socks Config") .. " [" .. s.port .. translate("Port") .. "]"
 		}
 	end
 end)
 
--- 负载均衡列表
+-- Load balancing node list
 o = s:option(DynamicList, _n("balancing_node"), translate("Load balancing node list"), translate("Load balancing node list, <a target='_blank' href='https://xtls.github.io/config/routing.html#balancerobject'>document</a>"))
 o:depends({ [_n("protocol")] = "_balancing" })
 local valid_ids = {}
@@ -108,7 +108,7 @@ for k, v in pairs(nodes_table) do
 	o:value(v.id, v.remark)
 	valid_ids[v.id] = true
 end
--- 去重并禁止自定义非法输入
+-- Deduplication and disabling of custom and illegal input
 function o.custom_write(self, section, value)
 	local result = {}
 	if type(value) == "table" then
@@ -145,14 +145,13 @@ local function check_fallback_chain(fb)
 		end
 	end
 end
--- 检查fallback链，去掉会形成闭环的balancer节点
+-- Check the fallback chain and remove the balancer node that would form a closed loop.
 if is_balancer then
 	check_fallback_chain(arg[1])
 end
 for k, v in pairs(fallback_table) do o:value(v.id, v.remark) end
 for k, v in pairs(nodes_table) do o:value(v.id, v.remark) end
 
--- 探测地址
 o = s:option(Flag, _n("useCustomProbeUrl"), translate("Use Custom Probe URL"), translate("By default the built-in probe URL will be used, enable this option to use a custom probe URL."))
 o:depends({ [_n("protocol")] = "_balancing" })
 
@@ -167,7 +166,6 @@ o:value("https://connectivitycheck.platform.hicloud.com/generate_204", "HiCloud 
 o.default = "https://www.google.com/generate_204"
 o.description = translate("The URL used to detect the connection status.")
 
--- 探测间隔
 o = s:option(Value, _n("probeInterval"), translate("Probe Interval"))
 o:depends({ [_n("protocol")] = "_balancing" })
 o.default = "1m"
@@ -184,7 +182,7 @@ o.placeholder = "2"
 o.description = translate("The load balancer selects the optimal number of nodes, and traffic is randomly distributed among them.")
 
 
--- [[ 分流模块 ]]
+-- [[ Shunt Start ]]
 if #nodes_table > 0 then
 	o = s:option(Flag, _n("preproxy_enabled"), translate("Preproxy"))
 	o:depends({ [_n("protocol")] = "_shunt" })
@@ -285,7 +283,7 @@ o:value("hybrid")
 o:value("linear")
 o:depends({ [_n("protocol")] = "_shunt" })
 
--- [[ 分流模块 End ]]
+-- [[ Shunt End ]]
 
 o = s:option(Value, _n("address"), translate("Address (Support Domain Name)"))
 
@@ -412,7 +410,7 @@ o:value("half")
 o:value("full")
 o:depends({ [_n("ech")] = true })
 
--- [[ REALITY部分 ]] --
+-- [[ REALITY ]] --
 o = s:option(Value, _n("reality_publicKey"), translate("Public Key"))
 o:depends({ [_n("tls")] = true, [_n("reality")] = true })
 
@@ -493,24 +491,21 @@ o = s:option(Value, _n("wireguard_keepAlive"), translate("Keep Alive"))
 o.default = "0"
 o:depends({ [_n("protocol")] = "wireguard" })
 
--- [[ RAW部分 ]]--
+-- [[ RAW ]]--
 
--- TCP伪装
 o = s:option(ListValue, _n("tcp_guise"), translate("Camouflage Type"))
 o:value("none", "none")
 o:value("http", "http")
 o:depends({ [_n("transport")] = "raw" })
 
--- HTTP域名
 o = s:option(DynamicList, _n("tcp_guise_http_host"), translate("HTTP Host"))
 o:depends({ [_n("tcp_guise")] = "http" })
 
--- HTTP路径
 o = s:option(DynamicList, _n("tcp_guise_http_path"), translate("HTTP Path"))
 o.placeholder = "/"
 o:depends({ [_n("tcp_guise")] = "http" })
 
--- [[ mKCP部分 ]]--
+-- [[ mKCP ]]--
 
 o = s:option(ListValue, _n("mkcp_guise"), translate("Camouflage Type"), translate('<br />none: default, no masquerade, data sent is packets with no characteristics.<br />srtp: disguised as an SRTP packet, it will be recognized as video call data (such as FaceTime).<br />utp: packets disguised as uTP will be recognized as bittorrent downloaded data.<br />wechat-video: packets disguised as WeChat video calls.<br />dtls: disguised as DTLS 1.2 packet.<br />wireguard: disguised as a WireGuard packet. (not really WireGuard protocol)<br />dns: Disguising traffic as DNS requests.'))
 for a, t in ipairs(header_type_list) do o:value(t) end
@@ -549,7 +544,7 @@ o:depends({ [_n("transport")] = "mkcp" })
 o = s:option(Value, _n("mkcp_seed"), translate("KCP Seed"))
 o:depends({ [_n("transport")] = "mkcp" })
 
--- [[ WebSocket部分 ]]--
+-- [[ WebSocket  ]]--
 o = s:option(Value, _n("ws_host"), translate("WebSocket Host"))
 o:depends({ [_n("transport")] = "ws" })
 
@@ -561,7 +556,7 @@ o = s:option(Value, _n("ws_heartbeatPeriod"), translate("HeartbeatPeriod(second)
 o.datatype = "integer"
 o:depends({ [_n("transport")] = "ws" })
 
--- [[ gRPC部分 ]]--
+-- [[ gRPC  ]]--
 o = s:option(Value, _n("grpc_serviceName"), "ServiceName")
 o:depends({ [_n("transport")] = "grpc" })
 
@@ -589,7 +584,7 @@ o = s:option(Value, _n("grpc_initial_windows_size"), translate("Initial Windows 
 o.default = "0"
 o:depends({ [_n("transport")] = "grpc" })
 
--- [[ HttpUpgrade部分 ]]--
+-- [[ HttpUpgrade ]]--
 o = s:option(Value, _n("httpupgrade_host"), translate("HttpUpgrade Host"))
 o:depends({ [_n("transport")] = "httpupgrade" })
 
@@ -597,7 +592,7 @@ o = s:option(Value, _n("httpupgrade_path"), translate("HttpUpgrade Path"))
 o.placeholder = "/"
 o:depends({ [_n("transport")] = "httpupgrade" })
 
--- [[ XHTTP部分 ]]--
+-- [[ XHTTP ]]--
 o = s:option(ListValue, _n("xhttp_mode"), "XHTTP " .. translate("Mode"))
 o:depends({ [_n("transport")] = "xhttp" })
 o.default = "auto"

@@ -106,7 +106,7 @@ local api = require "luci.passwall2.api"
 		})
 		.then(response => {
 			if (!response.ok) {
-				throw new Error("备份失败！");
+				throw new Error("<%:Backup failed!%>");
 			}
 			const filename = response.headers.get("X-Backup-Filename");
 			if (!filename) {
@@ -175,7 +175,7 @@ local api = require "luci.passwall2.api"
 
 			const base64Data = btoa(binaryText);
 
-			const targetByteSize = 64 * 1024; // 分片大小 64KB
+			const targetByteSize = 64 * 1024; // Slice Size 64KB
 			let chunkSize = Math.floor(targetByteSize * 4 / 3);
 			chunkSize = chunkSize + (4 - (chunkSize % 4)) % 4;
 			const totalChunks = Math.ceil(base64Data.length / chunkSize);

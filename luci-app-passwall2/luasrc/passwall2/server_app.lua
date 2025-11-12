@@ -184,7 +184,7 @@ local function start()
 					f:write(jsonc.stringify(config, 1))
 					f:close()
 				end
-				log(string.format("%s 生成配置文件并运行 - %s", remarks, config_file))
+				log(string.format("%s %s - %s", remarks, api.i18n.translate("Generate configuration file and run"), config_file))
 			end
 
 			if bin then

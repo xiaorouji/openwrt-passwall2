@@ -26,7 +26,7 @@ local api = require "luci.passwall2.api"
 			var id = onclick_str.substring(onclick_str.lastIndexOf('/') + 1, onclick_str.length - 1);
 			var td = edit_btn[i].parentNode;
 			var new_div = "";
-			//添加"日志"按钮
+			// Add `log` button
 			new_div += '<input class="btn cbi-button cbi-button-add" type="button" value="<%:Log%>" onclick="window.open(\'' + '<%=api.url("server_user_log")%>' + '?id=' + id + '\', \'_blank\')"/>&nbsp;&nbsp;';
 			td.innerHTML = new_div + td.innerHTML;
 		}

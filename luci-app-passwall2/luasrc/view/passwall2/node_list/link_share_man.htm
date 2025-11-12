@@ -215,7 +215,7 @@ local hysteria2_type = get_core("hysteria2_type", {{has_hysteria2,"hysteria2"},{
 				v_port.value + "/?";
 			
 			var shadow_tls;
-			//生成SS Shadow-TLS 插件参数
+			// Generate SS Shadow-TLS plugin parameters
 			const generateShadowTLSBase64 = function(paramStr) {
 				try {
 					let obj = {};
@@ -746,13 +746,13 @@ local hysteria2_type = get_core("hysteria2_type", {{has_hysteria2,"hysteria2"},{
 					} catch (err) {}
 				} else {
 					//alert('<%:Faltal on set option, please help in debug: %>' + opt + ' = ' + val);
-					// 处理 DynamicList
+					// Processing DynamicList
 					var fullName = this.base + '.' + opt;
 					var lists = document.querySelectorAll('.cbi-dynlist');
 					for (var i = 0; i < lists.length; i++) {
 						var parent = lists[i].closest('.cbi-value');
 						if (!parent) continue;
-						// 尝试从 label 的 for 属性中提取 fullName
+						// Try to extract fullName from the label's for attribute.
 						var label = parent.querySelector('label.cbi-value-title');
 						var labelFor = label?.getAttribute('for');
 						if (labelFor === fullName) {
@@ -793,7 +793,7 @@ local hysteria2_type = get_core("hysteria2_type", {{has_hysteria2,"hysteria2"},{
 		if (ssrurl === null || ssrurl === "") {
 			return false;
 		}
-		ssrurl = ssrurl.replace(/&amp;/gi, '&').replace(/\s*#\s*/, '#').trim();  //一些奇葩的链接用"&amp;"当做"&"，"#"前后带空格
+		ssrurl = ssrurl.replace(/&amp;/gi, '&').replace(/\s*#\s*/, '#').trim();  // Some odd links use "&" as "&", and include spaces before and after "#".
 		s.innerHTML = "";
 		var ssu = ssrurl.split('://');
 		var event = document.createEvent("HTMLEvents");
@@ -872,7 +872,7 @@ local hysteria2_type = get_core("hysteria2_type", {{has_hysteria2,"hysteria2"},{
 					method = userInfo.substr(0, userInfoSplitIndex);
 					password = userInfo.substr(userInfoSplitIndex + 1);
 				} else {
-					password = url0.substr(0, sipIndex);  //一些链接用明文uuid做密码
+					password = url0.substr(0, sipIndex);  // Some links use plaintext UUIDs as passwords.
 				}
 			} else {
 				// base64(method:pass@host:port)
@@ -892,7 +892,7 @@ local hysteria2_type = get_core("hysteria2_type", {{has_hysteria2,"hysteria2"},{
 				}
 			}
 
-			// 判断密码是否经过url编码
+			// Determine if the password is URL encoded
 			const isURLEncodedPassword = function(pwd) {
 				if (!/%[0-9A-Fa-f]{2}/.test(pwd)) return false;
 				try {
@@ -949,7 +949,7 @@ local hysteria2_type = get_core("hysteria2_type", {{has_hysteria2,"hysteria2"},{
 				opt.set(dom_prefix + 'plugin_enabled', true);
 				opt.set(dom_prefix + 'plugin', plugin || "none");
 				opt.set(dom_prefix + 'plugin_opts', pluginOpts || "");
-				//obfs-local插件转换成xray支持的格式
+				// The obfs-local plugin converts data to a format supported by xray.
 				if (plugin == "obfs-local" && dom_prefix == "xray_") {
 					var obfs = pluginOpts.match(/obfs=([^;]+)/);
 					var obfs_host = pluginOpts.match(/obfs-host=([^;]+)/);
@@ -1075,7 +1075,7 @@ local hysteria2_type = get_core("hysteria2_type", {{has_hysteria2,"hysteria2"},{
 				}
 			
 				if (queryParam["shadow-tls"]) {
-					//解析SS Shadow-TLS 插件参数
+					// Parsing SS Shadow-TLS plugin parameters
 					const parseShadowTLSParams = function(base64Str, outObj) {
 						try {
 							let obj = JSON.parse(b64decsafe(base64Str));

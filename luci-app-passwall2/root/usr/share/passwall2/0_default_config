@@ -87,35 +87,35 @@ config nodes 'myshunt'
 config shunt_rules 'DirectGame'
 	option remarks 'DirectGame'
 	option network 'tcp,udp'
-	option domain_list '# steam直连域名获取国内CDN走国内线路下载
+	option domain_list '# Steam CDN
 cm.steampowered.com
 steamserver.net
 
-# steam国内CDN华为云
+# Steam CN Huawei CDN
 steampipe.steamcontent.tnkjmec.com
-# steam国内CDN白山云
+# Steam CN BaiShan CDN
 st.dl.eccdnx.com
 st.dl.bscstorage.net
 st.dl.pinyuncloud.com
-# steam国内CDN新流云(原金山云)(支持ipv6)
+# Steam CN XinLiuYun(support ipv6) CDN
 dl.steam.clngaa.com
-# steam国内CDN网宿
+# Steam CN Wangsu CDN
 cdn.mileweb.cs.steampowered.com.8686c.com
 cdn-ws.content.steamchina.com
-# steam国内CDN腾讯云 (蒸汽中国独占)
+# Steam CN Tencent CDN
 cdn-qc.content.steamchina.com
-# steam国内CDN阿里云(支持ipv6)
+# Steam CN Aliyun(support ipv6) CDN
 cdn-ali.content.steamchina.com
 xz.pphimalayanrt.com
 lv.queniujq.cn
 alibaba.cdn.steampipe.steamcontent.com
 
-# 国内游戏geosite域名
+# CN Game geosite domain
 geosite:category-games@cn
 rule-set:remote:https://raw.githubusercontent.com/lyc8503/sing-box-rules/rule-set-geosite/geosite-category-games%40cn.srs
 '
 
-	option ip_list '# steam直连IP
+	option ip_list '# Steam IP
 45.121.184.0/24
 103.10.124.0/23
 103.28.54.0/24

@@ -8,6 +8,11 @@ util = require "luci.util"
 datatypes = require "luci.cbi.datatypes"
 jsonc = require "luci.jsonc"
 i18n = require "luci.i18n"
+local lang = uci:get("luci", "main", "lang") or "auto"
+if lang == "auto" then
+	lang = i18n.default
+end
+i18n.setlanguage(lang)
 
 appname = "passwall2"
 curl_args = { "-skfL", "--connect-timeout 3", "--retry 3" }
@@ -128,7 +133,7 @@ function base64Encode(text)
 	return result
 end
 
---提取URL中的域名和端口(no ip)
+-- Extract the domain name and port from the URL (no IP address).
 function get_domain_port_from_url(url)
 	local scheme, domain, port = string.match(url, "^(https?)://([%w%.%-]+):?(%d*)")
 	if not domain then
@@ -141,7 +146,7 @@ function get_domain_port_from_url(url)
 	return domain, port
 end
 
---解析域名
+-- Domain resolution
 function domainToIPv4(domain, dns)
 	local Dns = dns or "223.5.5.5"
 	local IPs = luci.sys.exec('nslookup %s %s | awk \'/^Name:/{getline; if ($1 == "Address:") print $2}\'' % { domain, Dns })
@@ -161,7 +166,7 @@ function curl_base(url, file, args)
 end
 
 function curl_proxy(url, file, args)
-	--使用代理
+	-- Use the proxy
 	local socks_server = get_cache_var("GLOBAL_SOCKS_server")
 	if socks_server and socks_server ~= "" then
 		if not args then args = {} end
@@ -181,7 +186,7 @@ function curl_logic(url, file, args)
 end
 
 function curl_direct(url, file, args)
-	--直连访问
+	-- Direct access
 	if not args then args = {} end
 	local tmp_args = clone(args)
 	local domain, port = get_domain_port_from_url(url)
@@ -223,16 +228,15 @@ function trim(text)
 	return text:match("^%s*(.-)%s*$")
 end
 
--- 分割字符串
 function split(full, sep)
 	if full then
-		full = full:gsub("%z", "") -- 这里不是很清楚 有时候结尾带个\0
+		full = full:gsub("%z", "") -- This is not very clear; sometimes it ends with a `\0`.
 		local off, result = 1, {}
 		while true do
 			local nStart, nEnd = full:find(sep, off)
 			if not nEnd then
 				local res = string.sub(full, off, string.len(full))
-				if #res > 0 then -- 过滤掉 \0
+				if #res > 0 then -- Filter out `\0`
 					table.insert(result, res)
 				end
 				break
@@ -1224,7 +1228,7 @@ function set_apply_on_parse(map)
 		end
 	end
 	map.render = function(self, ...)
-		getmetatable(self).__index.render(self, ...) -- 保持原渲染流程
+		getmetatable(self).__index.render(self, ...) -- Maintain the original rendering process
 		optimize_cbi_ui()
 	end
 end
@@ -1243,7 +1247,7 @@ function luci_types(id, m, s, type_name, option_prefix)
 				end
 
 				s.fields[key].cfgvalue = function(self, section)
-					-- 添加自定义 custom_cfgvalue 属性，如果有自定义的 custom_cfgvalue 函数，则使用自定义的 cfgvalue 逻辑
+					-- Add a custom `custom_cfgvalue` attribute. If a custom `custom_cfgvalue` function exists, the custom `cfgvalue` logic will be used.
 					if self.custom_cfgvalue then
 						return self:custom_cfgvalue(section)
 					else
@@ -1258,7 +1262,7 @@ function luci_types(id, m, s, type_name, option_prefix)
 				end
 				s.fields[key].write = function(self, section, value)
 					if s.fields["type"]:formvalue(id) == type_name then
-						-- 添加自定义 custom_write 属性，如果有自定义的 custom_write 函数，则使用自定义的 write 逻辑
+						-- Add a custom `custom_write` attribute; if a custom `custom_write` function exists, then use the custom write logic.
 						if self.custom_write then
 							self:custom_write(section, value)
 						else
@@ -1274,7 +1278,7 @@ function luci_types(id, m, s, type_name, option_prefix)
 				end
 				s.fields[key].remove = function(self, section)
 					if s.fields["type"]:formvalue(id) == type_name then
-						-- 添加自定义 custom_remove 属性，如果有自定义的 custom_remove 函数，则使用自定义的 remove 逻辑
+						-- Add a custom `custom_remove` attribute; if a custom `custom_remove` function exists, use the custom remove logic.
 						if self.custom_remove then
 							self:custom_remove(section)
 						else
@@ -1334,14 +1338,14 @@ end
 function optimize_cbi_ui()
 	luci.http.write([[
 		<script type="text/javascript">
-			//修正上移、下移按钮名称
+			//Correct the names of the move up and move down buttons.
 			document.querySelectorAll("input.btn.cbi-button.cbi-button-up").forEach(function(btn) {
 				btn.value = "]] .. i18n.translate("Move up") .. [[";
 			});
 			document.querySelectorAll("input.btn.cbi-button.cbi-button-down").forEach(function(btn) {
 				btn.value = "]] .. i18n.translate("Move down") .. [[";
 			});
-			//删除控件和说明之间的多余换行
+			//Remove extra line breaks between controls and descriptions.
 			document.querySelectorAll("div.cbi-value-description").forEach(function(descDiv) {
 				var prev = descDiv.previousSibling;
 				while (prev && prev.nodeType === Node.TEXT_NODE && prev.textContent.trim() === "") {

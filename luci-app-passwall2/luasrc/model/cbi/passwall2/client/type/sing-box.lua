@@ -105,7 +105,7 @@ m.uci:foreach(appname, "socks", function(s)
 	if s.enabled == "1" and s.node then
 		socks_list[#socks_list + 1] = {
 			id = "Socks_" .. s[".name"],
-			remark = translate("Socks Config") .. " [" .. s.port .. "端口]"
+			remark = translate("Socks Config") .. " [" .. s.port .. translate("Port") .. "]"
 		}
 	end
 end)
@@ -118,7 +118,7 @@ for k, v in pairs(nodes_table) do
 	o:value(v.id, v.remark)
 	valid_ids[v.id] = true
 end
--- 去重并禁止自定义非法输入
+-- Deduplication and disabling of custom and illegal input
 function o.custom_write(self, section, value)
 	local result = {}
 	if type(value) == "table" then
@@ -174,7 +174,7 @@ o:depends({ [_n("protocol")] = "_urltest" })
 o.default = "0"
 o.description = translate("Interrupt existing connections when the selected outbound has changed.") 
 
--- [[ 分流模块 ]]
+-- [[ Shunt Start ]]
 if #nodes_table > 0 then
 	o = s:option(Flag, _n("preproxy_enabled"), translate("Preproxy"))
 	o:depends({ [_n("protocol")] = "_shunt" })
@@ -259,7 +259,7 @@ if #nodes_table > 0 then
 	end
 end
 
--- [[ 分流模块 End ]]
+-- [[ Shunt End ]]
 
 o = s:option(Value, _n("address"), translate("Address (Support Domain Name)"))
 
@@ -587,7 +587,7 @@ if singbox_tags:find("with_utls") then
 	o.default = "chrome"
 	o:depends({ [_n("utls")] = true })
 
-	-- [[ REALITY部分 ]] --
+	-- [[ REALITY ]] --
 	o = s:option(Flag, _n("reality"), translate("REALITY"))
 	o.default = 0
 	o:depends({ [_n("protocol")] = "vless", [_n("tls")] = true })
@@ -650,7 +650,7 @@ if singbox_tags:find("with_wireguard") then
 	o:depends({ [_n("protocol")] = "wireguard" })
 end
 
--- [[ TCP部分（模拟） ]]--
+-- [[ TCP ]]--
 o = s:option(ListValue, _n("tcp_guise"), translate("Camouflage Type"))
 o:value("none", "none")
 o:value("http", "http")
@@ -663,7 +663,7 @@ o = s:option(DynamicList, _n("tcp_guise_http_path"), translate("HTTP Path"))
 o.placeholder = "/"
 o:depends({ [_n("tcp_guise")] = "http" })
 
--- [[ HTTP部分 ]]--
+-- [[ HTTP ]]--
 o = s:option(DynamicList, _n("http_host"), translate("HTTP Host"))
 o:depends({ [_n("transport")] = "http" })
 
@@ -682,7 +682,7 @@ o = s:option(Value, _n("http_h2_health_check_timeout"), translate("Health check 
 o.default = "15"
 o:depends({ [_n("tls")] = true, [_n("transport")] = "http", [_n("http_h2_health_check")] = true })
 
--- [[ WebSocket部分 ]]--
+-- [[ WebSocket ]]--
 o = s:option(Value, _n("ws_host"), translate("WebSocket Host"))
 o:depends({ [_n("transport")] = "ws" })
 
@@ -700,7 +700,7 @@ o:depends({ [_n("ws_enableEarlyData")] = true })
 o = s:option(Value, _n("ws_earlyDataHeaderName"), translate("Early data header name"), translate("Recommended value: Sec-WebSocket-Protocol"))
 o:depends({ [_n("ws_enableEarlyData")] = true })
 
--- [[ HTTPUpgrade部分 ]]--
+-- [[ HTTPUpgrade ]]--
 o = s:option(Value, _n("httpupgrade_host"), translate("HTTPUpgrade Host"))
 o:depends({ [_n("transport")] = "httpupgrade" })
 
@@ -708,7 +708,7 @@ o = s:option(Value, _n("httpupgrade_path"), translate("HTTPUpgrade Path"))
 o.placeholder = "/"
 o:depends({ [_n("transport")] = "httpupgrade" })
 
--- [[ gRPC部分 ]]--
+-- [[ gRPC ]]--
 o = s:option(Value, _n("grpc_serviceName"), "ServiceName")
 o:depends({ [_n("transport")] = "grpc" })
 

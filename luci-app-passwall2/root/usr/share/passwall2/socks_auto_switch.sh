@@ -1,16 +1,10 @@
 #!/bin/sh
 
 CONFIG=passwall2
-LOG_FILE=/tmp/log/$CONFIG.log
+APP_FILE=/usr/share/${CONFIG}/app.sh
 LOCK_FILE_DIR=/tmp/lock
 
 flag=0
-
-echolog() {
-	local d="$(date "+%Y-%m-%d %H:%M:%S")"
-	#echo -e "$d: $1"
-	echo -e "$d: $1" >> $LOG_FILE
-}
 
 config_n_get() {
 	local ret=$(uci -q get "${CONFIG}.${1}.${2}" 2>/dev/null)
@@ -60,12 +54,12 @@ test_node() {
 	local node_id=$1
 	local _type=$(echo $(config_n_get ${node_id} type) | tr 'A-Z' 'a-z')
 	[ -n "${_type}" ] && {
-		local _tmp_port=$(/usr/share/${CONFIG}/app.sh get_new_port 61080 tcp,udp)
-		/usr/share/${CONFIG}/app.sh run_socks flag="test_node_${node_id}" node=${node_id} bind=127.0.0.1 socks_port=${_tmp_port} config_file=test_node_${node_id}.json
+		local _tmp_port=$($APP_FILE get_new_port 61080 tcp,udp)
+		$APP_FILE run_socks flag="test_node_${node_id}" node=${node_id} bind=127.0.0.1 socks_port=${_tmp_port} config_file=test_node_${node_id}.json
 		local curlx="socks5h://127.0.0.1:${_tmp_port}"
 		sleep 1s
 		local _proxy_status=$(test_url "${probe_url}" ${retry_num} ${connect_timeout} "-x $curlx")
-		# 结束 SS 插件进程
+		# Kill the SS plugin process
 		local pid_file="/tmp/etc/${CONFIG}/test_node_${node_id}_plugin.pid"
 		[ -s "$pid_file" ] && kill -9 "$(head -n 1 "$pid_file")" >/dev/null 2>&1
 		pgrep -af "test_node_${node_id}" | awk '! /socks_auto_switch\.sh/{print $1}' | xargs kill -9 >/dev/null 2>&1
@@ -82,10 +76,10 @@ test_auto_switch() {
 	local b_nodes=$1
 	local now_node=$2
 	[ -z "$now_node" ] && {
-		if [ -n "$(/usr/share/${CONFIG}/app.sh get_cache_var "socks_${id}")" ]; then
-			now_node=$(/usr/share/${CONFIG}/app.sh get_cache_var "socks_${id}")
+		if [ -n "$($APP_FILE get_cache_var "socks_${id}")" ]; then
+			now_node=$($APP_FILE get_cache_var "socks_${id}")
 		else
-			#echolog "Socks切换检测：未知错误"
+			$APP_FILE echolog_i18n "Socks switch detection: Unknown error."
 			return 1
 		fi
 	}
@@ -96,46 +90,50 @@ test_auto_switch() {
 
 	local status=$(test_proxy)
 	if [ "$status" = "2" ]; then
-		echolog "Socks切换检测：无法连接到网络，请检查网络是否正常！"
+		$APP_FILE echolog_i18n "Socks switch detection: Unable to connect to the network. Please check if the network is working properly!"
 		return 2
 	fi
-	
-	#检测主节点是否能使用
+
+	# Check if the main node is usable
 	if [ "$restore_switch" = "1" ] && [ -n "$main_node" ] && [ "$now_node" != "$main_node" ]; then
 		test_node ${main_node}
 		[ $? -eq 0 ] && {
-			#主节点正常，切换到主节点
-			echolog "Socks切换检测：${id}主节点【$(config_n_get $main_node type)：[$(config_n_get $main_node remarks)]】正常，切换到主节点！"
-			/usr/share/${CONFIG}/app.sh socks_node_switch flag=${id} new_node=${main_node}
+			# The main node is working properly; switch to the main node.
+			$APP_FILE echolog_i18n "Socks switch detection: Primary node 【%s: [%s]】 is normal. Switch to the primary node!" "${id}" "$(config_n_get $main_node type)" "$(config_n_get $main_node remarks)"
+			$APP_FILE socks_node_switch flag=${id} new_node=${main_node}
 			[ $? -eq 0 ] && {
-				echolog "Socks切换检测：${id}节点切换完毕！"
+				$APP_FILE echolog_i18n "Socks switch detection: %s node switch complete!" "${id}"
 			}
 			return 0
 		}
 	fi
 
 	if [ "$status" = "0" ]; then
-		#echolog "Socks切换检测：${id}【$(config_n_get $now_node type)：[$(config_n_get $now_node remarks)]】正常。"
+		$APP_FILE echolog_i18n "Socks switch detection: %s 【%s:[%s]】 normal." "${id}" "$(config_n_get $now_node type)" "$(config_n_get $now_node remarks)"
 		return 0
 	elif [ "$status" = "1" ]; then
 		local new_node msg
 		if [ "$backup_node_num" -gt 1 ]; then
-			# 有多个后备节点时
+			# When there are multiple backup nodes
 			local first_node found node
 			for node in $b_nodes; do
-				[ -z "$first_node" ] && first_node="$node"       # 记录第一个节点
-				[ "$found" = "1" ] && { new_node="$node"; break; } # 找到当前节点后取下一个
-				[ "$node" = "$now_node" ] && found=1             # 标记找到当前节点
+				[ -z "$first_node" ] && first_node="$node"       # Record the first node.
+				[ "$found" = "1" ] && { new_node="$node"; break; } # Find the current node and then retrieve the next one.
+				[ "$node" = "$now_node" ] && found=1             # Mark the current node found.
 			done
-			# 如果没找到当前节点，或者当前节点是最后一个，就取第一个节点
+			# If the current node is not found, or if the current node is the last node, then take the first node.
 			[ -z "$new_node" ] && new_node="$first_node"
-			msg="切换到$([ "$now_node" = "$main_node" ] && echo 备用节点 || echo 下一个备用节点)检测！"
+			local msg2="$($APP_FILE i18n "next backup node")"
+			[ "$now_node" = "$main_node" ] && msg2="$($APP_FILE i18n "backup node")"
+			msg="$($APP_FILE i18n "switch to %s test detect!" "${msg2}")"
 		else
-			# 只有一个后备节点时，与主节点轮询
+			# When there is only one backup node, poll with the primary node.
 			new_node=$([ "$now_node" = "$main_node" ] && echo "$b_nodes" || echo "$main_node")
-			msg="切换到$([ "$now_node" = "$main_node" ] && echo 备用节点 || echo 主节点)检测！"
+			local msg2="$($APP_FILE i18n "main node")"
+			[ "$now_node" = "$main_node" ] && msg2="$($APP_FILE i18n "backup node")"
+			msg="$($APP_FILE i18n "switch to %s test detect!" "${msg2}")"
 		fi
-		echolog "Socks切换检测：${id}【$(config_n_get $now_node type)：[$(config_n_get $now_node remarks)]】异常，$msg"
+		$APP_FILE echolog_i18n "Socks switch detection: %s 【%s:[%s]】 abnormal, %s" "${id}" "$(config_n_get $now_node type)" "$(config_n_get $now_node remarks)" "${msg}"
 		test_node ${new_node}
 		if [ $? -eq 0 ]; then
 #			[ "$restore_switch" = "0" ] && {
@@ -143,10 +141,10 @@ test_auto_switch() {
 #				[ -z "$(echo $b_nodes | grep $main_node)" ] && uci add_list $CONFIG.${id}.autoswitch_backup_node=$main_node
 #				uci commit $CONFIG
 #			}
-			echolog "Socks切换检测：${id}【$(config_n_get $new_node type)：[$(config_n_get $new_node remarks)]】正常，切换到此节点！"
-			/usr/share/${CONFIG}/app.sh socks_node_switch flag=${id} new_node=${new_node}
+			$APP_FILE echolog_i18n "Socks switch detection: %s 【%s:[%s]】 normal, switch to this node!" "${id}" "$(config_n_get $new_node type)" "$(config_n_get $new_node remarks)"
+			$APP_FILE socks_node_switch flag=${id} new_node=${new_node}
 			[ $? -eq 0 ] && {
-				echolog "Socks切换检测：${id}节点切换完毕！"
+				$APP_FILE echolog_i18n "Socks switch detection: %s node switch complete!" "${id}"
 			}
 			return 0
 		else
@@ -181,7 +179,6 @@ start() {
 			continue
 		}
 		pgrep -af "${CONFIG}/" | awk '/app\.sh.*(start|stop)/ || /nftables\.sh/ || /iptables\.sh/ { found = 1 } END { exit !found }' && {
-			# 特定任务执行中不检测
 			sleep 6s
 			continue
 		}

@@ -6,7 +6,7 @@ local json = api.jsonc
 function gen_config(var)
 	local node_id = var["-node"]
 	if not node_id then
-		print("-node 不能为空")
+		print("-node Cannot be empty!")
 		return
 	end
 	local node = uci:get_all("passwall2", node_id)

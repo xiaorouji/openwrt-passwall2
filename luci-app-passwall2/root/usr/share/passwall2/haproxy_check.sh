@@ -9,7 +9,6 @@ server_address=$3
 server_port=$4
 
 pgrep -af "${CONFIG}/" | awk '/app\.sh.*(start|stop)/ || /nftables\.sh/ || /iptables\.sh/ { found = 1 } END { exit !found }' && {
-	# 特定任务执行中不检测
 	exit 0
 }
 

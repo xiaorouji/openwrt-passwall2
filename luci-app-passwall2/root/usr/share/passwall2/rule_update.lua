@@ -49,9 +49,7 @@ local function curl(url, file)
 	return tonumber(result)
 end
 
---获取geoip
 local function fetch_geoip()
-	--请求geoip
 	xpcall(function()
 		local return_code, content = api.curl_logic(geoip_api)
 		local json = jsonc.parse(content)
@@ -70,7 +68,7 @@ local function fetch_geoip()
 						if fs.access(asset_location .. "geoip.dat") then
 							sys.call(string.format("cp -f %s %s", asset_location .. "geoip.dat", "/tmp/geoip.dat"))
 							if sys.call('sha256sum -c /tmp/geoip.dat.sha256sum > /dev/null 2>&1') == 0 then
-								log("geoip 版本一致，无需更新。")
+								log(api.i18n.translatef("%s version is the same and does not need to be updated.", "geoip"))
 								return 1
 							end
 						end
@@ -80,10 +78,10 @@ local function fetch_geoip()
 								if sys.call('sha256sum -c /tmp/geoip.dat.sha256sum > /dev/null 2>&1') == 0 then
 									sys.call(string.format("mkdir -p %s && cp -f %s %s", asset_location, "/tmp/geoip.dat", asset_location .. "geoip.dat"))
 									reboot = 1
-									log("geoip 更新成功。")
+									log(api.i18n.translatef("%s update success.", "geoip"))
 									return 1
 								else
-									log("geoip 更新失败，请稍后再试。")
+									log(api.i18n.translatef("%s update failed, please try again later.", "geoip"))
 								end
 								break
 							end
@@ -103,9 +101,7 @@ local function fetch_geoip()
 	return 0
 end
 
---获取geosite
 local function fetch_geosite()
-	--请求geosite
 	xpcall(function()
 		local return_code, content = api.curl_logic(geosite_api)
 		local json = jsonc.parse(content)
@@ -124,7 +120,7 @@ local function fetch_geosite()
 						if fs.access(asset_location .. "geosite.dat") then
 							sys.call(string.format("cp -f %s %s", asset_location .. "geosite.dat", "/tmp/geosite.dat"))
 							if sys.call('sha256sum -c /tmp/geosite.dat.sha256sum > /dev/null 2>&1') == 0 then
-								log("geosite 版本一致，无需更新。")
+								log(api.i18n.translatef("%s version is the same and does not need to be updated.", "geosite"))
 								return 1
 							end
 						end
@@ -134,10 +130,10 @@ local function fetch_geosite()
 								if sys.call('sha256sum -c /tmp/geosite.dat.sha256sum > /dev/null 2>&1') == 0 then
 									sys.call(string.format("mkdir -p %s && cp -f %s %s", asset_location, "/tmp/geosite.dat", asset_location .. "geosite.dat"))
 									reboot = 1
-									log("geosite 更新成功。")
+									log(api.i18n.translatef("%s update success.", "geosite"))
 									return 1
 								else
-									log("geosite 更新失败，请稍后再试。")
+									log(api.i18n.translatef("%s update failed, please try again later.", "geosite"))
 								end
 								break
 							end
@@ -174,17 +170,17 @@ if geoip_update == 0 and geosite_update == 0 then
 	os.exit(0)
 end
 
-log("开始更新规则...")
+log(api.i18n.translate("Start updating the rules..."))
 
 if tonumber(geoip_update) == 1 then
-	log("geoip 开始更新...")
+	log(api.i18n.translatef("%s Start updating...", "geoip"))
 	local status = fetch_geoip()
 	os.remove("/tmp/geoip.dat")
 	os.remove("/tmp/geoip.dat.sha256sum")
 end
 
 if tonumber(geosite_update) == 1 then
-	log("geosite 开始更新...")
+	log(api.i18n.translatef("%s Start updating...", "geosite"))
 	local status = fetch_geosite()
 	os.remove("/tmp/geosite.dat")
 	os.remove("/tmp/geosite.dat.sha256sum")
@@ -201,8 +197,8 @@ if reboot == 1 then
 		end
 	end
 
-	log("重启服务，应用新的规则。")
+	log(api.i18n.translate("Restart the service and apply the new rules."))
 	uci:set(name, "@global[0]", "flush_set", "1")
 	api.uci_save(uci, name, true, true)
 end
-log("规则更新完毕...")
+log(api.i18n.translate("The rules have been updated..."))

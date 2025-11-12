@@ -76,7 +76,7 @@ table td, .table .td {
 
 	function cbi_t_switch(section, tab) {
 		if( cbi_t[section] && cbi_t[section][tab] ) {
-			//在切换选项卡之前，先取消当前激活选项卡的全选状态
+			// Before switching tabs, first deselect all currently active tabs.
 			var btn = document.getElementById("select_all_btn");
 			if (btn) {
 				dechecked_all_node(btn);

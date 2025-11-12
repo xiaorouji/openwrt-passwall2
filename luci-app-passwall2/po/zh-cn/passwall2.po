@@ -1702,6 +1702,9 @@ msgstr "下载备份"
 msgid "RST Backup"
 msgstr "恢复备份"
 
+msgid "Backup failed!"
+msgstr "备份失败！"
+
 msgid "UL Restore"
 msgstr "上传恢复"
 
@@ -1728,6 +1731,18 @@ msgstr "是否要恢复客户端默认配置？"
 
 msgid "Are you sure you want to restore the client to default settings?"
 msgstr "是否真的要恢复客户端默认配置？"
+
+msgid "Configuration file uploaded successfully…"
+msgstr "配置文件上传成功…"
+
+msgid "Configuration restored successfully…"
+msgstr "配置还原成功…"
+
+msgid "Service restarting…"
+msgstr "重启服务中…"
+
+msgid "Configuration file decompression failed, please try again!"
+msgstr "配置文件解压失败，请重试！"
 
 msgid "_urltest"
 msgstr "URLTest"
@@ -1842,3 +1857,384 @@ msgstr "分组名"
 
 msgid "Using..."
 msgstr "使用中。"
+
+msgid "Generate configuration file and run"
+msgstr "生成配置文件并运行"
+
+msgid "Start after a delay of %s seconds!"
+msgstr "延时 %s 秒后再启动!"
+
+msgid "The script is already running, do not run it again. Exit."
+msgstr "脚本已经在运行，不重复运行，退出."
+
+msgid "Stop the script and wait for a timeout, then exit without repeating the process."
+msgstr "停止脚本等待超时，不重复运行，退出."
+
+msgid "%s Transparent proxy base dependencies %s Not installed..."
+msgstr "%s 透明代理基础依赖 %s 未安装..."
+
+msgid "%s does not have execute permissions and cannot be started: %s %s"
+msgstr "%s 没有执行权限，无法启动：%s %s"
+
+msgid "%s not found, unable to start..."
+msgstr "找不到 %s，无法启动..."
+
+msgid "Socks node: [%s]%s is an invalid server address and cannot be started!"
+msgstr "Socks节点：[%s]%s 是非法的服务器地址，无法启动！"
+
+msgid "For some reason, the configuration for this Socks service has been lost, and its startup has been aborted!"
+msgstr "某种原因，此 Socks 服务的相关配置已失联，启动中止！"
+
+msgid "Socks node: [%s]%s, start failed %s:%s %s"
+msgstr "Socks节点：[%s]%s，启动失败 %s:%s %s"
+
+msgid "Socks node: [%s]%s, starting %s:%s"
+msgstr "Socks节点：[%s]%s，启动 %s:%s"
+
+msgid "To enable experimental IPv6 transparent proxy (TProxy), please ensure your node and type support IPv6!"
+msgstr "开启实验性IPv6透明代理(TProxy)，请确认您的节点及类型支持IPv6！"
+
+msgid "Analyzing the node configuration of the Socks service..."
+msgstr "分析 Socks 服务的节点配置..."
+
+msgid "Log file is too long, clear it!"
+msgstr "日志文件过长，清空处理！"
+
+msgid "The task is currently running automatically as a scheduled task; no reconfiguration of the scheduled task is required."
+msgstr "当前为计划任务自动运行，不重新配置定时任务。"
+
+msgid "Scheduled tasks: Auto stop service."
+msgstr "配置定时任务：自动关闭服务。"
+
+msgid "Scheduled tasks: Auto start service."
+msgstr "配置定时任务：自动开启服务。"
+
+msgid "Scheduled tasks: Auto restart service."
+msgstr "配置定时任务：自动重启服务。"
+
+msgid "Scheduled tasks: Auto update rules."
+msgstr "配置定时任务：自动更新规则。"
+
+msgid "Scheduled tasks: Auto update [%s] subscription."
+msgstr "配置定时任务：自动更新 【%s】 订阅。"
+
+msgid "Auto updates: Starts a cyclical update process."
+msgstr "自动更新：启动循环更新进程。"
+
+msgid "Running in no proxy mode, it only allows scheduled tasks for starting and stopping services."
+msgstr "运行于非代理模式，仅允许服务启停的定时任务。"
+
+msgid "Clear scheduled commands."
+msgstr "清除定时执行命令。"
+
+msgid "Unable to resolve [%s], route table addition failed!"
+msgstr "无法解析[%s]，路由表添加失败！"
+
+msgid "[%s] was successfully added to the routing table of interface [%s]!"
+msgstr "[%s]添加到接口[%s]路由表成功！"
+
+msgid "Adding [%s] to the [%s] routing table failed! The reason is that the [%s] gateway cannot be found."
+msgstr "[%s]添加到接口[%s]路由表失功！原因是找不到[%s]网关。"
+
+msgid "Global nodes are not enabled, skip [%s]."
+msgstr "全局节点未启用，跳过【%s】"
+
+msgid "Direct DNS: %s"
+msgstr "直连 DNS：%s"
+
+msgid "Remote DNS: %s"
+msgstr "远程 DNS：%s"
+
+msgid "The program has started. Please stop it and then restart it!"
+msgstr "程序已启动，先停止再重新启动!"
+
+msgid "The system does not have iptables or ipset installed, or Dnsmasq does not have ipset support enabled, so iptables+ipset transparent proxy cannot be used!"
+msgstr "系统未安装iptables或ipset或Dnsmasq没有开启ipset支持，无法使用iptables+ipset透明代理！"
+
+msgid "fw4 detected, use nftables to transparent proxy."
+msgstr "检测到fw4，使用nftables进行透明代理。"
+
+msgid "The Dnsmasq package does not meet the requirements for transparent proxy in nftables. If you need to use it, please ensure that the dnsmasq version is 2.87 or higher and that nftset support is enabled."
+msgstr "Dnsmasq软件包不满足nftables透明代理要求，如需使用请确保dnsmasq版本在2.87以上并开启nftset支持。"
+
+msgid "If your Dnsmasq version is lower than 2.90, it is recommended to upgrade to version 2.90 or higher to avoid Dnsmasq crashing in some cases!"
+msgstr "Dnsmasq版本低于2.90，建议升级至2.90及以上版本以避免部分情况下Dnsmasq崩溃问题！"
+
+msgid "Running complete!"
+msgstr "运行完成！"
+
+msgid "Clearing and closing related programs and cache complete."
+msgstr "清空并关闭相关程序和缓存完成。"
+
+msgid "Incorrect index listing method (%s), execution terminated!"
+msgstr "索引列举方式不正确（%s），终止执行！"
+
+msgid "parse the traffic splitting rules[%s]-[geoip:%s] add to %s to complete."
+msgstr "解析分流规则[%s]-[geoip:%s]加入到 %s 完成"
+
+msgid "Access Control:"
+msgstr "访问控制："
+
+msgid "Add node to the load balancer is directly connected to %s[%s]."
+msgstr "加入负载均衡的节点到%s[%s]直连完成。"
+
+msgid "Add all %s nodes to %s[%s] direct connection complete."
+msgstr "加入所有%s节点到%s[%s]直连完成。"
+
+msgid "Starting to load %s firewall rules..."
+msgstr "开始加载 %s 防火墙规则..."
+
+msgid "local network segments (%s) direct connection: %s"
+msgstr "本机 %s 网段直连：%s"
+
+msgid "Add ISP %s DNS to the whitelist: %s"
+msgstr "追加ISP %s DNS 到白名单：%s"
+
+msgid "[%s]"
+msgstr "【%s】"
+
+msgid "[%s],"
+msgstr "【%s】，"
+
+msgid "Source iface [%s],"
+msgstr "源接口【%s】，"
+
+msgid "IP range [%s],"
+msgstr "IP 范围【%s】，"
+
+msgid "All device,"
+msgstr "所有设备，"
+
+msgid "Does not exist, ignore."
+msgstr "不存在，忽略。"
+
+msgid "not proxy %s port [%s]"
+msgstr "不代理 %s 端口 [%s]"
+
+msgid "not proxy all %s"
+msgstr "不代理所有 %s"
+
+msgid "Use the %s node [%s]"
+msgstr "使用 %s 节点[%s]"
+
+msgid "Using a node that is different from the global configuration, DNS has been forcibly redirected to a dedicated DNS server."
+msgstr "使用与全局配置不相同节点，已将DNS强制重定向到专用 DNS 服务器。"
+
+msgid "Add direct DNS to %s: %s"
+msgstr "追加直连 DNS 到 %s： %s"
+
+msgid "Local"
+msgstr "本机"
+
+msgid "[Local],"
+msgstr "【本机】，"
+
+msgid "Clear %s."
+msgstr "清除 %s。"
+
+msgid "Delete %s rules is complete."
+msgstr "删除 %s 规则完成。"
+
+msgid "Firewall rules load complete!"
+msgstr "防火墙规则加载完成！"
+
+msgid "Socks switch detection: Unknown error."
+msgstr "Socks切换检测：未知错误。"
+
+msgid "Socks switch detection: Unable to connect to the network. Please check if the network is working properly!"
+msgstr "Socks切换检测：无法连接到网络，请检查网络是否正常！"
+
+msgid "Socks switch detection: Primary node 【%s: [%s]】 is normal. Switch to the primary node!"
+msgstr "Socks切换检测：%s 主节点【%s：[%s]】正常，切换到主节点！"
+
+msgid "Socks switch detection: %s node switch complete!"
+msgstr "Socks切换检测：%s 节点切换完毕！"
+
+msgid "Socks switch detection: %s 【%s:[%s]】 normal."
+msgstr "Socks切换检测：%s 【%s:[%s]】 正常。"
+
+msgid "switch to %s test detect!"
+msgstr "切换到 %s 检测！"
+
+msgid "backup node"
+msgstr "备用节点"
+
+msgid "next backup node"
+msgstr "下一个备用节点"
+
+msgid "main node"
+msgstr "主节点"
+
+msgid "Socks switch detection: Unknown error."
+msgstr "Socks切换检测：未知错误。"
+
+msgid "Socks switch detection: %s 【%s:[%s]】 abnormal, %s"
+msgstr "Socks切换检测：%s 【%s:[%s]】 异常，%s"
+
+msgid "Socks switch detection: %s 【%s:[%s]】 normal, switch to this node!"
+msgstr "Socks切换检测：%s 【%s:[%s]】 正常，切换到此节点！"
+
+msgid "Restart dnsmasq service."
+msgstr "重启 dnsmasq 服务。"
+
+msgid "Console Port: %s"
+msgstr "控制台端口：%s"
+
+msgid "Discard one obviously invalid node."
+msgstr "丢弃 1 个明显无效的节点"
+
+msgid "Entrance %s:%s"
+msgstr "入口 %s:%s"
+
+msgid "Node: %s:%s, Weight: %s"
+msgstr "节点：%s:%s，权重：%s"
+
+msgid "Start updating the rules..."
+msgstr "开始更新规则..."
+
+msgid "%s Start updating..."
+msgstr "%s 开始更新..."
+
+msgid "%s version is the same and does not need to be updated."
+msgstr "%s 版本一致，无需更新。"
+
+msgid "%s update success."
+msgstr "%s 更新成功。"
+
+msgid "%s update failed, please try again later."
+msgstr "%s 更新失败，请稍后再试。"
+
+msgid "Restart the service and apply the new rules."
+msgstr "重启服务，应用新的规则。"
+
+msgid "The rules have been updated..."
+msgstr "规则更新完毕..."
+
+msgid "Socks node list [%s]"
+msgstr "Socks 节点列表 [%s]"
+
+msgid "Backup node list"
+msgstr "备用节点的列表"
+
+msgid "HAProxy node list [%s]"
+msgstr "HAProxy 节点列表 [%s]"
+
+msgid "ACL list [%s]"
+msgstr "访问控制列表 [%s]"
+
+msgid "Shunt [%s] node"
+msgstr "分流 [%s] 节点"
+
+msgid "Xray Load Balancing node [%s] list"
+msgstr "Xray 负载均衡节点 [%s] 列表"
+
+msgid "Xray Load Balancing node [%s] backup node"
+msgstr "Xray 负载均衡节点 [%s] 后备节点"
+
+msgid "Sing-Box URLTest node [%s] list"
+msgstr "Sing-Box URLTest 节点 [%s] 列表"
+
+msgid "Node [%s] preproxy node"
+msgstr "节点 [%s] 前置代理节点"
+
+msgid "Node [%s] landing node"
+msgstr "节点 [%s] 落地节点"
+
+msgid "Skipping the %s node is due to incompatibility with the %s core program or incorrect node usage type settings."
+msgstr "跳过 %s 节点，因未适配到 %s 核心程序，或未正确设置节点使用类型。"
+
+msgid "Skip node: %s. Because Sing-Box does not support the %s protocol's %s transmission method, Xray needs to be used instead."
+msgstr "跳过节点：%s，因 Sing-Box 不支持 %s 协议的 %s 传输方式，需更换 Xray。"
+
+msgid "Xray unsupport %s plugin."
+msgstr "Xray 不支持 %s 插件。"
+
+msgid "Plugin options Incomplete."
+msgstr "插件选项不完整。"
+
+msgid "shadowsocks-libev unsupport 2022 encryption."
+msgstr "shadowsocks-libev 不支持2022加密。"
+
+msgid "Please replace Xray or Sing-Box to support more transmission methods in Shadowsocks."
+msgstr "请更换 Xray 或 Sing-Box 来支持 Shadowsocks 更多的传输方式。"
+
+msgid "unsupport %s plugin."
+msgstr "不支持 %s 插件。"
+
+msgid "Skip the %s node because the %s core program is not installed."
+msgstr "跳过 %s 节点，因未安装 %s 核心程序 %s。"
+
+msgid "Skip the %s node, as %s type nodes require Sing-Box version 1.12 or higher."
+msgstr "跳过 %s 节点，因 %s 类型的节点需要 Sing-Box 1.12 以上版本支持。"
+
+msgid "%s type node subscriptions are not currently supported, skip this node."
+msgstr "暂时不支持 %s 类型的节点订阅，跳过此节点。"
+
+msgid "Update [%s]"
+msgstr "'更新【%s】"
+
+msgid "Matching node:"
+msgstr "匹配节点："
+
+msgid "First Matching node:"
+msgstr "第一匹配节点："
+
+msgid "Second Matching node:"
+msgstr "第二匹配节点："
+
+msgid "Third Matching node:"
+msgstr "第三匹配节点："
+
+msgid "Fourth Matching node:"
+msgstr "第四匹配节点："
+
+msgid "Fifth Matching node:"
+msgstr "第五匹配节点："
+
+msgid "Unable to find the best matching node, now replaced with:"
+msgstr "无法找到最匹配的节点，当前已更换为："
+
+msgid "No node information updates are available."
+msgstr "没有可用的节点信息更新。"
+
+msgid "Skip unknown types:"
+msgstr "跳过未知类型："
+
+msgid "Discard node: %s, Reason:"
+msgstr "丢弃节点: %s ，原因："
+
+msgid "No usable binary was found."
+msgstr "找不到可使用二进制。"
+
+msgid "Discard filter nodes: %s type node %s"
+msgstr "丢弃过滤节点: %s 类型节点 %s"
+
+msgid "Parsing error, skip this node."
+msgstr "解析错误，跳过此节点。"
+
+msgid "Successfully resolved the [%s] node, number: %s"
+msgstr "成功解析【%s】节点，数量：%s"
+
+msgid "Get subscription content for [%s] is empty. This may be due to an invalid subscription address or a network problem. Please diagnose the issue!"
+msgstr "获取到的【%s】订阅内容为空，可能是订阅地址无效，或是网络问题，请诊断！"
+
+msgid "Proxy"
+msgstr "代理"
+
+msgid "Start subscribing..."
+msgstr "开始订阅..."
+
+msgid "Start subscribing: %s"
+msgstr "开始订阅：%s"
+
+msgid "Subscription: [%s] No changes, no update required."
+msgstr "订阅:【%s】没有变化，无需更新。"
+
+msgid "[%s] Subscription failed. This could be due to an invalid subscription address or a network issue. Please diagnose the problem! [%s]"
+msgstr "【%s】订阅失败，可能是订阅地址无效，或是网络问题，请诊断！[%s]"
+
+msgid "Error, restoring service."
+msgstr "发生错误, 正在恢复服务。"
+
+msgid "Subscription complete..."
+msgstr "订阅完毕..."

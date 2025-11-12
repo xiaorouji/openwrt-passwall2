@@ -5,7 +5,7 @@ local api = require "luci.passwall2.api"
 <script type="text/javascript">
 	//<![CDATA[
 	function ajax_add_node(link, group) {
-		const chunkSize = 1000;  // 分片发送以突破uhttpd的限制，每块1000字符
+		const chunkSize = 1000;  // Fragmented sending to overcome uhttpd's limitations, with each fragment containing 1000 characters.
 		const totalChunks = Math.ceil(link.length / chunkSize);
 		let currentChunk = 0;
 
@@ -86,7 +86,7 @@ local api = require "luci.passwall2.api"
 	}
 	
 
-	//自定义分组下拉列表事件
+	// Custom group dropdown list events
 	document.addEventListener("DOMContentLoaded", function() {
 		var dropdown = document.getElementById("addlink_group_custom");
 		if (!dropdown) return;
@@ -141,7 +141,7 @@ local api = require "luci.passwall2.api"
 			input.value = "";
 			selectItem(li);
 		});
-		// 从tab中读取分组名称
+		// Read group names from tab
 		var observer = new MutationObserver(function(mutations, obs){
 			var tabs = document.querySelectorAll(".cbi-tabmenu li");
 			if(!tabs.length) return;
@@ -163,7 +163,7 @@ local api = require "luci.passwall2.api"
 		});
 		observer.observe(document.body, {childList: true, subtree: true});
 
-		// 点击外部时自动收起
+		// Automatically collapses when clicking on the outside.
 		document.addEventListener("click", function(e) {
 			if (!dropdown.contains(e.target)) {
 				list.style.display = "none";

@@ -147,7 +147,7 @@ o:depends({ [_n("protocol")] = "socks" })
 o:depends({ [_n("protocol")] = "shadowsocks" })
 o:depends({ [_n("protocol")] = "trojan" })
 
--- [[ REALITY部分 ]] --
+-- [[ REALITY ]] --
 o = s:option(Flag, _n("reality"), translate("REALITY"))
 o.default = 0
 o:depends({ [_n("tls")] = true })
@@ -211,7 +211,7 @@ end
 -- o:value("1.3")
 --o:depends({ [_n("tls")] = true })
 
--- [[ TLS部分 ]] --
+-- [[ TLS ]] --
 o = s:option(FileUpload, _n("tls_certificateFile"), translate("Public key absolute path"), translate("as:") .. "/etc/ssl/fullchain.pem")
 o.default = m:get(s.section, "tls_certificateFile") or "/etc/config/ssl/" .. arg[1] .. ".pem"
 if o and o:formvalue(arg[1]) then o.default = o:formvalue(arg[1]) end
@@ -268,14 +268,14 @@ o:depends({ [_n("protocol")] = "socks" })
 o:depends({ [_n("protocol")] = "shadowsocks" })
 o:depends({ [_n("protocol")] = "trojan" })
 
--- [[ WebSocket部分 ]]--
+-- [[ WebSocket ]]--
 o = s:option(Value, _n("ws_host"), translate("WebSocket Host"))
 o:depends({ [_n("transport")] = "ws" })
 
 o = s:option(Value, _n("ws_path"), translate("WebSocket Path"))
 o:depends({ [_n("transport")] = "ws" })
 
--- [[ HttpUpgrade部分 ]]--
+-- [[ HttpUpgrade ]]--
 o = s:option(Value, _n("httpupgrade_host"), translate("HttpUpgrade Host"))
 o:depends({ [_n("transport")] = "httpupgrade" })
 
@@ -283,7 +283,7 @@ o = s:option(Value, _n("httpupgrade_path"), translate("HttpUpgrade Path"))
 o.placeholder = "/"
 o:depends({ [_n("transport")] = "httpupgrade" })
 
--- [[ XHTTP部分 ]]--
+-- [[ XHTTP ]]--
 o = s:option(Value, _n("xhttp_host"), translate("XHTTP Host"))
 o:depends({ [_n("transport")] = "xhttp" })
 
@@ -307,23 +307,20 @@ o = s:option(Value, _n("splithttp_maxconcurrentuploads"), translate("maxConcurre
 o.default = "10"
 o:depends({ [_n("transport")] = "splithttp" })
 
--- [[ TCP部分 ]]--
+-- [[ TCP ]]--
 
--- TCP伪装
 o = s:option(ListValue, _n("tcp_guise"), translate("Camouflage Type"))
 o:value("none", "none")
 o:value("http", "http")
 o:depends({ [_n("transport")] = "raw" })
 
--- HTTP域名
 o = s:option(DynamicList, _n("tcp_guise_http_host"), translate("HTTP Host"))
 o:depends({ [_n("tcp_guise")] = "http" })
 
--- HTTP路径
 o = s:option(DynamicList, _n("tcp_guise_http_path"), translate("HTTP Path"))
 o:depends({ [_n("tcp_guise")] = "http" })
 
--- [[ mKCP部分 ]]--
+-- [[ mKCP ]]--
 
 o = s:option(ListValue, _n("mkcp_guise"), translate("Camouflage Type"), translate('<br />none: default, no masquerade, data sent is packets with no characteristics.<br />srtp: disguised as an SRTP packet, it will be recognized as video call data (such as FaceTime).<br />utp: packets disguised as uTP will be recognized as bittorrent downloaded data.<br />wechat-video: packets disguised as WeChat video calls.<br />dtls: disguised as DTLS 1.2 packet.<br />wireguard: disguised as a WireGuard packet. (not really WireGuard protocol)<br />dns: Disguising traffic as DNS requests.'))
 for a, t in ipairs(header_type_list) do o:value(t) end
@@ -362,7 +359,7 @@ o:depends({ [_n("transport")] = "mkcp" })
 o = s:option(Value, _n("mkcp_seed"), translate("KCP Seed"))
 o:depends({ [_n("transport")] = "mkcp" })
 
--- [[ gRPC部分 ]]--
+-- [[ gRPC ]]--
 o = s:option(Value, _n("grpc_serviceName"), "ServiceName")
 o:depends({ [_n("transport")] = "grpc" })
 
@@ -370,7 +367,7 @@ o = s:option(Flag, _n("acceptProxyProtocol"), translate("acceptProxyProtocol"), 
 o.default = "0"
 o:depends({ [_n("custom")] = false })
 
--- [[ Fallback部分 ]]--
+-- [[ Fallback ]]--
 o = s:option(Flag, _n("fallback"), translate("Fallback"))
 o:depends({ [_n("protocol")] = "vless", [_n("transport")] = "raw" })
 o:depends({ [_n("protocol")] = "trojan", [_n("transport")] = "raw" })

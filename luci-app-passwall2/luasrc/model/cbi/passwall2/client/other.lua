@@ -119,7 +119,7 @@ if (os.execute("lsmod | grep -i REDIRECT >/dev/null") == 0 and os.execute("lsmod
 	o:value("tproxy", "TPROXY")
 	o:depends("ipv6_tproxy", false)
 	o.remove = function(self, section)
-		-- 禁止在隐藏时删除
+		-- Do not delete while hidden
 	end
 
 	o = s:option(ListValue, "_tcp_proxy_way", translate("TCP Proxy Way"))

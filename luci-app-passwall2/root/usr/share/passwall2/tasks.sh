@@ -1,6 +1,6 @@
 #!/bin/sh
 
-## 循环更新脚本
+## Loop update script
 
 CONFIG=passwall2
 APP_PATH=/usr/share/$CONFIG
