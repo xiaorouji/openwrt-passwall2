@@ -1,13 +1,6 @@
 #!/bin/sh
 
 CONFIG=passwall2
-LOG_FILE=/tmp/log/$CONFIG.log
-
-echolog() {
-	local d="$(date "+%Y-%m-%d %H:%M:%S")"
-	#echo -e "$d: $1"
-	echo -e "$d: $1" >> $LOG_FILE
-}
 
 config_n_get() {
 	local ret=$(uci -q get "${CONFIG}.${1}.${2}" 2>/dev/null)

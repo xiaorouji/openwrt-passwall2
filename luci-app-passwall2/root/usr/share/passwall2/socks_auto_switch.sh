@@ -79,7 +79,7 @@ test_auto_switch() {
 		if [ -n "$($APP_FILE get_cache_var "socks_${id}")" ]; then
 			now_node=$($APP_FILE get_cache_var "socks_${id}")
 		else
-			$APP_FILE echolog_i18n "Socks switch detection: Unknown error."
+			#$APP_FILE log_i18n 0 "Socks switch detection: Unknown error."
 			return 1
 		fi
 	}
@@ -90,7 +90,7 @@ test_auto_switch() {
 
 	local status=$(test_proxy)
 	if [ "$status" = "2" ]; then
-		$APP_FILE echolog_i18n "Socks switch detection: Unable to connect to the network. Please check if the network is working properly!"
+		$APP_FILE log_i18n 0 "Socks switch detection: Unable to connect to the network. Please check if the network is working properly!"
 		return 2
 	fi
 
@@ -99,17 +99,17 @@ test_auto_switch() {
 		test_node ${main_node}
 		[ $? -eq 0 ] && {
 			# The main node is working properly; switch to the main node.
-			$APP_FILE echolog_i18n "Socks switch detection: Primary node 【%s: [%s]】 is normal. Switch to the primary node!" "${id}" "$(config_n_get $main_node type)" "$(config_n_get $main_node remarks)"
+			$APP_FILE log_i18n 0 "Socks switch detection: Primary node 【%s: [%s]】 is normal. Switch to the primary node!" "${id}" "$(config_n_get $main_node type)" "$(config_n_get $main_node remarks)"
 			$APP_FILE socks_node_switch flag=${id} new_node=${main_node}
 			[ $? -eq 0 ] && {
-				$APP_FILE echolog_i18n "Socks switch detection: %s node switch complete!" "${id}"
+				$APP_FILE log_i18n 0 "Socks switch detection: %s node switch complete!" "${id}"
 			}
 			return 0
 		}
 	fi
 
 	if [ "$status" = "0" ]; then
-		$APP_FILE echolog_i18n "Socks switch detection: %s 【%s:[%s]】 normal." "${id}" "$(config_n_get $now_node type)" "$(config_n_get $now_node remarks)"
+		#$APP_FILE log_i18n 0 "Socks switch detection: %s 【%s:[%s]】 normal." "${id}" "$(config_n_get $now_node type)" "$(config_n_get $now_node remarks)"
 		return 0
 	elif [ "$status" = "1" ]; then
 		local new_node msg
@@ -133,7 +133,7 @@ test_auto_switch() {
 			[ "$now_node" = "$main_node" ] && msg2="$($APP_FILE i18n "backup node")"
 			msg="$($APP_FILE i18n "switch to %s test detect!" "${msg2}")"
 		fi
-		$APP_FILE echolog_i18n "Socks switch detection: %s 【%s:[%s]】 abnormal, %s" "${id}" "$(config_n_get $now_node type)" "$(config_n_get $now_node remarks)" "${msg}"
+		$APP_FILE log_i18n 0 "Socks switch detection: %s 【%s:[%s]】 abnormal, %s" "${id}" "$(config_n_get $now_node type)" "$(config_n_get $now_node remarks)" "${msg}"
 		test_node ${new_node}
 		if [ $? -eq 0 ]; then
 #			[ "$restore_switch" = "0" ] && {
@@ -141,10 +141,10 @@ test_auto_switch() {
 #				[ -z "$(echo $b_nodes | grep $main_node)" ] && uci add_list $CONFIG.${id}.autoswitch_backup_node=$main_node
 #				uci commit $CONFIG
 #			}
-			$APP_FILE echolog_i18n "Socks switch detection: %s 【%s:[%s]】 normal, switch to this node!" "${id}" "$(config_n_get $new_node type)" "$(config_n_get $new_node remarks)"
+			$APP_FILE log_i18n 0 "Socks switch detection: %s 【%s:[%s]】 normal, switch to this node!" "${id}" "$(config_n_get $new_node type)" "$(config_n_get $new_node remarks)"
 			$APP_FILE socks_node_switch flag=${id} new_node=${new_node}
 			[ $? -eq 0 ] && {
-				$APP_FILE echolog_i18n "Socks switch detection: %s node switch complete!" "${id}"
+				$APP_FILE log_i18n 0 "Socks switch detection: %s node switch complete!" "${id}"
 			}
 			return 0
 		else

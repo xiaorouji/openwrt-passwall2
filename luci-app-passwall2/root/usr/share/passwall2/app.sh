@@ -24,21 +24,38 @@ UTIL_NAIVE=$LUA_UTIL_PATH/util_naiveproxy.lua
 UTIL_HYSTERIA2=$LUA_UTIL_PATH/util_hysteria2.lua
 UTIL_TUIC=$LUA_UTIL_PATH/util_tuic.lua
 
-echolog() {
-	local d="$(date "+%Y-%m-%d %H:%M:%S")"
-	echo -e "$d: $*" >>$LOG_FILE
+i18n() {
+	echo "$(lua ${APP_PATH}/i18n.lua "$@")"
 }
 
-echolog_nodate() {
+echolog() {
 	echo -e "$*" >>$LOG_FILE
 }
 
-echolog_i18n() {
-	echolog "$(i18n "$@")"
+echolog_date() {
+	local d="$(date "+%Y-%m-%d %H:%M:%S")"
+	echolog "$d: $*"
 }
 
-i18n() {
-	echo "$(lua ${APP_PATH}/i18n.lua "$@")"
+log() {
+	local num="$1"
+	shift
+	local content="$@"
+	local indent=""
+	if [ "$num" -ge 1 ]; then
+		for i in $(seq 1 ${num}); do
+			indent="${indent}  "
+		done
+		echolog_date "${indent}- ${content}"
+	else
+		echolog_date "${content}"
+	fi
+}
+
+log_i18n() {
+	local num="$1"
+	shift
+	log ${num} "$(i18n "$@")"
 }
 
 config_get_type() {
@@ -228,11 +245,11 @@ check_depends() {
 	[ -d "/lib/apk/packages" ] && file_path="/lib/apk/packages" && file_ext=".list"
 	if [ "$tables" == "iptables" ]; then
 		for depends in "iptables-mod-tproxy" "iptables-mod-socket" "iptables-mod-iprange" "iptables-mod-conntrack-extra" "kmod-ipt-nat"; do
-			[ -s "${file_path}/${depends}${file_ext}" ] || echolog_i18n "%s Transparent proxy base dependencies %s Not installed..." "${tables}" "${depends}"
+			[ -s "${file_path}/${depends}${file_ext}" ] || log_i18n 0 "%s Transparent proxy base dependencies %s Not installed..." "${tables}" "${depends}"
 		done
 	else
 		for depends in "kmod-nft-socket" "kmod-nft-tproxy" "kmod-nft-nat"; do
-			[ -s "${file_path}/${depends}${file_ext}" ] || echolog_i18n "%s Transparent proxy base dependencies %s Not installed..." "${tables}" "${depends}"
+			[ -s "${file_path}/${depends}${file_ext}" ] || log_i18n 0 "%s Transparent proxy base dependencies %s Not installed..." "${tables}" "${depends}"
 		done
 	fi
 }
@@ -269,14 +286,14 @@ ln_run() {
 			ln -s "${file_func}" "${TMP_BIN_PATH}/${ln_name}" >/dev/null 2>&1
 			file_func="${TMP_BIN_PATH}/${ln_name}"
 		}
-		[ -x "${file_func}" ] || echolog "  - $(i18n "%s does not have execute permissions and cannot be started: %s %s" "$(readlink ${file_func})" "${file_func}" "$*")"
+		[ -x "${file_func}" ] || log 1 "$(i18n "%s does not have execute permissions and cannot be started: %s %s" "$(readlink ${file_func})" "${file_func}" "$*")"
 	fi
 	#echo "${file_func} $*" >&2
-	[ -n "${file_func}" ] || echolog "  - $(i18n "%s not found, unable to start..." "${ln_name}")"
-	${file_func:-echolog "  - ${ln_name}"} "$@" >${output} 2>&1 &
+	[ -n "${file_func}" ] || log 1 "$(i18n "%s not found, unable to start..." "${ln_name}")"
+	${file_func:-log 1 "${ln_name}"} "$@" >${output} 2>&1 &
 	process_count=$(ls $TMP_SCRIPT_FUNC_PATH | grep -v "^_" | wc -l)
 	process_count=$((process_count + 1))
-	echo "${file_func:-echolog "  - ${ln_name}"} $@ >${output}" > $TMP_SCRIPT_FUNC_PATH/$process_count
+	echo "${file_func:-log 1 "${ln_name}"} $@ >${output}" > $TMP_SCRIPT_FUNC_PATH/$process_count
 }
 
 lua_api() {
@@ -600,7 +617,7 @@ run_socks() {
 	if [ -n "$server_host" ] && [ -n "$server_port" ]; then
 		check_host $server_host
 		[ $? != 0 ] && {
-			echolog "  - $(i18n "Socks node: [%s]%s is an invalid server address and cannot be started!" "${$remarks}" "${server_host}")"
+			log 1 "$(i18n "Socks node: [%s]%s is an invalid server address and cannot be started!" "${$remarks}" "${server_host}")"
 			return 1
 		}
 		tmp="${server_host}:${server_port}"
@@ -616,10 +633,10 @@ run_socks() {
 	fi
 
 	[ -n "${error_msg}" ] && {
-		[ "$bind" != "127.0.0.1" ] && echolog "  - $(i18n "Socks node: [%s]%s, start failed %s:%s %s" "${remarks}" "${tmp}" "${bind}" "${socks_port}" "${error_msg}")"
+		[ "$bind" != "127.0.0.1" ] && log 1 "$(i18n "Socks node: [%s]%s, start failed %s:%s %s" "${remarks}" "${tmp}" "${bind}" "${socks_port}" "${error_msg}")"
 		return 1
 	}
-	[ "$bind" != "127.0.0.1" ] && echolog "  - $(i18n "Socks node: [%s]%s, starting %s:%s" "${remarks}" "${tmp}" "${bind}" "${socks_port}")"
+	[ "$bind" != "127.0.0.1" ] && log 1 "$(i18n "Socks node: [%s]%s, starting %s:%s" "${remarks}" "${tmp}" "${bind}" "${socks_port}")"
 
 	case "$type" in
 	sing-box)
@@ -759,7 +776,7 @@ run_global() {
 	mkdir -p ${GLOBAL_ACL_PATH}
 
 	if [ $PROXY_IPV6 == "1" ]; then
-		echolog_i18n "To enable experimental IPv6 transparent proxy (TProxy), please ensure your node and type support IPv6!"
+		log_i18n 0 "To enable experimental IPv6 transparent proxy (TProxy), please ensure your node and type support IPv6!"
 	fi
 
 	TUN_DNS_PORT=15353
@@ -767,7 +784,7 @@ run_global() {
 
 	V2RAY_ARGS="flag=global node=$NODE redir_port=$REDIR_PORT tcp_proxy_way=${TCP_PROXY_WAY}"
 	V2RAY_ARGS="${V2RAY_ARGS} dns_listen_port=${TUN_DNS_PORT} direct_dns_query_strategy=${DIRECT_DNS_QUERY_STRATEGY} remote_dns_query_strategy=${REMOTE_DNS_QUERY_STRATEGY} dns_cache=${DNS_CACHE}"
-	local msg="${TUN_DNS} （$(i18n "Direct DNS: %s" "${AUTO_DNS}")"
+	local msg="DNS: ${TUN_DNS} （$(i18n "Direct DNS: %s" "${AUTO_DNS}")"
 
 	[ -n "$REMOTE_DNS_PROTOCOL" ] && {
 		V2RAY_ARGS="${V2RAY_ARGS} remote_dns_protocol=${REMOTE_DNS_PROTOCOL} remote_dns_detour=${REMOTE_DNS_DETOUR}"
@@ -795,7 +812,7 @@ run_global() {
 		[ -n "${_remote_dns_client_ip}" ] && V2RAY_ARGS="${V2RAY_ARGS} remote_dns_client_ip=${_remote_dns_client_ip}"
 	}
 	msg="${msg}）"
-	echolog ${msg}
+	log 0 ${msg}
 
 	V2RAY_CONFIG=${GLOBAL_ACL_PATH}/global.json
 	V2RAY_LOG=${GLOBAL_ACL_PATH}/global.log
@@ -867,7 +884,7 @@ start_socks() {
 	[ "$SOCKS_ENABLED" = "1" ] && {
 		local ids=$(uci show $CONFIG | grep "=socks" | awk -F '.' '{print $2}' | awk -F '=' '{print $1}')
 		[ -n "$ids" ] && {
-			echolog_i18n "Analyzing the node configuration of the Socks service..."
+			log_i18n 0 "Analyzing the node configuration of the Socks service..."
 			for id in $ids; do
 				local enabled=$(config_n_get $id enabled 0)
 				[ "$enabled" == "0" ] && continue
@@ -898,7 +915,7 @@ clean_log() {
 	logsnum=$(cat $LOG_FILE 2>/dev/null | wc -l)
 	[ "$logsnum" -gt 1000 ] && {
 		echo "" > $LOG_FILE
-		echolog_i18n "Log file is too long, clear it!"
+		log_i18n 0 "Log file is too long, clear it!"
 	}
 }
 
@@ -922,7 +939,7 @@ start_crontab() {
 
 	[ -f "/tmp/lock/${CONFIG}_cron.lock" ] && {
 		rm -rf "/tmp/lock/${CONFIG}_cron.lock"
-		echolog_i18n "The task is currently running automatically as a scheduled task; no reconfiguration of the scheduled task is required."
+		log_i18n 0 "The task is currently running automatically as a scheduled task; no reconfiguration of the scheduled task is required."
 		return
 	}
 
@@ -943,7 +960,7 @@ start_crontab() {
 		else
 			echo "$t /etc/init.d/$CONFIG stop > /dev/null 2>&1 &" >>/etc/crontabs/root
 		fi
-		echolog_i18n "Scheduled tasks: Auto stop service."
+		log_i18n 0 "Scheduled tasks: Auto stop service."
 	fi
 
 	start_week_mode=$(config_t_get global_delay start_week_mode)
@@ -956,7 +973,7 @@ start_crontab() {
 		else
 			echo "$t /etc/init.d/$CONFIG start > /dev/null 2>&1 &" >>/etc/crontabs/root
 		fi
-		echolog_i18n "Scheduled tasks: Auto start service."
+		log_i18n 0 "Scheduled tasks: Auto start service."
 	fi
 
 	restart_week_mode=$(config_t_get global_delay restart_week_mode)
@@ -969,7 +986,7 @@ start_crontab() {
 		else
 			echo "$t /etc/init.d/$CONFIG restart > /dev/null 2>&1 &" >>/etc/crontabs/root
 		fi
-		echolog_i18n "Scheduled tasks: Auto restart service."
+		log_i18n 0 "Scheduled tasks: Auto restart service."
 	fi
 
 	autoupdate=$(config_t_get global_rules auto_update)
@@ -983,7 +1000,7 @@ start_crontab() {
 		else
 			echo "$t lua $APP_PATH/rule_update.lua log all cron > /dev/null 2>&1 &" >>/etc/crontabs/root
 		fi
-		echolog_i18n "Scheduled tasks: Auto update rules."
+		log_i18n 0 "Scheduled tasks: Auto update rules."
 	fi
 
 	TMP_SUB_PATH=$TMP_PATH/sub_crontabs
@@ -995,7 +1012,7 @@ start_crontab() {
 			week_update=$(config_n_get $item week_update)
 			time_update=$(config_n_get $item time_update)
 			echo "$cfgid" >> $TMP_SUB_PATH/${week_update}_${time_update}
-			echolog_i18n "Scheduled tasks: Auto update [%s] subscription." "${remark}"
+			log_i18n 0 "Scheduled tasks: Auto update [%s] subscription." "${remark}"
 		fi
 	done
 
@@ -1018,10 +1035,10 @@ start_crontab() {
 	if [ "$ENABLED_DEFAULT_ACL" == 1 ] || [ "$ENABLED_ACLS" == 1 ]; then
 		[ "$update_loop" = "1" ] && {
 			$APP_PATH/tasks.sh > /dev/null 2>&1 &
-			echolog_i18n "Auto updates: Starts a cyclical update process."
+			log_i18n 0 "Auto updates: Starts a cyclical update process."
 		}
 	else
-		echolog_i18n "Running in no proxy mode, it only allows scheduled tasks for starting and stopping services."
+		log_i18n 0 "Running in no proxy mode, it only allows scheduled tasks for starting and stopping services."
 	fi
 
 	/etc/init.d/cron restart
@@ -1031,13 +1048,13 @@ stop_crontab() {
 	[ -f "/tmp/lock/${CONFIG}_cron.lock" ] && return
 	clean_crontab
 	/etc/init.d/cron restart
-	#echolog_i18n "Clear scheduled commands."
+	#log_i18n 0 "Clear scheduled commands."
 }
 
 add_ip2route() {
 	local ip=$(get_host_ip "ipv4" $1)
 	[ -z "$ip" ] && {
-		echolog "  - $(i18n "Unable to resolve [%s], route table addition failed!" "${1}")"
+		log 1 "$(i18n "Unable to resolve [%s], route table addition failed!" "${1}")"
 		return 1
 	}
 	local remarks="${1}"
@@ -1052,9 +1069,9 @@ add_ip2route() {
 	if [ -n "${gateway}" ]; then
 		route add -host ${ip} gw ${gateway} dev ${device} >/dev/null 2>&1
 		echo "$ip" >> $TMP_ROUTE_PATH/${device}
-		echolog "  - $(i18n "[%s] was successfully added to the routing table of interface [%s]!" "${remarks}" "${device}")"
+		log 1 "$(i18n "[%s] was successfully added to the routing table of interface [%s]!" "${remarks}" "${device}")"
 	else
-		echolog "  - $(i18n "Adding [%s] to the [%s] routing table failed! The reason is that the [%s] gateway cannot be found." "${remarks}" "${device}" "${device}")"
+		log 1 "$(i18n "Adding [%s] to the [%s] routing table failed! The reason is that the [%s] gateway cannot be found." "${remarks}" "${device}" "${device}")"
 	fi
 }
 
@@ -1230,7 +1247,7 @@ acl_app() {
 						set_cache_var "ACL_${sid}_dns_port" "${GLOBAL_DNSMASQ_PORT}"
 						set_cache_var "ACL_${sid}_default" "1"
 					else
-						echolog "  - $(i18n "Global nodes are not enabled, skip [%s]." "${remarks}")"
+						log 1 "$(i18n "Global nodes are not enabled, skip [%s]." "${remarks}")"
 					fi
 				else
 					[ "$(config_get_type $node)" = "nodes" ] && {
@@ -1277,7 +1294,7 @@ acl_app() {
 
 start() {
 	pgrep -f /tmp/etc/passwall2/bin > /dev/null 2>&1 && {
-		#echolog_i18n "The program has started. Please stop it and then restart it!"
+		#log_i18n 0 "The program has started. Please stop it and then restart it!"
 		stop
 	}
 	mkdir -p /tmp/etc /tmp/log $TMP_PATH $TMP_BIN_PATH $TMP_SCRIPT_FUNC_PATH $TMP_ROUTE_PATH $TMP_ACL_PATH $TMP_PATH2
@@ -1296,9 +1313,9 @@ start() {
 		if [ -n "$(command -v iptables-legacy || command -v iptables)" ] && [ -n "$(command -v ipset)" ] && [ -n "$(dnsmasq --version | grep 'Compile time options:.* ipset')" ]; then
 			USE_TABLES="iptables"
 		else
-			echolog_i18n "The system does not have iptables or ipset installed, or Dnsmasq does not have ipset support enabled, so iptables+ipset transparent proxy cannot be used!"
+			log_i18n 0 "The system does not have iptables or ipset installed, or Dnsmasq does not have ipset support enabled, so iptables+ipset transparent proxy cannot be used!"
 			if [ -n "$(command -v fw4)" ] && [ -n "$(command -v nft)" ] && [ -n "$(dnsmasq --version | grep 'Compile time options:.* nftset')" ]; then
-				echolog_i18n "fw4 detected, use nftables to transparent proxy."
+				log_i18n 0 "fw4 detected, use nftables to transparent proxy."
 				USE_TABLES="nftables"
 				nftflag=1
 				config_t_set global_forwarding use_nft 1
@@ -1310,7 +1327,7 @@ start() {
 			USE_TABLES="nftables"
 			nftflag=1
 		else
-			echolog_i18n "The Dnsmasq package does not meet the requirements for transparent proxy in nftables. If you need to use it, please ensure that the dnsmasq version is 2.87 or higher and that nftset support is enabled."
+			log_i18n 0 "The Dnsmasq package does not meet the requirements for transparent proxy in nftables. If you need to use it, please ensure that the dnsmasq version is 2.87 or higher and that nftset support is enabled."
 		fi
 	fi
 
@@ -1318,7 +1335,7 @@ start() {
 	
 	[ "$USE_TABLES" = "nftables" ] && {
 		dnsmasq_version=$(dnsmasq -v | grep -i "Dnsmasq version " | awk '{print $3}')
-		[ "$(expr $dnsmasq_version \>= 2.90)" == 0 ] && echolog_i18n "If your Dnsmasq version is lower than 2.90, it is recommended to upgrade to version 2.90 or higher to avoid Dnsmasq crashing in some cases!"
+		[ "$(expr $dnsmasq_version \>= 2.90)" == 0 ] && log_i18n 0 "If your Dnsmasq version is lower than 2.90, it is recommended to upgrade to version 2.90 or higher to avoid Dnsmasq crashing in some cases!"
 	}
 
 	if [ "$ENABLED_DEFAULT_ACL" == 1 ] || [ "$ENABLED_ACLS" == 1 ]; then
@@ -1344,8 +1361,8 @@ start() {
 		}
 	fi
 	start_crontab
-	echolog_i18n "Running complete!"
-	echolog_nodate "\n"
+	log_i18n 0 "Running complete!"
+	echolog "\n"
 }
 
 stop() {
@@ -1389,7 +1406,7 @@ stop() {
 	rm -rf $TMP_PATH
 	rm -rf /tmp/lock/${CONFIG}_socks_auto_switch*
 	rm -rf /tmp/lock/${CONFIG}_lease2hosts*
-	echolog_i18n "Clearing and closing related programs and cache complete."
+	log_i18n 0 "Clearing and closing related programs and cache complete."
 	exit 0
 }
 
@@ -1460,11 +1477,11 @@ case $arg1 in
 add_ip2route)
 	add_ip2route $@
 	;;
-echolog)
-	echolog $@
+log)
+	log $@
 	;;
-echolog_i18n)
-	echolog_i18n "$@"
+log_i18n)
+	log_i18n "$@"
 	;;
 i18n)
 	i18n "$@"

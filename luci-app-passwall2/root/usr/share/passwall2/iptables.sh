@@ -136,7 +136,7 @@ insert_rule_after() {
 
 RULE_LAST_INDEX() {
 	[ $# -ge 3 ] || {
-		echolog_i18n "Incorrect index listing method (%s), execution terminated!" "iptables"
+		log_i18n 1 "Incorrect index listing method (%s), execution terminated!" "iptables"
 		return 1
 	}
 	local ipt_tmp="${1}"; shift
@@ -271,7 +271,7 @@ gen_shunt_list() {
 								get_geoip $_geoip_code ipv4 | grep -E "(\.((2(5[0-5]|[0-4][0-9]))|[0-1]?[0-9]{1,2})){3}" | sed -e "s/^/add $ipset_v4 &/g" | awk '{print $0} END{print "COMMIT"}' | ipset -! -R
 								get_geoip $_geoip_code ipv6 | grep -E "([A-Fa-f0-9]{1,4}::?){1,7}[A-Fa-f0-9]{1,4}" | sed -e "s/^/add $ipset_v6 &/g" | awk '{print $0} END{print "COMMIT"}' | ipset -! -R
 							fi
-							echolog "  - $(i18n "parse the traffic splitting rules[%s]-[geoip:%s] add to %s to complete." "${shunt_id}" "${_geoip_code}" "IPSET")"
+							log 1 "$(i18n "parse the traffic splitting rules[%s]-[geoip:%s] add to %s to complete." "${shunt_id}" "${_geoip_code}" "IPSET")"
 						}
 					}
 				}
@@ -317,8 +317,8 @@ add_shunt_t_rule() {
 }
 
 load_acl() {
+	log_i18n 1 "Access Control:"
 	[ "$ENABLED_ACLS" == 1 ] && {
-		echolog_i18n "Access Control:"
 		acl_app
 		for sid in $(ls -F ${TMP_ACL_PATH} | grep '/$' | awk -F '/' '{print $1}' | grep -v 'default'); do
 			eval $(uci -q show "${CONFIG}.${sid}" | cut -d'.' -sf 3-)
@@ -388,7 +388,7 @@ load_acl() {
 						_ipt_source="${_ipt_source}-m set --match-set ${_ipset} src"
 						unset _ipset
 					else
-						echolog "  - $(i18n "[%s]," "${remarks}")${msg}$(i18n "Does not exist, ignore.")"
+						log 2 "$(i18n "[%s]," "${remarks}")${msg}$(i18n "Does not exist, ignore.")"
 						unset _ipset
 						continue
 					fi
@@ -417,11 +417,11 @@ load_acl() {
 					if ! has_1_65535 "$tcp_no_redir_ports"; then
 						[ "$_ipv4" != "1" ] && add_port_rules "$ip6t_m -A PSW2 $(comment "$remarks") ${_ipt_source} -p tcp" $tcp_no_redir_ports "-j RETURN" 2>/dev/null
 						add_port_rules "$ipt_tmp -A PSW2 $(comment "$remarks") ${_ipt_source} -p tcp" $tcp_no_redir_ports "-j RETURN"
-						echolog "  - ${msg}$(i18n "not proxy %s port [%s]" "TCP" "${tcp_no_redir_ports}")"
+						log 2 "${msg}$(i18n "not proxy %s port [%s]" "TCP" "${tcp_no_redir_ports}")"
 					else
 						# It will return when it ends, so no extra rules are needed.
 						tcp_proxy_mode="disable"
-						echolog "  - ${msg}$(i18n "not proxy all %s" "TCP")"
+						log 2 "${msg}$(i18n "not proxy all %s" "TCP")"
 					fi
 				}
 				
@@ -429,11 +429,11 @@ load_acl() {
 					if ! has_1_65535 "$udp_no_redir_ports"; then
 						[ "$_ipv4" != "1" ] && add_port_rules "$ip6t_m -A PSW2 $(comment "$remarks") ${_ipt_source} -p udp" $udp_no_redir_ports "-j RETURN" 2>/dev/null
 						add_port_rules "$ipt_m -A PSW2 $(comment "$remarks") ${_ipt_source} -p udp" $udp_no_redir_ports "-j RETURN"
-						echolog "  - ${msg}$(i18n "not proxy %s port [%s]" "UDP" "${udp_no_redir_ports}")"
+						log 2 "${msg}$(i18n "not proxy %s port [%s]" "UDP" "${udp_no_redir_ports}")"
 					else
 						# It will return when it ends, so no extra rules are needed.
 						udp_proxy_mode="disable"
-						echolog "  - ${msg}$(i18n "not proxy all %s" "UDP")"
+						log 2 "${msg}$(i18n "not proxy all %s" "UDP")"
 					fi
 				}
 				
@@ -442,7 +442,7 @@ load_acl() {
 					$ip6t_n -A PSW2_DNS $(comment "$remarks") -p udp ${_ipt_source} --dport 53 -j REDIRECT --to-ports $dns_redirect_port 2>/dev/null
 					$ipt_n -A PSW2_DNS $(comment "$remarks") -p tcp ${_ipt_source} --dport 53 -j REDIRECT --to-ports $dns_redirect_port
 					$ip6t_n -A PSW2_DNS $(comment "$remarks") -p tcp ${_ipt_source} --dport 53 -j REDIRECT --to-ports $dns_redirect_port 2>/dev/null
-					[ -z "$(get_cache_var "ACL_${sid}_default")" ] && echolog "  - ${msg}$(i18n "Using a node that is different from the global configuration, DNS has been forcibly redirected to a dedicated DNS server.")"
+					[ -z "$(get_cache_var "ACL_${sid}_default")" ] && log 2 "${msg}$(i18n "Using a node that is different from the global configuration, DNS has been forcibly redirected to a dedicated DNS server.")"
 				else
 					$ipt_n -A PSW2_DNS $(comment "$remarks") -p udp ${_ipt_source} --dport 53 -j RETURN
 					$ip6t_n -A PSW2_DNS $(comment "$remarks") -p udp ${_ipt_source} --dport 53 -j RETURN 2>/dev/null
@@ -483,7 +483,7 @@ load_acl() {
 						add_port_rules "$ip6t_m -A PSW2 $(comment "$remarks") -p tcp ${_ipt_source}" $tcp_redir_ports "-j PSW2_RULE" 2>/dev/null
 						$ip6t_m -A PSW2 $(comment "$remarks") -p tcp ${_ipt_source} $(REDIRECT $redir_port TPROXY) 2>/dev/null
 					}
-					echolog "  - ${msg2}"
+					log 2 "${msg2}"
 				}
 				$ipt_tmp -A PSW2 $(comment "$remarks") ${_ipt_source} -p tcp -j RETURN
 				[ "$_ipv4" != "1" ] && $ip6t_m -A PSW2 $(comment "$remarks") ${_ipt_source} -p tcp -j RETURN 2>/dev/null
@@ -502,7 +502,7 @@ load_acl() {
 						add_port_rules "$ip6t_m -A PSW2 $(comment "$remarks") -p udp ${_ipt_source}" $udp_redir_ports "-j PSW2_RULE" 2>/dev/null
 						$ip6t_m -A PSW2 $(comment "$remarks") -p udp ${_ipt_source} $(REDIRECT $redir_port TPROXY) 2>/dev/null
 					}
-					echolog "  - ${msg2}"
+					log 2 "${msg2}"
 				}
 				$ipt_m -A PSW2 $(comment "$remarks") ${_ipt_source} -p udp -j RETURN
 				[ "$_ipv4" != "1" ] && $ip6t_m -A PSW2 $(comment "$remarks") ${_ipt_source} -p udp -j RETURN 2>/dev/null
@@ -514,38 +514,39 @@ load_acl() {
 	}
 	
 	[ "$ENABLED_DEFAULT_ACL" == 1 ] && [ "$CLIENT_PROXY" == 1 ] && {
-		msg="$(i18n "[%s]," "$(i18n "Default")")"
+		local comment_d="$(i18n "Default")"
+		msg="$(i18n "[%s]," ${comment_d})"
 		local ipt_tmp=$ipt_n
 		[ -n "${is_tproxy}" ] && ipt_tmp=$ipt_m
 
 		[ "$TCP_NO_REDIR_PORTS" != "disable" ] && {
-			add_port_rules "$ip6t_m -A PSW2 $(comment $(i18n "Default")) -p tcp" $TCP_NO_REDIR_PORTS "-j RETURN"
-			add_port_rules "$ipt_tmp -A PSW2 $(comment $(i18n "Default")) -p tcp" $TCP_NO_REDIR_PORTS "-j RETURN"
+			add_port_rules "$ip6t_m -A PSW2 $(comment "${comment_d}") -p tcp" $TCP_NO_REDIR_PORTS "-j RETURN"
+			add_port_rules "$ipt_tmp -A PSW2 $(comment "${comment_d}") -p tcp" $TCP_NO_REDIR_PORTS "-j RETURN"
 			if ! has_1_65535 "$TCP_NO_REDIR_PORTS"; then
-				echolog "  - ${msg}$(i18n "not proxy %s port [%s]" "TCP" "${TCP_NO_REDIR_PORTS}")"
+				log 2 "${msg}$(i18n "not proxy %s port [%s]" "TCP" "${TCP_NO_REDIR_PORTS}")"
 			else
 				TCP_PROXY_MODE="disable"
-				echolog "  - ${msg}$(i18n "not proxy all %s" "TCP")"
+				log 2 "${msg}$(i18n "not proxy all %s" "TCP")"
 			fi
 		}
 
 		[ "$UDP_NO_REDIR_PORTS" != "disable" ] && {
-			add_port_rules "$ip6t_m -A PSW2 $(comment $(i18n "Default")) -p udp" $UDP_NO_REDIR_PORTS "-j RETURN"
-			add_port_rules "$ipt_tmp -A PSW2 $(comment $(i18n "Default")) -p udp" $UDP_NO_REDIR_PORTS "-j RETURN"
+			add_port_rules "$ip6t_m -A PSW2 $(comment "${comment_d}") -p udp" $UDP_NO_REDIR_PORTS "-j RETURN"
+			add_port_rules "$ipt_tmp -A PSW2 $(comment "${comment_d}") -p udp" $UDP_NO_REDIR_PORTS "-j RETURN"
 			if ! has_1_65535 "$UDP_NO_REDIR_PORTS"; then
-				echolog "  - ${msg}$(i18n "not proxy %s port [%s]" "UDP" "${UDP_NO_REDIR_PORTS}")"
+				log 2 "${msg}$(i18n "not proxy %s port [%s]" "UDP" "${UDP_NO_REDIR_PORTS}")"
 			else
 				UDP_PROXY_MODE="disable"
-				echolog "  - ${msg}$(i18n "not proxy all %s" "UDP")"
+				log 2 "${msg}$(i18n "not proxy all %s" "UDP")"
 			fi
 		}
 
 		if ([ "$TCP_PROXY_MODE" != "disable" ] || [ "$UDP_PROXY_MODE" != "disable" ]) && [ -n "$NODE" ]; then
 			[ -n "$DNS_REDIRECT_PORT" ] && {
-				$ipt_n -A PSW2_DNS $(comment $(i18n "Default")) -p udp --dport 53 -j REDIRECT --to-ports $DNS_REDIRECT_PORT
-				$ip6t_n -A PSW2_DNS $(comment $(i18n "Default")) -p udp --dport 53 -j REDIRECT --to-ports $DNS_REDIRECT_PORT 2>/dev/null
-				$ipt_n -A PSW2_DNS $(comment $(i18n "Default")) -p tcp --dport 53 -j REDIRECT --to-ports $DNS_REDIRECT_PORT
-				$ip6t_n -A PSW2_DNS $(comment $(i18n "Default")) -p tcp --dport 53 -j REDIRECT --to-ports $DNS_REDIRECT_PORT 2>/dev/null
+				$ipt_n -A PSW2_DNS $(comment "${comment_d}") -p udp --dport 53 -j REDIRECT --to-ports $DNS_REDIRECT_PORT
+				$ip6t_n -A PSW2_DNS $(comment "${comment_d}") -p udp --dport 53 -j REDIRECT --to-ports $DNS_REDIRECT_PORT 2>/dev/null
+				$ipt_n -A PSW2_DNS $(comment "${comment_d}") -p tcp --dport 53 -j REDIRECT --to-ports $DNS_REDIRECT_PORT
+				$ip6t_n -A PSW2_DNS $(comment "${comment_d}") -p tcp --dport 53 -j REDIRECT --to-ports $DNS_REDIRECT_PORT 2>/dev/null
 			}
 		fi
 
@@ -560,48 +561,48 @@ load_acl() {
 			fi
 
 			[ "$accept_icmp" = "1" ] && {
-				$ipt_n -A PSW2 $(comment $(i18n "Default")) -p icmp -d $FAKE_IP $(REDIRECT)
-				add_shunt_t_rule "${SHUNT_LIST4}" "$ipt_n -A PSW2 $(comment $(i18n "Default")) -p icmp" "$(REDIRECT)"
-				$ipt_n -A PSW2 $(comment $(i18n "Default")) -p icmp $(REDIRECT)
+				$ipt_n -A PSW2 $(comment "${comment_d}") -p icmp -d $FAKE_IP $(REDIRECT)
+				add_shunt_t_rule "${SHUNT_LIST4}" "$ipt_n -A PSW2 $(comment "${comment_d}") -p icmp" "$(REDIRECT)"
+				$ipt_n -A PSW2 $(comment "${comment_d}") -p icmp $(REDIRECT)
 			}
 			
 			[ "$accept_icmpv6" = "1" ] && [ "$PROXY_IPV6" == "1" ] && {
-				$ip6t_n -A PSW2 $(comment $(i18n "Default")) -p ipv6-icmp -d $FAKE_IP_6 $(REDIRECT)
-				add_shunt_t_rule "${SHUNT_LIST6}" "$ip6t_n -A PSW2 $(comment $(i18n "Default")) -p ipv6-icmp" "$(REDIRECT)"
-				$ip6t_n -A PSW2 $(comment $(i18n "Default")) -p ipv6-icmp $(REDIRECT)
+				$ip6t_n -A PSW2 $(comment "${comment_d}") -p ipv6-icmp -d $FAKE_IP_6 $(REDIRECT)
+				add_shunt_t_rule "${SHUNT_LIST6}" "$ip6t_n -A PSW2 $(comment "${comment_d}") -p ipv6-icmp" "$(REDIRECT)"
+				$ip6t_n -A PSW2 $(comment "${comment_d}") -p ipv6-icmp $(REDIRECT)
 			}
 
-			$ipt_tmp -A PSW2 $(comment $(i18n "Default")) -p tcp -d $FAKE_IP ${ipt_j}
-			add_shunt_t_rule "${SHUNT_LIST4}" "$ipt_tmp -A PSW2 $(comment $(i18n "Default")) -p tcp" "${ipt_j}" $TCP_REDIR_PORTS
-			add_port_rules "$ipt_tmp -A PSW2 $(comment $(i18n "Default")) -p tcp" $TCP_REDIR_PORTS "${ipt_j}"
-			[ -n "${is_tproxy}" ] && $ipt_m -A PSW2 $(comment $(i18n "Default")) -p tcp $(REDIRECT $REDIR_PORT TPROXY)
+			$ipt_tmp -A PSW2 $(comment "${comment_d}") -p tcp -d $FAKE_IP ${ipt_j}
+			add_shunt_t_rule "${SHUNT_LIST4}" "$ipt_tmp -A PSW2 $(comment "${comment_d}") -p tcp" "${ipt_j}" $TCP_REDIR_PORTS
+			add_port_rules "$ipt_tmp -A PSW2 $(comment "${comment_d}") -p tcp" $TCP_REDIR_PORTS "${ipt_j}"
+			[ -n "${is_tproxy}" ] && $ipt_m -A PSW2 $(comment "${comment_d}") -p tcp $(REDIRECT $REDIR_PORT TPROXY)
 
 			[ "$PROXY_IPV6" == "1" ] && {
-				$ip6t_m -A PSW2 $(comment $(i18n "Default")) -p tcp -d $FAKE_IP_6 -j PSW2_RULE
-				add_shunt_t_rule "${SHUNT_LIST6}" "$ip6t_m -A PSW2 $(comment $(i18n "Default")) -p tcp" "-j PSW2_RULE" $TCP_REDIR_PORTS
-				add_port_rules "$ip6t_m -A PSW2 $(comment $(i18n "Default")) -p tcp" $TCP_REDIR_PORTS "-j PSW2_RULE"
-				$ip6t_m -A PSW2 $(comment $(i18n "Default")) -p tcp $(REDIRECT $REDIR_PORT TPROXY)
+				$ip6t_m -A PSW2 $(comment "${comment_d}") -p tcp -d $FAKE_IP_6 -j PSW2_RULE
+				add_shunt_t_rule "${SHUNT_LIST6}" "$ip6t_m -A PSW2 $(comment "${comment_d}") -p tcp" "-j PSW2_RULE" $TCP_REDIR_PORTS
+				add_port_rules "$ip6t_m -A PSW2 $(comment "${comment_d}") -p tcp" $TCP_REDIR_PORTS "-j PSW2_RULE"
+				$ip6t_m -A PSW2 $(comment "${comment_d}") -p tcp $(REDIRECT $REDIR_PORT TPROXY)
 			}
 
-			echolog "  - ${msg2}"
+			log 2 "${msg2}"
 		fi
 
 		if [ "$UDP_PROXY_MODE" != "disable" ] && [ -n "$NODE" ]; then
 			msg2="${msg}$(i18n "Use the %s node [%s]" "UDP" "$(config_n_get $NODE remarks)")(TPROXY:${REDIR_PORT})"
 
-			$ipt_m -A PSW2 $(comment $(i18n "Default")) -p udp -d $FAKE_IP -j PSW2_RULE
-			add_shunt_t_rule "${SHUNT_LIST4}" "$ipt_m -A PSW2 $(comment $(i18n "Default")) -p udp" "-j PSW2_RULE" $UDP_REDIR_PORTS
-			add_port_rules "$ipt_m -A PSW2 $(comment $(i18n "Default")) -p udp" $UDP_REDIR_PORTS "-j PSW2_RULE"
-			$ipt_m -A PSW2 $(comment $(i18n "Default")) -p udp $(REDIRECT $REDIR_PORT TPROXY)
+			$ipt_m -A PSW2 $(comment "${comment_d}") -p udp -d $FAKE_IP -j PSW2_RULE
+			add_shunt_t_rule "${SHUNT_LIST4}" "$ipt_m -A PSW2 $(comment "${comment_d}") -p udp" "-j PSW2_RULE" $UDP_REDIR_PORTS
+			add_port_rules "$ipt_m -A PSW2 $(comment "${comment_d}") -p udp" $UDP_REDIR_PORTS "-j PSW2_RULE"
+			$ipt_m -A PSW2 $(comment "${comment_d}") -p udp $(REDIRECT $REDIR_PORT TPROXY)
 
 			[ "$PROXY_IPV6" == "1" ] && {
-				$ip6t_m -A PSW2 $(comment $(i18n "Default")) -p udp -d $FAKE_IP_6 -j PSW2_RULE
-				add_shunt_t_rule "${SHUNT_LIST6}" "$ip6t_m -A PSW2 $(comment $(i18n "Default")) -p udp" "-j PSW2_RULE" $UDP_REDIR_PORTS
-				add_port_rules "$ip6t_m -A PSW2 $(comment $(i18n "Default")) -p udp" $UDP_REDIR_PORTS "-j PSW2_RULE"
-				$ip6t_m -A PSW2 $(comment $(i18n "Default")) -p udp $(REDIRECT $REDIR_PORT TPROXY)
+				$ip6t_m -A PSW2 $(comment "${comment_d}") -p udp -d $FAKE_IP_6 -j PSW2_RULE
+				add_shunt_t_rule "${SHUNT_LIST6}" "$ip6t_m -A PSW2 $(comment "${comment_d}") -p udp" "-j PSW2_RULE" $UDP_REDIR_PORTS
+				add_port_rules "$ip6t_m -A PSW2 $(comment "${comment_d}") -p udp" $UDP_REDIR_PORTS "-j PSW2_RULE"
+				$ip6t_m -A PSW2 $(comment "${comment_d}") -p udp $(REDIRECT $REDIR_PORT TPROXY)
 			}
 
-			echolog "  - ${msg2}"
+			log 2 "${msg2}"
 		fi
 	}
 }
@@ -611,14 +612,14 @@ filter_haproxy() {
 		local ip=$(get_host_ip ipv4 $(echo $item | awk -F ":" '{print $1}') 1)
 		[ -n "$ip" ] && ipset -q add $IPSET_VPS $ip
 	done
-	echolog_i18n "Add node to the load balancer is directly connected to %s[%s]." "ipset" "${IPSET_VPS}"
+	log_i18n 1 "Add node to the load balancer is directly connected to %s[%s]." "ipset" "${IPSET_VPS}"
 }
 
 filter_vpsip() {
 	uci show $CONFIG | grep -E "(.address=|.download_address=)" | cut -d "'" -f 2 | grep -E "([0-9]{1,3}[\.]){3}[0-9]{1,3}" | grep -v "^127\.0\.0\.1$" | sed -e "/^$/d" | sed -e "s/^/add $IPSET_VPS &/g" | awk '{print $0} END{print "COMMIT"}' | ipset -! -R
-	#echolog "  - $(i18n "Add all %s nodes to %s[%s] direct connection complete." "IPv4" "ipset" "${$IPSET_VPS}")"
+	#log 1 "$(i18n "Add all %s nodes to %s[%s] direct connection complete." "IPv4" "ipset" "${$IPSET_VPS}")"
 	uci show $CONFIG | grep -E "(.address=|.download_address=)" | cut -d "'" -f 2 | grep -E "([A-Fa-f0-9]{1,4}::?){1,7}[A-Fa-f0-9]{1,4}" | sed -e "/^$/d" | sed -e "s/^/add $IPSET_VPS6 &/g" | awk '{print $0} END{print "COMMIT"}' | ipset -! -R
-	#echolog "  - $(i18n "Add all %s nodes to %s[%s] direct connection complete." "IPv6" "ipset" "${$IPSET_VPS6}")"
+	#log 1 "$(i18n "Add all %s nodes to %s[%s] direct connection complete." "IPv6" "ipset" "${$IPSET_VPS6}")"
 }
 
 filter_server_port() {
@@ -666,7 +667,8 @@ filter_direct_node_list() {
 }
 
 add_firewall_rule() {
-	echolog_i18n "Starting to load %s firewall rules..." "iptables"
+	log_i18n 0 "Starting to load %s firewall rules..." "iptables"
+	
 	ipset -! create $IPSET_LOCAL nethash maxelem 1048576
 	ipset -! create $IPSET_LAN nethash maxelem 1048576
 	ipset -! create $IPSET_VPS nethash maxelem 1048576
@@ -696,8 +698,8 @@ add_firewall_rule() {
 	[ -n "$lan_ifname" ] && {
 		lan_ip=$(ip address show $lan_ifname | grep -w "inet" | awk '{print $2}')
 		lan_ip6=$(ip address show $lan_ifname | grep -w "inet6" | awk '{print $2}')
-		#echolog_i18n "local network segments (%s) direct connection: %s" "IPv4" "${lan_ip}"
-		#echolog_i18n "local network segments (%s) direct connection: %s" "IPv6" "${lan_ip6}"
+		#log_i18n 1 "local network segments (%s) direct connection: %s" "IPv4" "${lan_ip}"
+		#log_i18n 1 "local network segments (%s) direct connection: %s" "IPv6" "${lan_ip6}"
 
 		[ -n "$lan_ip" ] && ipset -! -R <<-EOF
 			$(echo $lan_ip | sed -e "s/ /\n/g" | sed -e "s/^/add $IPSET_LAN /")
@@ -711,14 +713,14 @@ add_firewall_rule() {
 	[ -n "$ISP_DNS" ] && {
 		for ispip in $ISP_DNS; do
 			ipset -! add $IPSET_LAN $ispip
-			echolog "  - $(i18n "Add ISP %s DNS to the whitelist: %s" "IPv4" "${ispip}")"
+			log_i18n 1 "$(i18n "Add ISP %s DNS to the whitelist: %s" "IPv4" "${ispip}")"
 		done
 	}
 
 	[ -n "$ISP_DNS6" ] && {
 		for ispip6 in $ISP_DNS6; do
 			ipset -! add $IPSET_LAN6 $ispip6
-			echolog "  - $(i18n "Add ISP %s DNS to the whitelist: %s" "IPv6" "${ispip6}")"
+			log_i18n 1 "$(i18n "Add ISP %s DNS to the whitelist: %s" "IPv6" "${ispip6}")"
 		done
 	}
 	
@@ -793,7 +795,7 @@ add_firewall_rule() {
 			local dns_address=$(echo $auto_dns | awk -F '#' '{print $1}')
 			local dns_port=$(echo $auto_dns | awk -F '#' '{print $2}')
 			$ipt_m -A PSW2_OUTPUT -p udp -d ${dns_address} --dport ${dns_port:-53} -j RETURN
-			echolog "  - $(i18n "Add direct DNS to %s: %s" "iptables" "${dns_address}:${dns_port:-53}")"
+			log_i18n 1 "$(i18n "Add direct DNS to %s: %s" "iptables" "${dns_address}:${dns_port:-53}")"
 		done
 	}
 	$ipt_m -A PSW2_OUTPUT -m mark --mark 0xff -j RETURN
@@ -860,10 +862,10 @@ add_firewall_rule() {
 			add_port_rules "$ipt_tmp -A PSW2_OUTPUT -p tcp" $TCP_NO_REDIR_PORTS "-j RETURN"
 			add_port_rules "$ip6t_m -A PSW2_OUTPUT -p tcp" $TCP_NO_REDIR_PORTS "-j RETURN"
 			if ! has_1_65535 "$TCP_NO_REDIR_PORTS"; then
-				echolog "  - ${msg}$(i18n "not proxy %s port [%s]" "TCP" "${TCP_NO_REDIR_PORTS}")"
+				log 1 "${msg}$(i18n "not proxy %s port [%s]" "TCP" "${TCP_NO_REDIR_PORTS}")"
 			else
 				unset TCP_LOCALHOST_PROXY
-				echolog "  - ${msg}$(i18n "not proxy all %s" "TCP")"
+				log 1 "${msg}$(i18n "not proxy all %s" "TCP")"
 			fi
 		}
 		
@@ -871,10 +873,10 @@ add_firewall_rule() {
 			add_port_rules "$ipt_m -A PSW2_OUTPUT -p udp" $UDP_NO_REDIR_PORTS "-j RETURN"
 			add_port_rules "$ip6t_m -A PSW2_OUTPUT -p udp" $UDP_NO_REDIR_PORTS "-j RETURN"
 			if ! has_1_65535 "$UDP_NO_REDIR_PORTS"; then
-				echolog "  - ${msg}$(i18n "not proxy %s port [%s]" "UDP" "${UDP_NO_REDIR_PORTS}")"
+				log 1 "${msg}$(i18n "not proxy %s port [%s]" "UDP" "${UDP_NO_REDIR_PORTS}")"
 			else
 				unset UDP_LOCALHOST_PROXY
-				echolog "  - ${msg}$(i18n "not proxy all %s" "UDP")"
+				log 1 "${msg}$(i18n "not proxy all %s" "UDP")"
 			fi
 		}
 		
@@ -886,6 +888,8 @@ add_firewall_rule() {
 				$ip6t_n -A OUTPUT $(comment "PSW2_DNS") -p tcp -o lo --dport 53 -j REDIRECT --to-ports $DNS_REDIRECT_PORT 2>/dev/null
 			}
 		fi
+
+		local comment_l="$(i18n "Local")"
 
 		# Loading local router proxy TCP
 		if [ -n "$NODE" ] && [ "$TCP_LOCALHOST_PROXY" = "1" ]; then
@@ -914,8 +918,8 @@ add_firewall_rule() {
 			add_port_rules "$ipt_tmp -A PSW2_OUTPUT -p tcp" $TCP_REDIR_PORTS "${ipt_j}"
 			[ -z "${is_tproxy}" ] && $ipt_n -A OUTPUT -p tcp -j PSW2_OUTPUT
 			[ -n "${is_tproxy}" ] && {
-				$ipt_m -A PSW2 $(comment "$(i18n "Local")") -p tcp -i lo $(REDIRECT $REDIR_PORT TPROXY)
-				$ipt_m -A PSW2 $(comment "$(i18n "Local")") -p tcp -i lo -j RETURN
+				$ipt_m -A PSW2 $(comment "${comment_l}") -p tcp -i lo $(REDIRECT $REDIR_PORT TPROXY)
+				$ipt_m -A PSW2 $(comment "${comment_l}") -p tcp -i lo -j RETURN
 				insert_rule_before "$ipt_m" "OUTPUT" "mwan3" "$(comment mangle-OUTPUT-PSW2) -p tcp -j PSW2_OUTPUT"
 			}
 
@@ -923,8 +927,8 @@ add_firewall_rule() {
 				$ip6t_m -A PSW2_OUTPUT -p tcp -d $FAKE_IP_6 -j PSW2_RULE
 				add_shunt_t_rule "${SHUNT_LIST6}" "$ip6t_m -A PSW2_OUTPUT -p tcp" "-j PSW2_RULE" $TCP_REDIR_PORTS
 				add_port_rules "$ip6t_m -A PSW2_OUTPUT -p tcp" $TCP_REDIR_PORTS "-j PSW2_RULE"
-				$ip6t_m -A PSW2 $(comment "$(i18n "Local")") -p tcp -i lo $(REDIRECT $REDIR_PORT TPROXY)
-				$ip6t_m -A PSW2 $(comment "$(i18n "Local")") -p tcp -i lo -j RETURN
+				$ip6t_m -A PSW2 $(comment "${comment_l}") -p tcp -i lo $(REDIRECT $REDIR_PORT TPROXY)
+				$ip6t_m -A PSW2 $(comment "${comment_l}") -p tcp -i lo -j RETURN
 				insert_rule_before "$ip6t_m" "OUTPUT" "mwan3" "$(comment mangle-OUTPUT-PSW2) -p tcp -j PSW2_OUTPUT"
 			}
 
@@ -941,16 +945,16 @@ add_firewall_rule() {
 			$ipt_m -A PSW2_OUTPUT -p udp -d $FAKE_IP -j PSW2_RULE
 			add_shunt_t_rule "${SHUNT_LIST4}" "$ipt_m -A PSW2_OUTPUT -p udp" "-j PSW2_RULE" $UDP_REDIR_PORTS
 			add_port_rules "$ipt_m -A PSW2_OUTPUT -p udp" $UDP_REDIR_PORTS "-j PSW2_RULE"
-			$ipt_m -A PSW2 $(comment "$(i18n "Local")") -p udp -i lo $(REDIRECT $REDIR_PORT TPROXY)
-			$ipt_m -A PSW2 $(comment "$(i18n "Local")") -p udp -i lo -j RETURN
+			$ipt_m -A PSW2 $(comment "${comment_l}") -p udp -i lo $(REDIRECT $REDIR_PORT TPROXY)
+			$ipt_m -A PSW2 $(comment "${comment_l}") -p udp -i lo -j RETURN
 			insert_rule_before "$ipt_m" "OUTPUT" "mwan3" "$(comment mangle-OUTPUT-PSW2) -p udp -j PSW2_OUTPUT"
 
 			[ "$PROXY_IPV6" == "1" ] && {
 				$ip6t_m -A PSW2_OUTPUT -p udp -d $FAKE_IP_6 -j PSW2_RULE
 				add_shunt_t_rule "${SHUNT_LIST6}" "$ip6t_m -A PSW2_OUTPUT -p udp" "-j PSW2_RULE" $UDP_REDIR_PORTS
 				add_port_rules "$ip6t_m -A PSW2_OUTPUT -p udp" $UDP_REDIR_PORTS "-j PSW2_RULE"
-				$ip6t_m -A PSW2 $(comment "$(i18n "Local")") -p udp -i lo $(REDIRECT $REDIR_PORT TPROXY)
-				$ip6t_m -A PSW2 $(comment "$(i18n "Local")") -p udp -i lo -j RETURN
+				$ip6t_m -A PSW2 $(comment "${comment_l}") -p udp -i lo $(REDIRECT $REDIR_PORT TPROXY)
+				$ip6t_m -A PSW2 $(comment "${comment_l}") -p udp -i lo -j RETURN
 				insert_rule_before "$ip6t_m" "OUTPUT" "mwan3" "$(comment mangle-OUTPUT-PSW2) -p udp -j PSW2_OUTPUT"
 			}
 
@@ -976,7 +980,7 @@ add_firewall_rule() {
 
 	filter_direct_node_list > /dev/null 2>&1 &
 
-	echolog_i18n "Firewall rules load complete!"
+	log_i18n 0 "%s firewall rules load complete!" "iptables"
 }
 
 del_firewall_rule() {
@@ -999,11 +1003,11 @@ del_firewall_rule() {
 	ip -6 rule del fwmark 1 table 100 2>/dev/null
 	ip -6 route del local ::/0 dev lo table 100 2>/dev/null
 
-	$DIR/app.sh echolog_i18n "Delete %s rules is complete." "iptables"
+	$DIR/app.sh log_i18n 0 "Delete %s rules is complete." "iptables"
 }
 
 flush_ipset() {
-	$DIR/app.sh echolog_i18n "Clear %s." "IPSet"
+	$DIR/app.sh log_i18n 0 "Clear %s." "IPSet"
 	for _name in $(ipset list | grep "Name: " | grep "passwall2_" | awk '{print $2}'); do
 		destroy_ipset ${_name}
 	done

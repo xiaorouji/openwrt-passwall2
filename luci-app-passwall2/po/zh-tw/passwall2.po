@@ -1,6 +1,3 @@
-msgid "PassWall 2"
-msgstr "PassWall 2"
-
 msgid "Auto"
 msgstr "自動"
 
@@ -2035,8 +2032,8 @@ msgstr "清除 %s。"
 msgid "Delete %s rules is complete."
 msgstr "删除 %s 規則完成。"
 
-msgid "Firewall rules load complete!"
-msgstr "防火墙規則加载完成！"
+msgid "%s firewall rules load complete!"
+msgstr "%s 防火墙規則加载完成！"
 
 msgid "Socks switch detection: Unknown error."
 msgstr "Socks切换检測：未知错误。"

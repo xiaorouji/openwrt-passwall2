@@ -35,7 +35,7 @@ unlock() {
 boot_func() {
 	local delay=$(uci -q get ${CONFIG}.@global_delay[0].start_delay || echo 1)
 	if [ "$delay" -gt 0 ]; then
-		$APP_FILE echolog_i18n "Start after a delay of %s seconds!" "${delay}"
+		$APP_FILE log_i18n 0 "Start after a delay of %s seconds!" "${delay}"
 		sleep $delay
 	fi
 	restart
@@ -48,7 +48,7 @@ boot() {
 
 start() {
 	set_lock
-	[ $? == 1 ] && $APP_FILE echolog_i18n "The script is already running, do not run it again. Exit." && exit 0
+	[ $? == 1 ] && $APP_FILE log_i18n 0 "The script is already running, do not run it again. Exit." && exit 0
 	$APP_FILE start
 	unset_lock
 }
@@ -56,14 +56,14 @@ start() {
 stop() {
 	unlock
 	set_lock
-	[ $? == 1 ] && $APP_FILE echolog_i18n "Stop the script and wait for a timeout, then exit without repeating the process." && exit 0
+	[ $? == 1 ] && $APP_FILE log_i18n 0 "Stop the script and wait for a timeout, then exit without repeating the process." && exit 0
 	$APP_FILE stop
 	unset_lock
 }
 
 restart() {
 	set_lock
-	[ $? == 1 ] && $APP_FILE echolog_i18n "The script is already running, do not run it again. Exit." && exit 0
+	[ $? == 1 ] && $APP_FILE log_i18n 0 "The script is already running, do not run it again. Exit." && exit 0
 	$APP_FILE stop
 	$APP_FILE start
 	unset_lock
