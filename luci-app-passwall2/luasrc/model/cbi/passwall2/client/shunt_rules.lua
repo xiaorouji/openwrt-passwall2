@@ -139,7 +139,7 @@ source.write = dynamicList_write
 
 sourcePort = s:option(Value, "sourcePort", translate("Source port"))
 
-port = s:option(Value, "port", translate("port"))
+port = s:option(Value, "port", translate("Port"))
 
 domain_list = s:option(TextValue, "domain_list", translate("Domain"))
 domain_list.rows = 10
@@ -230,5 +230,7 @@ ip_list.description = "<br /><ul>"
 .. "</li>"
 .. "<li>" .. translate("Annotation: Begining with #") .. "</li>"
 .. "</ul>"
+
+o = s:option(Flag, "invert", "invert", translate("Invert match result.") .. " " .. translate("Only support Sing-Box."))
 
 return m

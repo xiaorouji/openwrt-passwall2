@@ -1371,6 +1371,7 @@ function gen_config(var)
 							domain_regex = {},
 							geosite = {},
 							rule_set = {},
+							invert = e.invert == "1" and true or nil
 						}
 						string.gsub(e.domain_list, '[^' .. "\r\n" .. ']+', function(w)
 							if w:find("#") == 1 then return end
@@ -1427,6 +1428,7 @@ function gen_config(var)
 						rule.geoip = #geoip > 0 and geoip or nil
 					end
 					rule.rule_set = #rule_set > 0 and rule_set or nil
+					rule.invert = e.invert == "1" and true or nil
 
 					table.insert(rules, rule)
 				end
@@ -1602,6 +1604,7 @@ function gen_config(var)
 						geosite = (value.geosite and #value.geosite > 0) and value.geosite or nil,
 						rule_set = (value.rule_set and #value.rule_set > 0) and value.rule_set or nil,
 						disable_cache = false,
+						invert = value.invert,
 					}
 					if value.outboundTag ~= "block" and value.outboundTag ~= "direct" then
 						dns_rule.server = "remote"

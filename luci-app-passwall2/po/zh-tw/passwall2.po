@@ -1114,6 +1114,12 @@ msgstr "预定义域名列表：由'geosite:'開头，余下部分是一个名�
 msgid "Annotation: Begining with #"
 msgstr "注释: 由 # 開头"
 
+msgid "Invert match result."
+msgstr "反選匹配結果。"
+
+msgid "Only support Sing-Box."
+msgstr "只支持 Sing-Box。"
+
 msgid "IP: such as '127.0.0.1'."
 msgstr "IP: 形如'127.0.0.1'。"
 
