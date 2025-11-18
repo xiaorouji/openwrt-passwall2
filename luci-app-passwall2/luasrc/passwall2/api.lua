@@ -1,4 +1,5 @@
 module("luci.passwall2.api", package.seeall)
+appname = "passwall2"
 local com = require "luci.passwall2.com"
 bin = require "nixio".bin
 fs = require "nixio.fs"
@@ -8,13 +9,8 @@ util = require "luci.util"
 datatypes = require "luci.cbi.datatypes"
 jsonc = require "luci.jsonc"
 i18n = require "luci.i18n"
-local lang = uci:get("luci", "main", "lang") or "auto"
-if lang == "auto" then
-	lang = i18n.default
-end
-i18n.setlanguage(lang)
+conf = require "luci.config"
 
-appname = "passwall2"
 curl_args = { "-skfL", "--connect-timeout 3", "--retry 3" }
 command_timeout = 300
 OPENWRT_ARCH = nil
@@ -24,6 +20,16 @@ LOG_FILE = "/tmp/log/passwall2.log"
 CACHE_PATH = "/tmp/etc/passwall2_tmp"
 TMP_PATH = "/tmp/etc/" .. appname
 TMP_IFACE_PATH = TMP_PATH .. "/iface"
+
+local lang = conf.main.lang or "auto"
+if lang == "auto" then
+	local auto_lang = uci:get(appname, "@global[0]", "auto_lang")
+	if auto_lang then lang = auto_lang end
+end
+if lang == "auto" then
+	lang = i18n.default
+end
+i18n.setlanguage(lang)
 
 function log(...)
 	local result = os.date("%Y-%m-%d %H:%M:%S: ") .. table.concat({...}, " ")
@@ -1210,6 +1216,26 @@ end
 function set_apply_on_parse(map)
 	if not map then
 		return
+	end
+	local lang = conf.main.lang or "auto"
+	if lang == "auto" then
+		local http = require "luci.http"
+		local aclang = http.getenv("HTTP_ACCEPT_LANGUAGE") or ""
+		for lpat in aclang:gmatch("[%w-]+") do
+			lpat = lpat and lpat:gsub("-", "_")
+			if conf.languages[lpat] then
+				lang = lpat
+				break
+			end
+			lpat = lpat and lpat:lower()
+			if conf.languages[lpat] then
+				lang = lpat
+				break
+			end
+		end
+		if lang ~= "auto" then
+			sh_uci_set(appname, "@global[0]", "auto_lang", lang, true)
+		end
 	end
 	if is_js_luci() == true then
 		local hide_popup_box = nil
