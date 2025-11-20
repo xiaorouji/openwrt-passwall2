@@ -1573,6 +1573,12 @@ msgstr "协议参數。 如果啟用会随機浪费流量。"
 msgid "Protocol parameter. Enable length block encryption."
 msgstr "协议参數。啟用长度块加密。"
 
+msgid "TLS Chain Fingerprint (SHA256)"
+msgstr "TLS 憑證鏈指紋（SHA256）"
+
+msgid "Once set, connects only when the server’s chain fingerprint matches."
+msgstr "設定後，僅在伺服器憑證鏈指紋匹配時連接。"
+
 msgid "ECH Config"
 msgstr "ECH 配置"
 
