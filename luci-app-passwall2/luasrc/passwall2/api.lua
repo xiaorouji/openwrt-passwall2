@@ -229,9 +229,13 @@ function url(...)
 	return require "luci.dispatcher".build_url(url)
 end
 
-function trim(text)
-	if not text or text == "" then return "" end
-	return text:match("^%s*(.-)%s*$")
+function trim(s)
+	local len = #s
+	local i, j = 1, len
+	while i <= len and s:byte(i) <= 32 do i = i + 1 end
+	while j >= i and s:byte(j) <= 32 do j = j - 1 end
+	if i > j then return "" end
+	return s:sub(i, j)
 end
 
 function split(full, sep)
