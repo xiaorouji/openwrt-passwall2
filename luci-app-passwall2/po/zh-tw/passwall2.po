@@ -331,6 +331,9 @@ msgstr "儲存當前順序"
 msgid "Saved current page order successfully."
 msgstr "儲存目前頁面順序成功。"
 
+msgid "Drag to reorder"
+msgstr "拖曳以重排"
+
 msgid "Type"
 msgstr "類型"
 
