@@ -653,7 +653,7 @@ function restore_backup()
 		fp:close()
 		if chunk_index + 1 == total_chunks then
 			api.sys.call("echo '' > /tmp/log/passwall2.log")
-			api.log(string.format(" * PassWall2 %s", i18n.translate("Configuration file uploaded successfully…")))
+			api.log(0, string.format(" * PassWall2 %s", i18n.translate("Configuration file uploaded successfully…")))
 			local temp_dir = '/tmp/passwall2_bak'
 			api.sys.call("mkdir -p " .. temp_dir)
 			if api.sys.call("tar -xzf " .. file_path .. " -C " .. temp_dir) == 0 then
@@ -663,13 +663,13 @@ function restore_backup()
 						api.sys.call("cp -f " .. temp_file .. " " .. backup_file)
 					end
 				end
-				api.log(string.format(" * PassWall2 %s", i18n.translate("Configuration restored successfully…")))
-				api.log(string.format(" * PassWall2 %s", i18n.translate("Service restarting…")))
+				api.log(0, string.format(" * PassWall2 %s", i18n.translate("Configuration restored successfully…")))
+				api.log(0, string.format(" * PassWall2 %s", i18n.translate("Service restarting…")))
 				luci.sys.call('/etc/init.d/passwall2 restart > /dev/null 2>&1 &')
 				luci.sys.call('/etc/init.d/passwall2_server restart > /dev/null 2>&1 &')
 				result = { status = "success", message = "Upload completed", path = file_path }
 			else
-				api.log(string.format(" * PassWall2 %s", i18n.translate("Configuration file decompression failed, please try again!")))
+				api.log(0, string.format(" * PassWall2 %s", i18n.translate("Configuration file decompression failed, please try again!")))
 				result = { status = "error", message = "Decompression failed" }
 			end
 			api.sys.call("rm -rf " .. temp_dir)

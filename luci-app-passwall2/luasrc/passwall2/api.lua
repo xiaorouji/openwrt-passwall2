@@ -31,12 +31,29 @@ if lang == "auto" then
 end
 i18n.setlanguage(lang)
 
-function log(...)
-	local result = os.date("%Y-%m-%d %H:%M:%S: ") .. table.concat({...}, " ")
+function echolog(...)
+	local result = table.concat({...}, " ")
 	local f, err = io.open(LOG_FILE, "a")
 	if f and err == nil then
 		f:write(result .. "\n")
 		f:close()
+	end
+end
+
+function echolog_date(...)
+	local result = os.date("%Y-%m-%d %H:%M:%S: ") .. table.concat({...}, " ")
+	echolog(result)
+end
+
+function log(level, ...)
+	local indent = ""
+	if level >= 1 then
+		for i = 1, level, 1 do
+			indent = indent .. "  "
+		end
+		echolog_date(indent .. "- " .. table.concat({...}, " "))
+	else
+		echolog_date(table.concat({...}, " "))
 	end
 end
 

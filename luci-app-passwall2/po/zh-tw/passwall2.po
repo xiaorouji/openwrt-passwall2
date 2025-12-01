@@ -2195,7 +2195,7 @@ msgid "%s type node subscriptions are not currently supported, skip this node."
 msgstr "暫時不支持 %s 類型的節點訂閱，跳過此節點。"
 
 msgid "Update [%s]"
-msgstr "'更新【%s】"
+msgstr "更新【%s】"
 
 msgid "Matching node:"
 msgstr "匹配節點："
@@ -2217,6 +2217,9 @@ msgstr "第五匹配節點："
 
 msgid "Unable to find the best matching node, now replaced with:"
 msgstr "無法找到最匹配的節點，當前已更換為："
+
+msgid "Unable to find a new node. Please confirm and process manually."
+msgstr "無法匹配到新的節點，請手動確認處理。"
 
 msgid "No node information updates are available."
 msgstr "沒有可用的節點信息更新。"

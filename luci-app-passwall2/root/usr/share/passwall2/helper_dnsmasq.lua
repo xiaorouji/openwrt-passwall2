@@ -84,7 +84,7 @@ function restart(var)
 	local LOG = var["-LOG"]
 	sys.call("/etc/init.d/dnsmasq restart >/dev/null 2>&1")
 	if LOG == "1" then
-		api.log(api.i18n.translate("Restart dnsmasq service."))
+		api.log(0, api.i18n.translate("Restart dnsmasq service."))
 	end
 end
 
@@ -111,7 +111,7 @@ function logic_restart(var)
 		sys.call("/etc/init.d/dnsmasq restart >/dev/null 2>&1")
 	end
 	if LOG == "1" then
-		api.log(api.i18n.translate("Restart dnsmasq service."))
+		api.log(0, api.i18n.translate("Restart dnsmasq service."))
 	end
 end
 

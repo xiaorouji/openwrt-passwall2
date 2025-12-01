@@ -19,6 +19,7 @@ local jsonParse, jsonStringify = luci.jsonc.parse, luci.jsonc.stringify
 local base64Decode = api.base64Decode
 local uci = api.uci
 local fs = api.fs
+local log = api.log
 local i18n = api.i18n
 uci:revert(appname)
 
@@ -98,17 +99,6 @@ local function is_filter_keyword(value)
 end
 
 local nodeResult = {} -- update result
-local debug = false
-
-local log = function(...)
-	if debug == true then
-		local result = os.date("%Y-%m-%d %H:%M:%S: ") .. table.concat({...}, " ")
-		print(result)
-	else
-		api.log(...)
-	end
-end
-
 local nodes_table = {}
 for k, e in ipairs(api.get_valid_nodes()) do
 	if e.node_type == "normal" then
@@ -458,7 +448,7 @@ local function set_ss_implementation(result)
 		result.type = 'sing-box'
 		result.protocol = 'shadowsocks'
 	else
-		log(i18n.translatef("Skipping the %s node is due to incompatibility with the %s core program or incorrect node usage type settings.", "SS", "SS"))
+		log(2, i18n.translatef("Skipping the %s node is due to incompatibility with the %s core program or incorrect node usage type settings.", "SS", "SS"))
 		return nil
 	end
 	return result
@@ -466,7 +456,7 @@ end
 
 -- Processing data
 local function processData(szType, content, add_mode, group)
-	--log(content, add_mode, group)
+	--log(2, content, add_mode, group)
 	local result = {
 		timeout = 60,
 		add_mode = add_mode, -- `0` for manual configuration, `1` for import, `2` for subscription
@@ -475,7 +465,7 @@ local function processData(szType, content, add_mode, group)
 	--ssr://base64(host:port:protocol:method:obfs:base64pass/?obfsparam=base64param&protoparam=base64param&remarks=base64remarks&group=base64group&udpport=0&uot=0)
 	if szType == 'ssr' then
 		if not has_ssr then
-			log(i18n.translatef("Skipping the %s node is due to incompatibility with the %s core program or incorrect node usage type settings.", "SSR", "shadowsocksr-libev"))
+			log(2, i18n.translatef("Skipping the %s node is due to incompatibility with the %s core program or incorrect node usage type settings.", "SSR", "shadowsocksr-libev"))
 			return nil
 		end
 		result.type = "SSR"
@@ -509,7 +499,7 @@ local function processData(szType, content, add_mode, group)
 		elseif vmess_type_default == "xray" and has_xray then
 			result.type = "Xray"
 		else
-			log(i18n.translatef("Skipping the %s node is due to incompatibility with the %s core program or incorrect node usage type settings.", "VMess", "VMess"))
+			log(2, i18n.translatef("Skipping the %s node is due to incompatibility with the %s core program or incorrect node usage type settings.", "VMess", "VMess"))
 			return nil
 		end
 		result.alter_id = info.aid
@@ -623,7 +613,7 @@ local function processData(szType, content, add_mode, group)
 		end
 
 		if result.type == "sing-box" and (result.transport == "mkcp" or result.transport == "xhttp") then
-			log(i18n.translatef("Skip node: %s. Because Sing-Box does not support the %s protocol's %s transmission method, Xray needs to be used instead.", result.remarks, szType, result.transport))
+			log(2, i18n.translatef("Skip node: %s. Because Sing-Box does not support the %s protocol's %s transmission method, Xray needs to be used instead.", result.remarks, szType, result.transport))
 			return nil
 		end
 	elseif szType == "ss" then
@@ -931,7 +921,7 @@ local function processData(szType, content, add_mode, group)
 			result.type = 'Xray'
 			result.protocol = 'trojan'
 		else
-			log(i18n.translatef("Skipping the %s node is due to incompatibility with the %s core program or incorrect node usage type settings.", "Trojan", "Trojan"))
+			log(2, i18n.translatef("Skipping the %s node is due to incompatibility with the %s core program or incorrect node usage type settings.", "Trojan", "Trojan"))
 			return nil
 		end
 		
@@ -1077,7 +1067,7 @@ local function processData(szType, content, add_mode, group)
 			result.alpn = params.alpn
 
 			if result.type == "sing-box" and (result.transport == "mkcp" or result.transport == "xhttp") then
-				log(i18n.translatef("Skip node: %s. Because Sing-Box does not support the %s protocol's %s transmission method, Xray needs to be used instead.", result.remarks, szType, result.transport))
+				log(2, i18n.translatef("Skip node: %s. Because Sing-Box does not support the %s protocol's %s transmission method, Xray needs to be used instead.", result.remarks, szType, result.transport))
 				return nil
 			end
 		end
@@ -1098,7 +1088,7 @@ local function processData(szType, content, add_mode, group)
 		elseif vless_type_default == "xray" and has_xray then
 			result.type = "Xray"
 		else
-			log(i18n.translatef("Skipping the %s node is due to incompatibility with the %s core program or incorrect node usage type settings.", "VLESS", "VLESS"))
+			log(2, i18n.translatef("Skipping the %s node is due to incompatibility with the %s core program or incorrect node usage type settings.", "VLESS", "VLESS"))
 			return nil
 		end
 		result.protocol = "vless"
@@ -1264,7 +1254,7 @@ local function processData(szType, content, add_mode, group)
 			end
 
 			if result.type == "sing-box" and (result.transport == "mkcp" or result.transport == "xhttp") then
-				log(i18n.translatef("Skip node: %s. Because Sing-Box does not support the %s protocol's %s transmission method, Xray needs to be used instead.", result.remarks, szType, result.transport))
+				log(2, i18n.translatef("Skip node: %s. Because Sing-Box does not support the %s protocol's %s transmission method, Xray needs to be used instead.", result.remarks, szType, result.transport))
 				return nil
 			end
 		end
@@ -1273,7 +1263,7 @@ local function processData(szType, content, add_mode, group)
 			result.type = 'sing-box'
 			result.protocol = "hysteria"
 		else
-			log(i18n.translatef("Skip the %s node because the %s core program is not installed.", "Hysteria", "Hysteria", "Sing-Box"))
+			log(2, i18n.translatef("Skip the %s node because the %s core program is not installed.", "Hysteria", "Hysteria", "Sing-Box"))
 			return nil
 		end
 
@@ -1381,7 +1371,7 @@ local function processData(szType, content, add_mode, group)
 				result.hysteria2_obfs = params["obfs-password"] or params["obfs_password"]
 			end
 		else
-			log(i18n.translatef("Skipping the %s node is due to incompatibility with the %s core program or incorrect node usage type settings.", "Hysteria2", "Hysteria2"))
+			log(2, i18n.translatef("Skipping the %s node is due to incompatibility with the %s core program or incorrect node usage type settings.", "Hysteria2", "Hysteria2"))
 			return nil
 		end
 	elseif szType == 'tuic' then
@@ -1389,7 +1379,7 @@ local function processData(szType, content, add_mode, group)
 			result.type = 'sing-box'
 			result.protocol = "tuic"
 		else
-			log(i18n.translatef("Skip the %s node because the %s core program is not installed.", "Tuic", "Tuic", "Sing-Box"))
+			log(2, i18n.translatef("Skip the %s node because the %s core program is not installed.", "Tuic", "Tuic", "Sing-Box"))
 			return nil
 		end
 
@@ -1449,7 +1439,7 @@ local function processData(szType, content, add_mode, group)
 			result.type = 'sing-box'
 			result.protocol = "anytls"
 		else
-			log(i18n.translatef("Skip the %s node because the %s core program is not installed.", "AnyTLS", "AnyTLS", "Sing-Box 1.12"))
+			log(2, i18n.translatef("Skip the %s node because the %s core program is not installed.", "AnyTLS", "AnyTLS", "Sing-Box 1.12"))
 			return nil
 		end
 
@@ -1513,12 +1503,12 @@ local function processData(szType, content, add_mode, group)
 			local singbox_version = api.get_app_version("sing-box")
 			local version_ge_1_12 = api.compare_versions(singbox_version:match("[^v]+"), ">=", "1.12.0")
 			if not has_singbox or not version_ge_1_12 then
-				log(i18n.translatef("Skip the %s node, as %s type nodes require Sing-Box version 1.12 or higher.", result.remarks, szType))
+				log(2, i18n.translatef("Skip the %s node, as %s type nodes require Sing-Box version 1.12 or higher.", result.remarks, szType))
 				return nil
 			end
 		end
 	else
-		log(i18n.translatef("%s type node subscriptions are not currently supported, skip this node.", szType))
+		log(2, i18n.translatef("%s type node subscriptions are not currently supported, skip this node.", szType))
 		return nil
 	end
 	if not result.remarks or result.remarks == "" then
@@ -1597,6 +1587,10 @@ local function truncate_nodes(group)
 end
 
 local function select_node(nodes, config, parentConfig)
+	local log_level = 1
+	if parentConfig then
+		log_level = log_level + 1
+	end
 	if config.currentNode then
 		local server
 		-- Special priority: cfgid
@@ -1604,7 +1598,7 @@ local function select_node(nodes, config, parentConfig)
 			for index, node in pairs(nodes) do
 				if node[".name"] == config.currentNode[".name"] then
 					if config.log == nil or config.log == true then
-						log(i18n.translatef("Update [%s]", config.remarks) .. " " .. i18n.translatef("Matching node:") .. " " .. node.remarks)
+						log(log_level, i18n.translatef("Update [%s]", config.remarks) .. " " .. i18n.translatef("Matching node:") .. " " .. node.remarks)
 					end
 					server = node[".name"]
 					break
@@ -1618,7 +1612,7 @@ local function select_node(nodes, config, parentConfig)
 					if node.type and node.remarks and node.address and node.port then
 						if node.type == config.currentNode.type and node.remarks == config.currentNode.remarks and (node.address .. ':' .. node.port == config.currentNode.address .. ':' .. config.currentNode.port) then
 							if config.log == nil or config.log == true then
-								log(i18n.translatef("Update [%s]", config.remarks) .. " " .. i18n.translatef("First Matching node:") .. " " .. node.remarks)
+								log(log_level, i18n.translatef("Update [%s]", config.remarks) .. " " .. i18n.translatef("First Matching node:") .. " " .. node.remarks)
 							end
 							server = node[".name"]
 							break
@@ -1634,7 +1628,7 @@ local function select_node(nodes, config, parentConfig)
 					if node.type and node.address and node.port then
 						if node.type == config.currentNode.type and (node.address .. ':' .. node.port == config.currentNode.address .. ':' .. config.currentNode.port) then
 							if config.log == nil or config.log == true then
-								log(i18n.translatef("Update [%s]", config.remarks) .. " " .. i18n.translatef("Second Matching node:") .. " " .. node.remarks)
+								log(log_level, i18n.translatef("Update [%s]", config.remarks) .. " " .. i18n.translatef("Second Matching node:") .. " " .. node.remarks)
 							end
 							server = node[".name"]
 							break
@@ -1650,7 +1644,7 @@ local function select_node(nodes, config, parentConfig)
 					if node.address and node.port then
 						if node.address .. ':' .. node.port == config.currentNode.address .. ':' .. config.currentNode.port then
 							if config.log == nil or config.log == true then
-								log(i18n.translatef("Update [%s]", config.remarks) .. " " .. i18n.translatef("Third Matching node:") .. " " .. node.remarks)
+								log(log_level, i18n.translatef("Update [%s]", config.remarks) .. " " .. i18n.translatef("Third Matching node:") .. " " .. node.remarks)
 							end
 							server = node[".name"]
 							break
@@ -1666,7 +1660,7 @@ local function select_node(nodes, config, parentConfig)
 					if node.address then
 						if node.address == config.currentNode.address then
 							if config.log == nil or config.log == true then
-								log(i18n.translatef("Update [%s]", config.remarks) .. " " .. i18n.translatef("Fourth Matching node:") .. " " .. node.remarks)
+								log(log_level, i18n.translatef("Update [%s]", config.remarks) .. " " .. i18n.translatef("Fourth Matching node:") .. " " .. node.remarks)
 							end
 							server = node[".name"]
 							break
@@ -1682,7 +1676,7 @@ local function select_node(nodes, config, parentConfig)
 					if node.remarks then
 						if node.remarks == config.currentNode.remarks then
 							if config.log == nil or config.log == true then
-								log(i18n.translatef("Update [%s]", config.remarks) .. " " .. i18n.translatef("Fifth Matching node:") .. " " .. node.remarks)
+								log(log_level, i18n.translatef("Update [%s]", config.remarks) .. " " .. i18n.translatef("Fifth Matching node:") .. " " .. node.remarks)
 							end
 							server = node[".name"]
 							break
@@ -1696,7 +1690,7 @@ local function select_node(nodes, config, parentConfig)
 			if not server then
 				if #nodes_table > 0 then
 					if config.log == nil or config.log == true then
-						log(i18n.translatef("Update [%s]", config.remarks) .. " " .. i18n.translatef("Unable to find the best matching node, now replaced with:") .. " " .. nodes_table[1].remarks)
+						log(log_level, i18n.translatef("Update [%s]", config.remarks) .. " " .. i18n.translatef("Unable to find the best matching node, now replaced with:") .. " " .. nodes_table[1].remarks)
 					end
 					server = nodes_table[1][".name"]
 				end
@@ -1718,7 +1712,7 @@ end
 
 local function update_node(manual)
 	if next(nodeResult) == nil then
-		log(i18n.translatef("No node information updates are available."))
+		log(1, i18n.translatef("No node information updates are available."))
 		return
 	end
 
@@ -1786,12 +1780,15 @@ local function update_node(manual)
 		for _, config in pairs(CONFIG) do
 			if config.currentNodes and #config.currentNodes > 0 then
 				if config.remarks and config.currentNodes[1].log ~= false then
-					log('----【' .. config.remarks .. '】----')
+					log(1, i18n.translatef("Update [%s]", config.remarks))
 				end
 				for kk, vv in pairs(config.currentNodes) do
 					select_node(nodes, vv, config)
 				end
 				config.set(config)
+				if not config.newNodes or #config.newNodes == 0 then
+					log(1, i18n.translatef("[%s]", config.remarks) .. " " .. i18n.translate("Unable to find a new node. Please confirm and process manually."))
+				end
 			else
 				select_node(nodes, config)
 			end
@@ -1861,17 +1858,17 @@ local function parse_link(raw, add_mode, group, cfgid)
 							end
 						end
 					else
-						log(i18n.translatef("Skip unknown types:") .. " " .. szType)
+						log(2, i18n.translatef("Skip unknown types:") .. " " .. szType)
 					end
-					-- log(result)
+					-- log(2, result)
 					if result then
 						if result.error_msg then
-							log(i18n.translatef("Discard node: %s, Reason:", result.remarks) .. " " .. result.error_msg)
+							log(2, i18n.translatef("Discard node: %s, Reason:", result.remarks) .. " " .. result.error_msg)
 						elseif not result.type then
-							log(i18n.translatef("Discard node: %s, Reason:", result.remarks) .. " " .. i18n.translatef("No usable binary was found."))
+							log(2, i18n.translatef("Discard node: %s, Reason:", result.remarks) .. " " .. i18n.translatef("No usable binary was found."))
 						elseif (add_mode == "2" and is_filter_keyword(result.remarks)) or not result.address or result.remarks == "NULL" or result.address == "127.0.0.1" or
 								(not datatypes.hostname(result.address) and not (api.is_ip(result.address))) then
-							log(i18n.translatef("Discard filter nodes: %s type node %s", result.type, result.remarks))
+							log(2, i18n.translatef("Discard filter nodes: %s type node %s", result.type, result.remarks))
 						else
 							tinsert(node_list, result)
 						end
@@ -1880,8 +1877,8 @@ local function parse_link(raw, add_mode, group, cfgid)
 						end
 					end
 				end, function (err)
-					--log(err)
-					log(v, i18n.translatef("Parsing error, skip this node."))
+					--log(2, err)
+					log(2, v, i18n.translatef("Parsing error, skip this node."))
 				end
 			)
 			end
@@ -1892,10 +1889,10 @@ local function parse_link(raw, add_mode, group, cfgid)
 				list = node_list
 			}
 		end
-		log(i18n.translatef("Successfully resolved the [%s] node, number: %s", group, #node_list))
+		log(2, i18n.translatef("Successfully resolved the [%s] node, number: %s", group, #node_list))
 	else
 		if add_mode == "2" then
-			log(i18n.translatef("Get subscription content for [%s] is empty. This may be due to an invalid subscription address or a network problem. Please diagnose the issue!", group))
+			log(2, i18n.translatef("Get subscription content for [%s] is empty. This may be due to an invalid subscription address or a network problem. Please diagnose the issue!", group))
 		end
 	end
 end
@@ -1986,7 +1983,7 @@ local execute = function()
 			local ua = value.user_agent
 			local access_mode = value.access_mode
 			local result = (not access_mode) and i18n.translatef("Auto") or (access_mode == "direct" and i18n.translatef("Direct") or (access_mode == "proxy" and i18n.translatef("Proxy") or i18n.translatef("Auto")))
-			log(i18n.translatef("Start subscribing: %s", '【' .. remark .. '】' .. url .. ' [' .. result .. ']'))
+			log(1, i18n.translatef("Start subscribing: %s", '【' .. remark .. '】' .. url .. ' [' .. result .. ']'))
 			local tmp_file = "/tmp/" .. cfgid
 			value.http_code = curl(url, tmp_file, ua, access_mode)
 			if value.http_code ~= 200 then
@@ -2000,7 +1997,7 @@ local execute = function()
 					local old_md5 = value.md5 or ""
 					local new_md5 = luci.sys.exec("md5sum " .. tmp_file .. " 2>/dev/null | awk '{print $1}'"):gsub("\n", "")
 					if not manual_sub and old_md5 == new_md5 then
-						log(i18n.translatef("Subscription: [%s] No changes, no update required.", remark))
+						log(1, i18n.translatef("Subscription: [%s] No changes, no update required.", remark))
 					else
 						parse_link(raw_data, "2", remark, cfgid)
 						uci:set(appname, cfgid, "md5", new_md5)
@@ -2023,7 +2020,7 @@ local execute = function()
 
 		if #fail_list > 0 then
 			for index, value in ipairs(fail_list) do
-				log(i18n.translatef("[%s] Subscription failed. This could be due to an invalid subscription address or a network issue. Please diagnose the problem! [%s]", value.remark, tostring(value.http_code)))
+				log(1, i18n.translatef("[%s] Subscription failed. This could be due to an invalid subscription address or a network issue. Please diagnose the problem! [%s]", value.remark, tostring(value.http_code)))
 			end
 		end
 		update_node(0)
@@ -2032,13 +2029,13 @@ end
 
 if arg[1] then
 	if arg[1] == "start" then
-		log(i18n.translatef("Start subscribing..."))
+		log(0, i18n.translatef("Start subscribing..."))
 		xpcall(execute, function(e)
-			log(e)
-			log(debug.traceback())
-			log(i18n.translatef("Error, restoring service."))
+			log(1, e)
+			log(1, debug.traceback())
+			log(1, i18n.translatef("Error, restoring service."))
 		end)
-		log(i18n.translatef("Subscription complete...") .. "\n")
+		log(0, i18n.translatef("Subscription complete...") .. "\n")
 	elseif arg[1] == "add" then
 		local f = assert(io.open("/tmp/links.conf", 'r'))
 		local raw = f:read('*all')

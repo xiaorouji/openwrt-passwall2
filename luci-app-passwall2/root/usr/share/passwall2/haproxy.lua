@@ -7,9 +7,7 @@ local jsonc = api.jsonc
 local uci = api.uci
 local sys = api.sys
 
-local log = function(...)
-	api.log(...)
-end
+local log = api.log
 
 function get_ip_port_from(str)
 	local result_port = sys.exec("echo -n " .. str .. " | sed -n 's/^.*[:#]\\([0-9]*\\)$/\\1/p'")
@@ -40,8 +38,8 @@ local bind_local = uci:get(appname, "@global_haproxy[0]", "bind_local") or "0"
 local bind_address = "0.0.0.0"
 if bind_local == "1" then bind_address = "127.0.0.1" end
 
-log("HAProxy: ")
-log("  * " .. api.i18n.translatef("Console Port: %s", console_port))
+log(0, "HAProxy: ")
+log(1, api.i18n.translatef("Console Port: %s", console_port))
 fs.mkdir(haproxy_path)
 local haproxy_file = haproxy_path .. "/" .. haproxy_conf
 
@@ -150,7 +148,7 @@ uci:foreach(appname, "haproxy_config", function(t)
 			t.server_port = server_port
 			table.insert(listens[listen_port], t)
 		else
-			log("  - " .. api.i18n.translate("Discard one obviously invalid node."))
+			log(1, api.i18n.translate("Discard one obviously invalid node."))
 		end
 	end
 end)
@@ -164,7 +162,7 @@ end
 table.sort(sortTable, function(a,b) return (a < b) end)
 
 for i, port in pairs(sortTable) do
-	log("  +  " .. api.i18n.translatef("Entrance %s:%s", bind_address, port))
+	log(1, api.i18n.translatef("Entrance %s:%s", bind_address, port))
 
 	f_out:write("\n" .. string.format([[
 listen %s
@@ -210,7 +208,7 @@ listen %s
 			sys.call(string.format("/usr/share/passwall2/app.sh add_ip2route %s %s", o.origin_address, o.export))
 		end
 
-		log(string.format("  | - " .. api.i18n.translatef("Node: %s:%s, Weight: %s", o.origin_address, o.origin_port, o.lbweight)))
+		log(2, string.format(api.i18n.translatef("Node: %s:%s, Weight: %s", o.origin_address, o.origin_port, o.lbweight)))
 	end
 end
 

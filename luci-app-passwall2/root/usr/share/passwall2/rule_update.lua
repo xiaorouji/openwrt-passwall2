@@ -3,6 +3,7 @@
 local api = require "luci.passwall2.api"
 local name = api.appname
 local fs = api.fs
+local log = api.log
 local sys = api.sys
 local uci = api.uci
 local jsonc = api.jsonc
@@ -19,22 +20,9 @@ local asset_location = uci:get_first(name, 'global_rules', "v2ray_location_asset
 -- Custom geo file
 local geoip_api = uci:get_first(name, 'global_rules', "geoip_url", "https://api.github.com/repos/Loyalsoldier/v2ray-rules-dat/releases/latest")
 local geosite_api = uci:get_first(name, 'global_rules', "geosite_url", "https://api.github.com/repos/Loyalsoldier/v2ray-rules-dat/releases/latest")
---
-local use_nft = uci:get(name, "@global_forwarding[0]", "use_nft") or "0"
 
 if arg3 == "cron" then
 	arg2 = nil
-end
-
-local log = function(...)
-	if arg1 then
-		if arg1 == "log" then
-			api.log(...)
-		elseif arg1 == "print" then
-			local result = os.date("%Y-%m-%d %H:%M:%S: ") .. table.concat({...}, " ")
-			print(result)
-		end
-	end
 end
 
 -- curl
@@ -68,7 +56,7 @@ local function fetch_geoip()
 						if fs.access(asset_location .. "geoip.dat") then
 							sys.call(string.format("cp -f %s %s", asset_location .. "geoip.dat", "/tmp/geoip.dat"))
 							if sys.call('sha256sum -c /tmp/geoip.dat.sha256sum > /dev/null 2>&1') == 0 then
-								log(api.i18n.translatef("%s version is the same and does not need to be updated.", "geoip"))
+								log(1, api.i18n.translatef("%s version is the same and does not need to be updated.", "geoip"))
 								return 1
 							end
 						end
@@ -78,10 +66,10 @@ local function fetch_geoip()
 								if sys.call('sha256sum -c /tmp/geoip.dat.sha256sum > /dev/null 2>&1') == 0 then
 									sys.call(string.format("mkdir -p %s && cp -f %s %s", asset_location, "/tmp/geoip.dat", asset_location .. "geoip.dat"))
 									reboot = 1
-									log(api.i18n.translatef("%s update success.", "geoip"))
+									log(1, api.i18n.translatef("%s update success.", "geoip"))
 									return 1
 								else
-									log(api.i18n.translatef("%s update failed, please try again later.", "geoip"))
+									log(1, api.i18n.translatef("%s update failed, please try again later.", "geoip"))
 								end
 								break
 							end
@@ -92,7 +80,7 @@ local function fetch_geoip()
 			end
 		end
 		if json.message then
-			log(json.message)
+			log(2, json.message)
 		end
 	end,
 	function(e)
@@ -120,7 +108,7 @@ local function fetch_geosite()
 						if fs.access(asset_location .. "geosite.dat") then
 							sys.call(string.format("cp -f %s %s", asset_location .. "geosite.dat", "/tmp/geosite.dat"))
 							if sys.call('sha256sum -c /tmp/geosite.dat.sha256sum > /dev/null 2>&1') == 0 then
-								log(api.i18n.translatef("%s version is the same and does not need to be updated.", "geosite"))
+								log(1, api.i18n.translatef("%s version is the same and does not need to be updated.", "geosite"))
 								return 1
 							end
 						end
@@ -130,10 +118,10 @@ local function fetch_geosite()
 								if sys.call('sha256sum -c /tmp/geosite.dat.sha256sum > /dev/null 2>&1') == 0 then
 									sys.call(string.format("mkdir -p %s && cp -f %s %s", asset_location, "/tmp/geosite.dat", asset_location .. "geosite.dat"))
 									reboot = 1
-									log(api.i18n.translatef("%s update success.", "geosite"))
+									log(1, api.i18n.translatef("%s update success.", "geosite"))
 									return 1
 								else
-									log(api.i18n.translatef("%s update failed, please try again later.", "geosite"))
+									log(1, api.i18n.translatef("%s update failed, please try again later.", "geosite"))
 								end
 								break
 							end
@@ -144,7 +132,7 @@ local function fetch_geosite()
 			end
 		end
 		if json.message then
-			log(json.message)
+			log(2, json.message)
 		end
 	end,
 	function(e)
@@ -170,17 +158,17 @@ if geoip_update == 0 and geosite_update == 0 then
 	os.exit(0)
 end
 
-log(api.i18n.translate("Start updating the rules..."))
+log(0, api.i18n.translate("Start updating the rules..."))
 
 if tonumber(geoip_update) == 1 then
-	log(api.i18n.translatef("%s Start updating...", "geoip"))
+	log(1, api.i18n.translatef("%s Start updating...", "geoip"))
 	local status = fetch_geoip()
 	os.remove("/tmp/geoip.dat")
 	os.remove("/tmp/geoip.dat.sha256sum")
 end
 
 if tonumber(geosite_update) == 1 then
-	log(api.i18n.translatef("%s Start updating...", "geosite"))
+	log(1, api.i18n.translatef("%s Start updating...", "geosite"))
 	local status = fetch_geosite()
 	os.remove("/tmp/geosite.dat")
 	os.remove("/tmp/geosite.dat.sha256sum")
@@ -197,8 +185,8 @@ if reboot == 1 then
 		end
 	end
 
-	log(api.i18n.translate("Restart the service and apply the new rules."))
+	log(1, api.i18n.translate("Restart the service and apply the new rules."))
 	uci:set(name, "@global[0]", "flush_set", "1")
 	api.uci_save(uci, name, true, true)
 end
-log(api.i18n.translate("The rules have been updated..."))
+log(0, api.i18n.translate("The rules have been updated..."))
