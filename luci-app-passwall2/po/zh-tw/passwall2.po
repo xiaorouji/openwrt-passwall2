@@ -1877,7 +1877,13 @@ msgid "The configured type also applies to the core specified when manually impo
 msgstr "配置的類型同樣適用於手動導入節點時所指定的核心程序。"
 
 msgid "Group Name"
-msgstr "分组名"
+msgstr "分組名"
+
+msgid "Reassign Group"
+msgstr "調整分組"
+
+msgid "Reassign Node Group"
+msgstr "調整節點分組"
 
 msgid "Using..."
 msgstr "使用中。"
