@@ -9,6 +9,8 @@ if not arg[1] or not m:get(arg[1]) then
 	luci.http.redirect(api.url("node_list"))
 end
 
+m:append(Template(appname .. "/cbi/nodes_multivalue_com"))
+
 s = m:section(NamedSection, arg[1], "nodes", "")
 s.addremove = false
 s.dynamic = false

@@ -64,7 +64,8 @@ for k, e in ipairs(api.get_valid_nodes()) do
 			id = e[".name"],
 			remark = e["remark"],
 			type = e["type"],
-			chain_proxy = e["chain_proxy"]
+			chain_proxy = e["chain_proxy"],
+			group = e["group"]
 		}
 	end
 	if e.protocol == "_balancing" then
@@ -101,26 +102,29 @@ m.uci:foreach(appname, "socks", function(s)
 end)
 
 -- Load balancing node list
-o = s:option(DynamicList, _n("balancing_node"), translate("Load balancing node list"), translate("Load balancing node list, <a target='_blank' href='https://xtls.github.io/config/routing.html#balancerobject'>document</a>"))
+o = s:option(MultiValue, _n("balancing_node"), translate("Load balancing node list"), translate("Load balancing node list, <a target='_blank' href='https://xtls.github.io/config/routing.html#balancerobject'>document</a>"))
 o:depends({ [_n("protocol")] = "_balancing" })
-local valid_ids = {}
-for k, v in pairs(nodes_table) do
+o.widget = "checkbox"
+o.template = appname .. "/cbi/nodes_multivalue"
+o.group = {}
+for i, v in pairs(nodes_table) do
 	o:value(v.id, v.remark)
-	valid_ids[v.id] = true
+	o.group[#o.group+1] = v.group or ""
 end
--- Deduplication and disabling of custom and illegal input
+-- Reading the old DynamicList
+function o.cfgvalue(self, section)
+	local val = m.uci:get_list(appname, section, "balancing_node")
+	if val then
+		return val
+	else
+		return {}
+	end
+end
+-- Write-and-hold DynamicList
 function o.custom_write(self, section, value)
 	local result = {}
-	if type(value) == "table" then
-		local seen = {}
-		for _, v in ipairs(value) do
-			if v and not seen[v] and valid_ids[v] then
-				table.insert(result, v)
-				seen[v] = true
-			end
-		end
-	else
-		result = { value }
+	for v in value:gmatch("%S+") do
+		result[#result + 1] = v
 	end
 	m.uci:set_list(appname, section, "balancing_node", result)
 end

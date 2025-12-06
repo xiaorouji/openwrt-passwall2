@@ -292,6 +292,9 @@ msgstr "置顶"
 msgid "Select"
 msgstr "選择"
 
+msgid "Selected:"
+msgstr "已選："
+
 msgid "DeSelect"
 msgstr "反選"
 
@@ -1884,6 +1887,9 @@ msgstr "調整分組"
 
 msgid "Reassign Node Group"
 msgstr "調整節點分組"
+
+msgid "Search nodes..."
+msgstr "搜尋節點…"
 
 msgid "Using..."
 msgstr "使用中。"
