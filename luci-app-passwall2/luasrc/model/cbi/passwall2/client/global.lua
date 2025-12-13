@@ -7,6 +7,8 @@ local has_xray = api.finded_com("xray")
 m = Map(appname)
 api.set_apply_on_parse(m)
 
+m:append(Template(appname .. "/cbi/nodes_listvalue_com"))
+
 local nodes_table = {}
 for k, e in ipairs(api.get_valid_nodes()) do
 	nodes_table[#nodes_table + 1] = e
@@ -40,7 +42,8 @@ m.uci:foreach(appname, "socks", function(s)
 	if s.enabled == "1" and s.node then
 		socks_list[#socks_list + 1] = {
 			id = "Socks_" .. s[".name"],
-			remark = translate("Socks Config") .. " [" .. s.port .. translate("Port") .. "]"
+			remark = translate("Socks Config") .. " [" .. s.port .. translate("Port") .. "]",
+			group = "Socks"
 		}
 	end
 end)
@@ -82,7 +85,9 @@ o.rmempty = false
 
 ---- Node
 o = s:taboption("Main", ListValue, "node", "<a style='color: red'>" .. translate("Node") .. "</a>")
+o.template = appname .. "/cbi/nodes_listvalue"
 o:value("", translate("Close"))
+o.group = {""}
 
 -- Shunt
 if (has_singbox or has_xray) and #nodes_table > 0 then
@@ -128,20 +133,27 @@ if (has_singbox or has_xray) and #nodes_table > 0 then
 
 			o = s:taboption("Main", ListValue, vid .. "-main_node", string.format('<a style="color:red">%s</a>', translate("Preproxy Node")), translate("Set the node to be used as a pre-proxy. Each rule (including <code>Default</code>) has a separate switch that controls whether this rule uses the pre-proxy or not."))
 			o:depends(vid .. "-preproxy_enabled", "1")
+			o.template = appname .. "/cbi/nodes_listvalue"
+			o.group = {}
 			for k1, v1 in pairs(socks_list) do
 				o:value(v1.id, v1.remark)
+				o.group[#o.group+1] = (v1.group and v1.group ~= "") and v1.group or translate("default")
 			end
 			for k1, v1 in pairs(balancing_list) do
 				o:value(v1.id, v1.remark)
+				o.group[#o.group+1] = (v1.group and v1.group ~= "") and v1.group or translate("default")
 			end
 			for k1, v1 in pairs(urltest_list) do
 				o:value(v1.id, v1.remark)
+				o.group[#o.group+1] = (v1.group and v1.group ~= "") and v1.group or translate("default")
 			end
 			for k1, v1 in pairs(iface_list) do
 				o:value(v1.id, v1.remark)
+				o.group[#o.group+1] = (v1.group and v1.group ~= "") and v1.group or translate("default")
 			end
 			for k1, v1 in pairs(normal_list) do
 				o:value(v1.id, v1.remark)
+				o.group[#o.group+1] = (v1.group and v1.group ~= "") and v1.group or translate("default")
 			end
 			if #o.keylist > 0 then
 				o.default = o.keylist[1]
@@ -168,6 +180,8 @@ if (has_singbox or has_xray) and #nodes_table > 0 then
 					o:value("_default", translate("Default"))
 					o:value("_direct", translate("Direct Connection"))
 					o:value("_blackhole", translate("Blackhole"))
+					o.template = appname .. "/cbi/nodes_listvalue"
+					o.group = {"","","",""}
 
 					local pt = s:taboption("Main", ListValue, vid .. "-".. id .. "_proxy_tag", string.format('* <a style="color:red">%s</a>', e.remarks .. " " .. translate("Preproxy")))
 					pt.cfgvalue = get_cfgvalue(v.id, id .. "_proxy_tag")
@@ -177,18 +191,23 @@ if (has_singbox or has_xray) and #nodes_table > 0 then
 					pt:value("main", translate("Preproxy Node"))
 					for k1, v1 in pairs(socks_list) do
 						o:value(v1.id, v1.remark)
+						o.group[#o.group+1] = (v1.group and v1.group ~= "") and v1.group or translate("default")
 					end
 					for k1, v1 in pairs(balancing_list) do
 						o:value(v1.id, v1.remark)
+						o.group[#o.group+1] = (v1.group and v1.group ~= "") and v1.group or translate("default")
 					end
 					for k1, v1 in pairs(urltest_list) do
 						o:value(v1.id, v1.remark)
+						o.group[#o.group+1] = (v1.group and v1.group ~= "") and v1.group or translate("default")
 					end
 					for k1, v1 in pairs(iface_list) do
 						o:value(v1.id, v1.remark)
+						o.group[#o.group+1] = (v1.group and v1.group ~= "") and v1.group or translate("default")
 					end
 					for k1, v1 in pairs(normal_list) do
 						o:value(v1.id, v1.remark)
+						o.group[#o.group+1] = (v1.group and v1.group ~= "") and v1.group or translate("default")
 						pt:depends({ [node_option] = v1.id, [vid .. "-preproxy_enabled"] = "1" })
 					end
 				end
@@ -203,20 +222,27 @@ if (has_singbox or has_xray) and #nodes_table > 0 then
 			o.default = "_direct"
 			o:value("_direct", translate("Direct Connection"))
 			o:value("_blackhole", translate("Blackhole"))
+			o.template = appname .. "/cbi/nodes_listvalue"
+			o.group = {"",""}
 			for k1, v1 in pairs(socks_list) do
 				o:value(v1.id, v1.remark)
+				o.group[#o.group+1] = (v1.group and v1.group ~= "") and v1.group or translate("default")
 			end
 			for k1, v1 in pairs(balancing_list) do
 				o:value(v1.id, v1.remark)
+				o.group[#o.group+1] = (v1.group and v1.group ~= "") and v1.group or translate("default")
 			end
 			for k1, v1 in pairs(urltest_list) do
 				o:value(v1.id, v1.remark)
+				o.group[#o.group+1] = (v1.group and v1.group ~= "") and v1.group or translate("default")
 			end
 			for k1, v1 in pairs(iface_list) do
 				o:value(v1.id, v1.remark)
+				o.group[#o.group+1] = (v1.group and v1.group ~= "") and v1.group or translate("default")
 			end
 			for k1, v1 in pairs(normal_list) do
 				o:value(v1.id, v1.remark)
+				o.group[#o.group+1] = (v1.group and v1.group ~= "") and v1.group or translate("default")
 			end
 
 			local id = "default_proxy_tag"
@@ -416,6 +442,8 @@ o.default = 1
 o.rmempty = false
 
 o = s2:option(ListValue, "node", translate("Socks Node"))
+o.template = appname .. "/cbi/nodes_listvalue"
+o.group = {}
 
 o = s2:option(DummyValue, "now_node", translate("Current Node"))
 o.rawhtml = true
@@ -448,9 +476,13 @@ if has_singbox or has_xray then
 	o.datatype = "port"
 end
 
+local o_node = s.fields["node"]
+local o_socks = s2.fields["node"]
 for k, v in pairs(nodes_table) do
-	s.fields["node"]:value(v.id, v["remark"])
-	s2.fields["node"]:value(v.id, v["remark"])
+	o_node:value(v.id, v["remark"])
+	o_node.group[#o_node.group+1] = (v.group and v.group ~= "") and v.group or translate("default")
+	o_socks:value(v.id, v["remark"])
+	o_socks.group[#o_socks.group+1] = (v.group and v.group ~= "") and v.group or translate("default")
 	if v.type == "Xray" then
 		s.fields["_xray_node"]:depends({ node = v.id })
 	end

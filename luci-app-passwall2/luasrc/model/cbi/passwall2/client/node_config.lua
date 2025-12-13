@@ -10,6 +10,7 @@ if not arg[1] or not m:get(arg[1]) then
 end
 
 m:append(Template(appname .. "/cbi/nodes_multivalue_com"))
+m:append(Template(appname .. "/cbi/nodes_listvalue_com"))
 
 s = m:section(NamedSection, arg[1], "nodes", "")
 s.addremove = false
