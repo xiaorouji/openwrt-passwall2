@@ -983,7 +983,7 @@ msgid "Are you sure you want to delete all subscribed nodes?"
 msgstr "您確定要刪除所有已訂閱的節點吗？"
 
 msgid "Manual subscription All"
-msgstr "手動訂閱全部"
+msgstr "手動訂閱全部鏈接"
 
 msgid "This remark already exists, please change a new remark."
 msgstr "此備注已存在，請改一個新的備注。"
