@@ -232,8 +232,6 @@ rule-set:remote:https://raw.githubusercontent.com/lyc8503/sing-box-rules/rule-se
 config shunt_rules 'Proxy'
 	option network 'tcp,udp'
 	option remarks 'Proxy'
-	option domain_list 'geosite:geolocation-!cn
-rule-set:remote:https://raw.githubusercontent.com/lyc8503/sing-box-rules/rule-set-geosite/geosite-geolocation-!cn.srs'
 	option ip_list '149.154.160.0/20
 91.108.4.0/22
 91.108.56.0/24
