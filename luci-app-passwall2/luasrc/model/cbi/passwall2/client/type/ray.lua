@@ -111,6 +111,10 @@ o:depends({ [_n("protocol")] = "_balancing" })
 o.widget = "checkbox"
 o.template = appname .. "/cbi/nodes_multivalue"
 o.group = {}
+for k, v in pairs(socks_list) do
+	o:value(v.id, v.remark)
+	o.group[#o.group+1] = v.group or ""
+end
 for i, v in pairs(nodes_table) do
 	o:value(v.id, v.remark)
 	o.group[#o.group+1] = v.group or ""
@@ -165,6 +169,10 @@ end
 -- Check the fallback chain and remove the balancer node that would form a closed loop.
 if is_balancer then
 	check_fallback_chain(arg[1])
+end
+for k, v in pairs(socks_list) do
+	o:value(v.id, v.remark)
+	o.group[#o.group+1] = (v.group and v.group ~= "") and v.group or translate("default")
 end
 for k, v in pairs(fallback_table) do
 	o:value(v.id, v.remark)
