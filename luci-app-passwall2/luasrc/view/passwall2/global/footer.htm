@@ -63,9 +63,9 @@ local api = require "luci.passwall2.api"
 				}
 				var html = '<a href="#" onclick="location.href=\'' + to_url + '\'"><%:Edit%></a>';
 
-				var m = cbid.match(/\.(tcp|udp)_node$/);
-				if (m && (m[1] === "tcp" || m[1] === "udp")) {
-					html += '<a href="#" onclick="window.open(\'' + '<%=api.url("get_redir_log")%>?name=default&proto=' + m[1] + '\', \'_blank\')"><%:Log%></a>';
+				var m = cbid.match(/\.node$/);
+				if (m) {
+					html += '<a href="#" onclick="window.open(\'' + '<%=api.url("get_redir_log")%>?id=default&name=' + 'global' + '\', \'_blank\')"><%:Log%></a>';
 				}
 
 				node_select.insertAdjacentHTML("beforeend",
