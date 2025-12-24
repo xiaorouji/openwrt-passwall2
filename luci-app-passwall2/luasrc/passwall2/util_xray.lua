@@ -225,14 +225,20 @@ function gen_outbound(flag, node, tag, proxy_table)
 					mode = node.xhttp_mode or "auto",
 					path = node.xhttp_path or "/",
 					host = node.xhttp_host,
-					-- If the code contains an "extra" section, retrieve the contents of "extra"; otherwise, assign the value directly to "extra".
 					extra = node.xhttp_extra and (function()
 							local success, parsed = pcall(jsonc.parse, api.base64Decode(node.xhttp_extra))
-							if success then
-								return parsed.extra or parsed
-							else
-								return nil
+							if not success or not parsed then return nil end
+							-- Use it if the "extra" section is included; otherwise, use it directly.
+							local tbl = parsed.extra or parsed
+							-- Enumerate the first-level fields; if the value is empty or nil, delete it (simple fault tolerance).
+							for k, v in pairs(tbl) do
+								if type(v) == "table" and next(v) == nil then
+									tbl[k] = nil
+								elseif v == nil then
+									tbl[k] = nil
+								end
 							end
+							return tbl
 						end)() or nil
 				} or nil,
 			} or nil,
