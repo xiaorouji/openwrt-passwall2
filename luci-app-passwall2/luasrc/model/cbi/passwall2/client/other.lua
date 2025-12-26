@@ -301,6 +301,20 @@ if has_singbox then
 		o = s:option(Flag, "fragment", "TLS TCP " .. translate("Fragment"),
 			translate("Split handshake into multiple TCP segments. Enhances obfuscation. May increase delay. Use only if needed."))
 		o.default = 0
+		
+		-- clash api enable option
+		o = s:option(Flag, "clash_api_enable", translate("Enable Clash API"),
+			translate("Enable Clash API to allow external applications to control Sing-Box."))
+		o.default = 0
+
+		o = s:option(Value, "clash_api_port", translate("Clash API Port"))
+		o.datatype = "port"
+		o.default = "9090"
+		o:depends("clash_api_enable", true)
+
+		o = s:option(Value, "clash_api_token", translate("Clash API Token"))
+		o.default = ""
+		o:depends("clash_api_enable", true)
 	end
 end
 

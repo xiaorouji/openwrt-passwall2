@@ -1870,6 +1870,22 @@ function gen_config(var)
 					value.geosite = nil
 				end
 			end
+
+
+			local clash_api_enable = singbox_settings.clash_api_enable or 0
+			local clash_api_port = singbox_settings.clash_api_port or 9090
+			local clash_api_address = singbox_settings.clash_api_address or "0.0.0.0"
+			local clash_api_token = singbox_settings.clash_api_token or ""
+			if clash_api_enable == "1" then
+				if not config.api then
+					config.api = {}
+				end
+				config.api.clash = {
+					enabled = true,
+					listen = clash_api_address .. ":" .. tostring(clash_api_port),
+					token = clash_api_token ~= "" and clash_api_token or nil,
+				}
+			end
 		end
 		return jsonc.stringify(config, 1)
 	end
