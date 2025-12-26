@@ -307,6 +307,10 @@ if has_singbox then
 			translate("Enable Clash API to allow external applications to control Sing-Box."))
 		o.default = 0
 
+		o = s:option(Value, "clash_api_address", translate("Clash API Address"))
+		o.default = "0.0.0.0"
+		o:depends("clash_api_enable", true)
+
 		o = s:option(Value, "clash_api_port", translate("Clash API Port"))
 		o.datatype = "port"
 		o.default = "9090"

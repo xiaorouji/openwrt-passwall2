@@ -16,7 +16,8 @@ local new_port
 
 local function get_new_port()
 	if new_port then
-		new_port = tonumber(sys.exec(string.format("echo -n $(/usr/share/%s/app.sh get_new_port %s tcp)", appname, new_port + 1)))
+		new_port = tonumber(sys.exec(string.format("echo -n $(/usr/share/%s/app.sh get_new_port %s tcp)", appname,
+			new_port + 1)))
 	else
 		new_port = tonumber(sys.exec(string.format("echo -n $(/usr/share/%s/app.sh get_new_port auto tcp)", appname)))
 	end
@@ -53,14 +54,14 @@ function gen_outbound(flag, node, tag, proxy_table)
 				sys.call(string.format('/usr/share/%s/app.sh run_socks "%s"> /dev/null',
 					appname,
 					string.format("flag=%s node=%s bind=%s socks_port=%s config_file=%s relay_port=%s",
-						new_port, --flag
-						node_id, --node
-						"127.0.0.1", --bind
-						new_port, --socks port
-						config_file, --config file
+						new_port,                               --flag
+						node_id,                                --node
+						"127.0.0.1",                            --bind
+						new_port,                               --socks port
+						config_file,                            --config file
 						(proxy_tag and relay_port) and tostring(relay_port) or "" --relay port
-						)
 					)
+				)
 				)
 			end
 			node = {
@@ -98,9 +99,9 @@ function gen_outbound(flag, node, tag, proxy_table)
 			tls = {
 				enabled = true,
 				disable_sni = (node.tls_disable_sni == "1") and true or false, -- Do not send the server name in ClientHello.
-				server_name = node.tls_serverName, -- Used to verify the hostname on the returned certificate, unless the settings are insecure. It is also included in ClientHello to support virtual hosts, unless it is an IP address.
+				server_name = node.tls_serverName,                 -- Used to verify the hostname on the returned certificate, unless the settings are insecure. It is also included in ClientHello to support virtual hosts, unless it is an IP address.
 				insecure = (node.tls_allowInsecure == "1") and true or false, -- Accepts any server certificate.
-				alpn = alpn, -- A list of supported application layer protocols, arranged in order of priority. If both peers support ALPN, the protocol selected will be one of these protocols; otherwise, the connection will fail.
+				alpn = alpn,                                       -- A list of supported application layer protocols, arranged in order of priority. If both peers support ALPN, the protocol selected will be one of these protocols; otherwise, the connection will fail.
 				--max_version = "1.3",
 				fragment = fragment,
 				record_fragment = record_fragment,
@@ -127,7 +128,7 @@ function gen_outbound(flag, node, tag, proxy_table)
 			mux = {
 				enabled = true,
 				protocol = node.mux_type or "h2mux",
-				max_connections = ( (node.tcpbrutal == "1") and 1 ) or tonumber(node.mux_concurrency) or 4,
+				max_connections = ((node.tcpbrutal == "1") and 1) or tonumber(node.mux_concurrency) or 4,
 				padding = (node.mux_padding == "1") and true or false,
 				--min_streams = 4,
 				--max_streams = 0,
@@ -141,14 +142,14 @@ function gen_outbound(flag, node, tag, proxy_table)
 
 		local v2ray_transport = nil
 
-		if node.transport == "tcp" and node.tcp_guise == "http" and (node.tcp_guise_http_host or "") ~= "" then  -- Simulate X-ray Raw (TCP) transmission
+		if node.transport == "tcp" and node.tcp_guise == "http" and (node.tcp_guise_http_host or "") ~= "" then -- Simulate X-ray Raw (TCP) transmission
 			v2ray_transport = {
 				type = "http",
 				host = node.tcp_guise_http_host,
 				path = node.tcp_guise_http_path and (function()
-						local first = node.tcp_guise_http_path[1]
-						return (first == "" or not first) and "/" or first
-					end)() or "/",
+					local first = node.tcp_guise_http_path[1]
+					return (first == "" or not first) and "/" or first
+				end)() or "/",
 				headers = node.tcp_guise_http_user_agent and {
 					["User-Agent"] = node.tcp_guise_http_user_agent
 				} or nil,
@@ -181,7 +182,8 @@ function gen_outbound(flag, node, tag, proxy_table)
 					["User-Agent"] = node.ws_user_agent
 				} or nil,
 				max_early_data = tonumber(node.ws_maxEarlyData) or nil,
-				early_data_header_name = (node.ws_earlyDataHeaderName) and node.ws_earlyDataHeaderName or nil -- For compatibility with Xray-core, set it to Sec-WebSocket-Protocol. It needs to be consistent with the server.
+				early_data_header_name = (node.ws_earlyDataHeaderName) and node.ws_earlyDataHeaderName or
+				nil                                                                               -- For compatibility with Xray-core, set it to Sec-WebSocket-Protocol. It needs to be consistent with the server.
 			}
 		end
 
@@ -336,10 +338,10 @@ function gen_outbound(flag, node, tag, proxy_table)
 			protocol_table = {
 				server_ports = next(server_ports) and server_ports or nil,
 				hop_interval = (function()
-							if not next(server_ports) then return nil end
-							local v = tonumber((node.hysteria_hop_interval or "30s"):match("^%d+"))
-							return (v and v >= 5) and (v .. "s") or "30s"
-						end)(),
+					if not next(server_ports) then return nil end
+					local v = tonumber((node.hysteria_hop_interval or "30s"):match("^%d+"))
+					return (v and v >= 5) and (v .. "s") or "30s"
+				end)(),
 				up_mbps = tonumber(node.hysteria_up_mbps),
 				down_mbps = tonumber(node.hysteria_down_mbps),
 				obfs = node.hysteria_obfs,
@@ -416,12 +418,14 @@ function gen_outbound(flag, node, tag, proxy_table)
 			protocol_table = {
 				server_ports = next(server_ports) and server_ports or nil,
 				hop_interval = (function()
-							if not next(server_ports) then return nil end
-							local v = tonumber((node.hysteria2_hop_interval or "30s"):match("^%d+"))
-							return (v and v >= 5) and (v .. "s") or "30s"
-						end)(),
-				up_mbps = (node.hysteria2_up_mbps and tonumber(node.hysteria2_up_mbps)) and tonumber(node.hysteria2_up_mbps) or nil,
-				down_mbps = (node.hysteria2_down_mbps and tonumber(node.hysteria2_down_mbps)) and tonumber(node.hysteria2_down_mbps) or nil,
+					if not next(server_ports) then return nil end
+					local v = tonumber((node.hysteria2_hop_interval or "30s"):match("^%d+"))
+					return (v and v >= 5) and (v .. "s") or "30s"
+				end)(),
+				up_mbps = (node.hysteria2_up_mbps and tonumber(node.hysteria2_up_mbps)) and
+				tonumber(node.hysteria2_up_mbps) or nil,
+				down_mbps = (node.hysteria2_down_mbps and tonumber(node.hysteria2_down_mbps)) and
+				tonumber(node.hysteria2_down_mbps) or nil,
 				obfs = {
 					type = node.hysteria2_obfs_type,
 					password = node.hysteria2_obfs_password
@@ -477,7 +481,7 @@ end
 function gen_config_server(node)
 	local outbounds = {
 		{ type = "direct", tag = "direct" },
-		{ type = "block", tag = "block" }
+		{ type = "block",  tag = "block" }
 	}
 
 	local tls = {
@@ -540,7 +544,8 @@ function gen_config_server(node)
 			type = "ws",
 			path = node.ws_path or "/",
 			headers = (node.ws_host ~= nil) and { Host = node.ws_host } or nil,
-			early_data_header_name = (node.ws_earlyDataHeaderName) and node.ws_earlyDataHeaderName or nil -- For compatibility with Xray-core, set it to Sec-WebSocket-Protocol. It needs to be consistent with the server.
+			early_data_header_name = (node.ws_earlyDataHeaderName) and node.ws_earlyDataHeaderName or
+			nil                                                                                  -- For compatibility with Xray-core, set it to Sec-WebSocket-Protocol. It needs to be consistent with the server.
 		}
 	end
 
@@ -734,8 +739,10 @@ function gen_config_server(node)
 
 	if node.protocol == "hysteria2" then
 		protocol_table = {
-			up_mbps = (node.hysteria2_ignore_client_bandwidth ~= "1" and node.hysteria2_up_mbps and tonumber(node.hysteria2_up_mbps)) and tonumber(node.hysteria2_up_mbps) or nil,
-			down_mbps = (node.hysteria2_ignore_client_bandwidth ~= "1" and node.hysteria2_down_mbps and tonumber(node.hysteria2_down_mbps)) and tonumber(node.hysteria2_down_mbps) or nil,
+			up_mbps = (node.hysteria2_ignore_client_bandwidth ~= "1" and node.hysteria2_up_mbps and tonumber(node.hysteria2_up_mbps)) and
+			tonumber(node.hysteria2_up_mbps) or nil,
+			down_mbps = (node.hysteria2_ignore_client_bandwidth ~= "1" and node.hysteria2_down_mbps and tonumber(node.hysteria2_down_mbps)) and
+			tonumber(node.hysteria2_down_mbps) or nil,
 			obfs = {
 				type = node.hysteria2_obfs_type,
 				password = node.hysteria2_obfs_password
@@ -795,7 +802,8 @@ function gen_config_server(node)
 				bind_interface = node.outbound_node_iface,
 				routing_mark = 255,
 			}
-			sys.call(string.format("mkdir -p %s && touch %s/%s", api.TMP_IFACE_PATH, api.TMP_IFACE_PATH, node.outbound_node_iface))
+			sys.call(string.format("mkdir -p %s && touch %s/%s", api.TMP_IFACE_PATH, api.TMP_IFACE_PATH,
+				node.outbound_node_iface))
 		else
 			local outbound_node_t = uci:get_all("passwall2", node.outbound_node)
 			if node.outbound_node == "_socks" or node.outbound_node == "_http" then
@@ -804,8 +812,10 @@ function gen_config_server(node)
 					protocol = node.outbound_node:gsub("_", ""),
 					address = node.outbound_node_address,
 					port = tonumber(node.outbound_node_port),
-					username = (node.outbound_node_username and node.outbound_node_username ~= "") and node.outbound_node_username or nil,
-					password = (node.outbound_node_password and node.outbound_node_password ~= "") and node.outbound_node_password or nil,
+					username = (node.outbound_node_username and node.outbound_node_username ~= "") and
+					node.outbound_node_username or nil,
+					password = (node.outbound_node_password and node.outbound_node_password ~= "") and
+					node.outbound_node_password or nil,
 				}
 			end
 			outbound = require("luci.passwall2.util_sing-box").gen_outbound(nil, outbound_node_t, "outbound")
@@ -1082,7 +1092,9 @@ function gen_config(var)
 						ut_node = uci:get_all(appname, ut_node_id)
 					end
 					if ut_node then
-						local outbound = gen_outbound(flag, ut_node, ut_node_tag, { fragment = singbox_settings.fragment == "1" or nil, record_fragment = singbox_settings.record_fragment == "1" or nil, run_socks_instance = not no_run })
+						local outbound = gen_outbound(flag, ut_node, ut_node_tag,
+							{ fragment = singbox_settings.fragment == "1" or nil, record_fragment = singbox_settings
+							.record_fragment == "1" or nil, run_socks_instance = not no_run })
 						if outbound then
 							outbound.tag = outbound.tag .. ":" .. ut_node.remarks
 							table.insert(outbounds, outbound)
@@ -1097,10 +1109,14 @@ function gen_config(var)
 				tag = urltest_tag,
 				outbounds = valid_nodes,
 				url = _node.urltest_url or "https://www.gstatic.com/generate_204",
-				interval = (api.format_go_time(_node.urltest_interval) ~= "0s") and api.format_go_time(_node.urltest_interval) or "3m",
-				tolerance = (_node.urltest_tolerance and tonumber(_node.urltest_tolerance) > 0) and tonumber(_node.urltest_tolerance) or 50,
-				idle_timeout = (api.format_go_time(_node.urltest_idle_timeout) ~= "0s") and api.format_go_time(_node.urltest_idle_timeout) or "30m",
-				interrupt_exist_connections = (_node.urltest_interrupt_exist_connections == "true" or _node.urltest_interrupt_exist_connections == "1") and true or false
+				interval = (api.format_go_time(_node.urltest_interval) ~= "0s") and
+				api.format_go_time(_node.urltest_interval) or "3m",
+				tolerance = (_node.urltest_tolerance and tonumber(_node.urltest_tolerance) > 0) and
+				tonumber(_node.urltest_tolerance) or 50,
+				idle_timeout = (api.format_go_time(_node.urltest_idle_timeout) ~= "0s") and
+				api.format_go_time(_node.urltest_idle_timeout) or "30m",
+				interrupt_exist_connections = (_node.urltest_interrupt_exist_connections == "true" or _node.urltest_interrupt_exist_connections == "1") and
+				true or false
 			}
 			table.insert(outbounds, outbound)
 			return urltest_tag
@@ -1116,7 +1132,8 @@ function gen_config(var)
 					type = "sing-box",
 					protocol = "shadowtls",
 					shadowtls_version = node.shadowtls_version,
-					password = (node.shadowtls_version == "2" or node.shadowtls_version == "3") and node.shadowtls_password or nil,
+					password = (node.shadowtls_version == "2" or node.shadowtls_version == "3") and
+					node.shadowtls_password or nil,
 					address = node.address,
 					port = node.port,
 					tls = "1",
@@ -1210,7 +1227,8 @@ function gen_config(var)
 					if not _node then return nil end
 
 					if api.is_normal_node(_node) then
-						local use_proxy = preproxy_tag and node[rule_name .. "_proxy_tag"] == preproxy_rule_name and _node_id ~= preproxy_node_id
+						local use_proxy = preproxy_tag and node[rule_name .. "_proxy_tag"] == preproxy_rule_name and
+						_node_id ~= preproxy_node_id
 						local copied_outbound
 						for index, value in ipairs(outbounds) do
 							if value["_id"] == _node_id and value["_flag_proxy_tag"] == (use_proxy and preproxy_tag or nil) then
@@ -1244,7 +1262,7 @@ function gen_config(var)
 									_node.address = "127.0.0.1"
 									_node.port = new_port
 									table.insert(rules, 1, {
-										inbound = {"proxy_" .. rule_name},
+										inbound = { "proxy_" .. rule_name },
 										outbound = preproxy_tag,
 									})
 								end
@@ -1264,7 +1282,8 @@ function gen_config(var)
 							local _outbound = gen_outbound(flag, _node, rule_name, proxy_table)
 							if _outbound then
 								_outbound.tag = _outbound.tag .. ":" .. _node.remarks
-								rule_outboundTag, last_insert_outbound = set_outbound_detour(_node, _outbound, outbounds, rule_name)
+								rule_outboundTag, last_insert_outbound = set_outbound_detour(_node, _outbound, outbounds,
+									rule_name)
 								table.insert(outbounds, _outbound)
 								if last_insert_outbound then
 									table.insert(outbounds, last_insert_outbound)
@@ -1283,7 +1302,8 @@ function gen_config(var)
 							}
 							table.insert(outbounds, _outbound)
 							rule_outboundTag = _outbound.tag
-							sys.call(string.format("mkdir -p %s && touch %s/%s", api.TMP_IFACE_PATH, api.TMP_IFACE_PATH, _node.iface))
+							sys.call(string.format("mkdir -p %s && touch %s/%s", api.TMP_IFACE_PATH, api.TMP_IFACE_PATH,
+								_node.iface))
 						end
 					end
 				end
@@ -1333,7 +1353,7 @@ function gen_config(var)
 							end
 						end
 					end
-					
+
 					local rule = {
 						inbound = inboundTag,
 						outbound = outboundTag,
@@ -1484,7 +1504,9 @@ function gen_config(var)
 				sys.call(string.format("mkdir -p %s && touch %s/%s", api.TMP_IFACE_PATH, api.TMP_IFACE_PATH, node.iface))
 			end
 		else
-			local outbound = gen_outbound(flag, node, nil, { fragment = singbox_settings.fragment == "1" or nil, record_fragment = singbox_settings.record_fragment == "1" or nil, run_socks_instance = not no_run })
+			local outbound = gen_outbound(flag, node, nil,
+				{ fragment = singbox_settings.fragment == "1" or nil, record_fragment = singbox_settings.record_fragment ==
+				"1" or nil, run_socks_instance = not no_run })
 			if outbound then
 				outbound.tag = outbound.tag .. ":" .. node.remarks
 				COMMON.default_outbound_tag, last_insert_outbound = set_outbound_detour(node, outbound, outbounds)
@@ -1577,10 +1599,11 @@ function gen_config(var)
 				path = CACHE_PATH .. "/singbox_" .. flag .. ".db"
 			}
 		end
-	
+
 		if direct_dns_udp_server then
 			local domain = {}
-			local nodes_domain_text = sys.exec('uci show passwall2 | grep ".address=" | cut -d "\'" -f 2 | grep "[a-zA-Z]$" | sort -u')
+			local nodes_domain_text = sys.exec(
+			'uci show passwall2 | grep ".address=" | cut -d "\'" -f 2 | grep "[a-zA-Z]$" | sort -u')
 			string.gsub(nodes_domain_text, '[^' .. "\r\n" .. ']+', function(w)
 				table.insert(domain, w)
 			end)
@@ -1590,16 +1613,16 @@ function gen_config(var)
 					domain = domain
 				})
 			end
-	
+
 			local direct_strategy = "prefer_ipv6"
 			if direct_dns_query_strategy == "UseIPv4" then
 				direct_strategy = "ipv4_only"
 			elseif direct_dns_query_strategy == "UseIPv6" then
 				direct_strategy = "ipv6_only"
 			end
-	
+
 			local port = tonumber(direct_dns_udp_port) or 53
-	
+
 			table.insert(dns.servers, {
 				tag = "direct",
 				address = "udp://" .. direct_dns_udp_server .. ":" .. port,
@@ -1617,7 +1640,8 @@ function gen_config(var)
 					default_dns_flag = "direct"
 				end
 			end
-		else default_dns_flag = "direct"
+		else
+			default_dns_flag = "direct"
 		end
 		dns.final = default_dns_flag
 
@@ -1629,7 +1653,8 @@ function gen_config(var)
 						server = value.outboundTag,
 						domain = (value.domain and #value.domain > 0) and value.domain or nil,
 						domain_suffix = (value.domain_suffix and #value.domain_suffix > 0) and value.domain_suffix or nil,
-						domain_keyword = (value.domain_keyword and #value.domain_keyword > 0) and value.domain_keyword or nil,
+						domain_keyword = (value.domain_keyword and #value.domain_keyword > 0) and value.domain_keyword or
+						nil,
 						domain_regex = (value.domain_regex and #value.domain_regex > 0) and value.domain_regex or nil,
 						geosite = (value.geosite and #value.geosite > 0) and value.geosite or nil,
 						rule_set = (value.rule_set and #value.rule_set > 0) and value.rule_set or nil,
@@ -1673,7 +1698,7 @@ function gen_config(var)
 			}
 			table.insert(dns.rules, fakedns_dns_rule)
 		end
-	
+
 		table.insert(inbounds, {
 			type = "direct",
 			tag = "dns-in",
@@ -1701,7 +1726,8 @@ function gen_config(var)
 					sys.call("ipset -q -F " .. w)
 				end)
 				local ipset_prefix_name = "passwall2_" .. node_id .. "_"
-				local ipset_list = sys.exec("ipset list | grep 'Name: ' | grep '" .. ipset_prefix_name .. "' | awk '{print $2}'")
+				local ipset_list = sys.exec("ipset list | grep 'Name: ' | grep '" ..
+				ipset_prefix_name .. "' | awk '{print $2}'")
 				string.gsub(ipset_list, '[^' .. "\r\n" .. ']+', function(w)
 					sys.call("ipset -q -F " .. w)
 				end)
@@ -1720,7 +1746,8 @@ function gen_config(var)
 				local family = "inet"
 				local table_name = "passwall2"
 				local nftset_prefix_name = "passwall2_" .. node_id .. "_"
-				local nftset_list = sys.exec("nft -a list sets | grep -E '" .. nftset_prefix_name .. "' | awk -F 'set ' '{print $2}' | awk '{print $1}'")
+				local nftset_list = sys.exec("nft -a list sets | grep -E '" ..
+				nftset_prefix_name .. "' | awk -F 'set ' '{print $2}' | awk '{print $1}'")
 				string.gsub(nftset_list, '[^' .. "\r\n" .. ']+', function(w)
 					sys.call(string.format("nft flush set %s %s %s 2>/dev/null", family, table_name, w))
 				end)
@@ -1734,7 +1761,7 @@ function gen_config(var)
 			table.insert(route.rule_set, v)
 		end
 	end
-	
+
 	if inbounds or outbounds then
 		local config = {
 			log = {
@@ -1791,7 +1818,7 @@ function gen_config(var)
 								port = value.server_port,
 								public_key = value.peer_public_key,
 								pre_shared_key = value.pre_shared_key,
-								allowed_ips = {"0.0.0.0/0"},
+								allowed_ips = { "0.0.0.0/0" },
 								reserved = value.reserved
 							}
 						},
@@ -1877,14 +1904,16 @@ function gen_config(var)
 			local clash_api_address = singbox_settings.clash_api_address or "0.0.0.0"
 			local clash_api_token = singbox_settings.clash_api_token or ""
 			if clash_api_enable == "1" then
-				if not config.api then
-					config.api = {}
+				if not config.experimental then
+					config.experimental = {}
+					if not config.experimental.clash_api then
+						config.experimental.clash_api = {}
+					end
 				end
-				config.api.clash = {
-					enabled = true,
-					listen = clash_api_address .. ":" .. tostring(clash_api_port),
-					token = clash_api_token ~= "" and clash_api_token or nil,
-				}
+				config.experimental.clash_api.external_controller = clash_api_address .. ":" .. tostring(clash_api_port)
+				if clash_api_token and clash_api_token ~= "" then
+					config.experimental.clash_api.secret = clash_api_token
+				end
 			end
 		end
 		return jsonc.stringify(config, 1)
@@ -1955,7 +1984,7 @@ function gen_proto_config(var)
 		}
 		if outbound then table.insert(outbounds, outbound) end
 	end
-	
+
 	local config = {
 		log = {
 			disabled = true,
@@ -1972,7 +2001,7 @@ _G.gen_config = gen_config
 _G.gen_proto_config = gen_proto_config
 
 if arg[1] then
-	local func =_G[arg[1]]
+	local func = _G[arg[1]]
 	if func then
 		print(func(api.get_function_args(arg)))
 	end
