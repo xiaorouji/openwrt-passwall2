@@ -150,8 +150,8 @@ function gen_outbound(flag, node, tag, proxy_table)
 					local first = node.tcp_guise_http_path[1]
 					return (first == "" or not first) and "/" or first
 				end)() or "/",
-				headers = node.tcp_guise_http_user_agent and {
-					["User-Agent"] = node.tcp_guise_http_user_agent
+				headers = node.user_agent and {
+					["User-Agent"] = node.user_agent
 				} or nil,
 				idle_timeout = (node.http_h2_health_check == "1") and node.http_h2_read_idle_timeout or nil,
 				ping_timeout = (node.http_h2_health_check == "1") and node.http_h2_health_check_timeout or nil,
@@ -164,8 +164,8 @@ function gen_outbound(flag, node, tag, proxy_table)
 				type = "http",
 				host = node.http_host or {},
 				path = node.http_path or "/",
-				headers = node.http_user_agent and {
-					["User-Agent"] = node.http_user_agent
+				headers = node.user_agent and {
+					["User-Agent"] = node.user_agent
 				} or nil,
 				idle_timeout = (node.http_h2_health_check == "1") and node.http_h2_read_idle_timeout or nil,
 				ping_timeout = (node.http_h2_health_check == "1") and node.http_h2_health_check_timeout or nil,
@@ -177,13 +177,13 @@ function gen_outbound(flag, node, tag, proxy_table)
 			v2ray_transport = {
 				type = "ws",
 				path = node.ws_path or "/",
-				headers = (node.ws_host or node.ws_user_agent) and {
+				headers = (node.ws_host or node.user_agent) and {
 					Host = node.ws_host,
-					["User-Agent"] = node.ws_user_agent
+					["User-Agent"] = node.user_agent
 				} or nil,
 				max_early_data = tonumber(node.ws_maxEarlyData) or nil,
 				early_data_header_name = (node.ws_earlyDataHeaderName) and node.ws_earlyDataHeaderName or
-				nil                                                                               -- For compatibility with Xray-core, set it to Sec-WebSocket-Protocol. It needs to be consistent with the server.
+					nil -- For compatibility with Xray-core, set it to Sec-WebSocket-Protocol. It needs to be consistent with the server.
 			}
 		end
 
@@ -192,8 +192,8 @@ function gen_outbound(flag, node, tag, proxy_table)
 				type = "httpupgrade",
 				host = node.httpupgrade_host,
 				path = node.httpupgrade_path or "/",
-				headers = node.httpupgrade_user_agent and {
-					["User-Agent"] = node.httpupgrade_user_agent
+				headers = node.user_agent and {
+					["User-Agent"] = node.user_agent
 				} or nil
 			}
 		end
@@ -423,9 +423,9 @@ function gen_outbound(flag, node, tag, proxy_table)
 					return (v and v >= 5) and (v .. "s") or "30s"
 				end)(),
 				up_mbps = (node.hysteria2_up_mbps and tonumber(node.hysteria2_up_mbps)) and
-				tonumber(node.hysteria2_up_mbps) or nil,
+					tonumber(node.hysteria2_up_mbps) or nil,
 				down_mbps = (node.hysteria2_down_mbps and tonumber(node.hysteria2_down_mbps)) and
-				tonumber(node.hysteria2_down_mbps) or nil,
+					tonumber(node.hysteria2_down_mbps) or nil,
 				obfs = {
 					type = node.hysteria2_obfs_type,
 					password = node.hysteria2_obfs_password
@@ -545,7 +545,7 @@ function gen_config_server(node)
 			path = node.ws_path or "/",
 			headers = (node.ws_host ~= nil) and { Host = node.ws_host } or nil,
 			early_data_header_name = (node.ws_earlyDataHeaderName) and node.ws_earlyDataHeaderName or
-			nil                                                                                  -- For compatibility with Xray-core, set it to Sec-WebSocket-Protocol. It needs to be consistent with the server.
+				nil -- For compatibility with Xray-core, set it to Sec-WebSocket-Protocol. It needs to be consistent with the server.
 		}
 	end
 
@@ -740,9 +740,9 @@ function gen_config_server(node)
 	if node.protocol == "hysteria2" then
 		protocol_table = {
 			up_mbps = (node.hysteria2_ignore_client_bandwidth ~= "1" and node.hysteria2_up_mbps and tonumber(node.hysteria2_up_mbps)) and
-			tonumber(node.hysteria2_up_mbps) or nil,
+				tonumber(node.hysteria2_up_mbps) or nil,
 			down_mbps = (node.hysteria2_ignore_client_bandwidth ~= "1" and node.hysteria2_down_mbps and tonumber(node.hysteria2_down_mbps)) and
-			tonumber(node.hysteria2_down_mbps) or nil,
+				tonumber(node.hysteria2_down_mbps) or nil,
 			obfs = {
 				type = node.hysteria2_obfs_type,
 				password = node.hysteria2_obfs_password
@@ -813,9 +813,9 @@ function gen_config_server(node)
 					address = node.outbound_node_address,
 					port = tonumber(node.outbound_node_port),
 					username = (node.outbound_node_username and node.outbound_node_username ~= "") and
-					node.outbound_node_username or nil,
+						node.outbound_node_username or nil,
 					password = (node.outbound_node_password and node.outbound_node_password ~= "") and
-					node.outbound_node_password or nil,
+						node.outbound_node_password or nil,
 				}
 			end
 			outbound = require("luci.passwall2.util_sing-box").gen_outbound(nil, outbound_node_t, "outbound")
@@ -1093,8 +1093,12 @@ function gen_config(var)
 					end
 					if ut_node then
 						local outbound = gen_outbound(flag, ut_node, ut_node_tag,
-							{ fragment = singbox_settings.fragment == "1" or nil, record_fragment = singbox_settings
-							.record_fragment == "1" or nil, run_socks_instance = not no_run })
+							{
+								fragment = singbox_settings.fragment == "1" or nil,
+								record_fragment = singbox_settings
+									.record_fragment == "1" or nil,
+								run_socks_instance = not no_run
+							})
 						if outbound then
 							outbound.tag = outbound.tag .. ":" .. ut_node.remarks
 							table.insert(outbounds, outbound)
@@ -1110,13 +1114,13 @@ function gen_config(var)
 				outbounds = valid_nodes,
 				url = _node.urltest_url or "https://www.gstatic.com/generate_204",
 				interval = (api.format_go_time(_node.urltest_interval) ~= "0s") and
-				api.format_go_time(_node.urltest_interval) or "3m",
+					api.format_go_time(_node.urltest_interval) or "3m",
 				tolerance = (_node.urltest_tolerance and tonumber(_node.urltest_tolerance) > 0) and
-				tonumber(_node.urltest_tolerance) or 50,
+					tonumber(_node.urltest_tolerance) or 50,
 				idle_timeout = (api.format_go_time(_node.urltest_idle_timeout) ~= "0s") and
-				api.format_go_time(_node.urltest_idle_timeout) or "30m",
+					api.format_go_time(_node.urltest_idle_timeout) or "30m",
 				interrupt_exist_connections = (_node.urltest_interrupt_exist_connections == "true" or _node.urltest_interrupt_exist_connections == "1") and
-				true or false
+					true or false
 			}
 			table.insert(outbounds, outbound)
 			return urltest_tag
@@ -1133,7 +1137,7 @@ function gen_config(var)
 					protocol = "shadowtls",
 					shadowtls_version = node.shadowtls_version,
 					password = (node.shadowtls_version == "2" or node.shadowtls_version == "3") and
-					node.shadowtls_password or nil,
+						node.shadowtls_password or nil,
 					address = node.address,
 					port = node.port,
 					tls = "1",
@@ -1228,7 +1232,7 @@ function gen_config(var)
 
 					if api.is_normal_node(_node) then
 						local use_proxy = preproxy_tag and node[rule_name .. "_proxy_tag"] == preproxy_rule_name and
-						_node_id ~= preproxy_node_id
+							_node_id ~= preproxy_node_id
 						local copied_outbound
 						for index, value in ipairs(outbounds) do
 							if value["_id"] == _node_id and value["_flag_proxy_tag"] == (use_proxy and preproxy_tag or nil) then
@@ -1505,8 +1509,12 @@ function gen_config(var)
 			end
 		else
 			local outbound = gen_outbound(flag, node, nil,
-				{ fragment = singbox_settings.fragment == "1" or nil, record_fragment = singbox_settings.record_fragment ==
-				"1" or nil, run_socks_instance = not no_run })
+				{
+					fragment = singbox_settings.fragment == "1" or nil,
+					record_fragment = singbox_settings.record_fragment ==
+						"1" or nil,
+					run_socks_instance = not no_run
+				})
 			if outbound then
 				outbound.tag = outbound.tag .. ":" .. node.remarks
 				COMMON.default_outbound_tag, last_insert_outbound = set_outbound_detour(node, outbound, outbounds)
@@ -1603,7 +1611,7 @@ function gen_config(var)
 		if direct_dns_udp_server then
 			local domain = {}
 			local nodes_domain_text = sys.exec(
-			'uci show passwall2 | grep ".address=" | cut -d "\'" -f 2 | grep "[a-zA-Z]$" | sort -u')
+				'uci show passwall2 | grep ".address=" | cut -d "\'" -f 2 | grep "[a-zA-Z]$" | sort -u')
 			string.gsub(nodes_domain_text, '[^' .. "\r\n" .. ']+', function(w)
 				table.insert(domain, w)
 			end)
@@ -1654,7 +1662,7 @@ function gen_config(var)
 						domain = (value.domain and #value.domain > 0) and value.domain or nil,
 						domain_suffix = (value.domain_suffix and #value.domain_suffix > 0) and value.domain_suffix or nil,
 						domain_keyword = (value.domain_keyword and #value.domain_keyword > 0) and value.domain_keyword or
-						nil,
+							nil,
 						domain_regex = (value.domain_regex and #value.domain_regex > 0) and value.domain_regex or nil,
 						geosite = (value.geosite and #value.geosite > 0) and value.geosite or nil,
 						rule_set = (value.rule_set and #value.rule_set > 0) and value.rule_set or nil,
@@ -1727,7 +1735,7 @@ function gen_config(var)
 				end)
 				local ipset_prefix_name = "passwall2_" .. node_id .. "_"
 				local ipset_list = sys.exec("ipset list | grep 'Name: ' | grep '" ..
-				ipset_prefix_name .. "' | awk '{print $2}'")
+					ipset_prefix_name .. "' | awk '{print $2}'")
 				string.gsub(ipset_list, '[^' .. "\r\n" .. ']+', function(w)
 					sys.call("ipset -q -F " .. w)
 				end)
@@ -1747,7 +1755,7 @@ function gen_config(var)
 				local table_name = "passwall2"
 				local nftset_prefix_name = "passwall2_" .. node_id .. "_"
 				local nftset_list = sys.exec("nft -a list sets | grep -E '" ..
-				nftset_prefix_name .. "' | awk -F 'set ' '{print $2}' | awk '{print $1}'")
+					nftset_prefix_name .. "' | awk -F 'set ' '{print $2}' | awk '{print $1}'")
 				string.gsub(nftset_list, '[^' .. "\r\n" .. ']+', function(w)
 					sys.call(string.format("nft flush set %s %s %s 2>/dev/null", family, table_name, w))
 				end)
